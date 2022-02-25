@@ -61,9 +61,6 @@ public class ServiciosController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         List<ProductData> productsData = new ArrayList<>();
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         if (subjectOpt.isPresent()) {
@@ -72,24 +69,17 @@ public class ServiciosController {
                 productsData = buildResultListProduct(productService.encontrarPorOrganizacionId(organization.get(0).getId()));
             }
         }
-        System.out.println("productsData:::" + productsData);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         Api.imprimirGetLogAuditoria("servicios/organizacion/activos", user.getId());
         return ResponseEntity.ok(productsData);
     }
 
-    @GetMapping("organizacion/{productType}/activos")
+    @GetMapping("organizacion/tipo/{productType}/activos")
     public ResponseEntity encontrarPorOrganizacionIdYProductType(
             @AuthenticationPrincipal UserData user,
             @PathVariable("productType") ProductType productType,
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         List<ProductData> productsData = new ArrayList<>();
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         if (subjectOpt.isPresent()) {
@@ -98,11 +88,7 @@ public class ServiciosController {
                 productsData = buildResultListProduct(productService.encontrarPorOrganizacionIdYProductType(organization.get(0).getId(), productType));
             }
         }
-        System.out.println("productsData:::" + productsData);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        Api.imprimirGetLogAuditoria("servicios/organizacion/activos", user.getId());
+        Api.imprimirGetLogAuditoria("servicios/organizacion/tipo/productType/activos", user.getId());
         return ResponseEntity.ok(productsData);
     }
 
