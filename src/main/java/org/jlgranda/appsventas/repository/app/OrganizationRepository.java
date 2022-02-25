@@ -6,7 +6,8 @@
 package org.jlgranda.appsventas.repository.app;
 
 import java.util.List;
-import org.jlgranda.appsventas.domain.app.Proveedor;
+import org.jlgranda.appsventas.domain.Subject;
+import org.jlgranda.appsventas.domain.app.Organization;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -14,8 +15,9 @@ import org.springframework.data.repository.CrudRepository;
  *
  * @author usuario
  */
-public interface ProveedorRepository extends CrudRepository<Proveedor, Long> {
-    
-//    @Query("")
-//    public List<Proveedor> encontrarPorOrganizacionId();
+public interface OrganizationRepository extends CrudRepository<Organization, Long> {
+
+    @Query("select p from Organization p where p.owner = :#{#owner}")
+    public List<Organization> encontrarPorOwner(Subject owner);
+
 }

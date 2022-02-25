@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jlgranda.appsventas.domain;
+package org.jlgranda.appsventas.domain.app;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -17,6 +17,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jlgranda.appsventas.domain.DeletableObject;
 
 /**
  *
@@ -45,10 +46,6 @@ public class Proveedor extends DeletableObject implements Comparable<Proveedor>,
     @Column(name = "organization_id", insertable = true, updatable = true, nullable = true)
     private Long organizacionId;
 
-//    @ManyToOne(optional = true)
-//    @JoinColumn(name = "organization_id", insertable = true, updatable = true, nullable = true)
-//    private Organization organization;
-//
     @Override
     public int compareTo(Proveedor t) {
         if (getId() == null && t != null && t.getId() != null) {

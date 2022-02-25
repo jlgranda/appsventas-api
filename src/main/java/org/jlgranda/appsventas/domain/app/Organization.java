@@ -1,0 +1,101 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.jlgranda.appsventas.domain.app;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.jlgranda.appsventas.domain.DeletableObject;
+
+/**
+ *
+ * @author usuario
+ */
+@Entity
+@Table(name = "Organization", schema = "public")
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode(callSuper = false)
+public class Organization extends DeletableObject<Organization> implements Serializable {
+
+    private String ruc;
+    private String initials;
+    private String url;
+    @Column(name = "registro_contable_habilitado")
+    private Boolean accountingEnabled = Boolean.TRUE;
+    @Column(name = "vista_ventas")
+    private String vistaVentas;
+    @Column(name = "vista_venta")
+    private String vistaVenta;
+
+    public enum Type {
+        GOVERMENT,
+        PUBLIC,
+        PRIVATE,
+        NATURAL;
+
+        private Type() {
+        }
+    }
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Organization.Type organizationType;
+
+    public String getCanonicalPath() {
+        StringBuilder path = new StringBuilder();
+        path.append(getName());
+        return path.toString();
+    }
+
+    public List<Organization.Type> getOrganizationTypes() {
+        return Arrays.asList(Organization.Type.values());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 83 * hash + Objects.hashCode(this.ruc);
+        hash = 83 * hash + Objects.hashCode(this.initials);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Organization other = (Organization) obj;
+        if (!Objects.equals(this.ruc, other.ruc)) {
+            return false;
+        }
+        if (!Objects.equals(this.initials, other.initials)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s[id=%d]", getClass().getSimpleName(), getId());
+    }
+}

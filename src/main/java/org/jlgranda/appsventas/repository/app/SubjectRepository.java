@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.repository.app;
 
 import java.util.List;
+import java.util.Optional;
 import org.jlgranda.appsventas.domain.Subject;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -16,10 +17,15 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface SubjectRepository extends CrudRepository<Subject, Long> {
 
-    @Query("select p from Subject p where p.deleted = false")
+    @Query("select p from Subject p where p.deleted = false and p.id = :#{#id}")
+    public Optional<Subject> encontrarPorId(Long id);
+
+    @Query("select p from Subject p where p.deleted = false order by p.firstname ASC")
     public List<Subject> encontrarActivos();
 
-    @Query("select p from Subject p where p.deleted = false and (lower(p.firstname) like %:keyword% or lower(p.surname) like %:keyword% or lower(p.initials) like %:keyword%  or lower(p.code) like %:keyword%)")
+    @Query("select p from Subject p where p.deleted = false "
+            + "and (lower(p.firstname) like %:keyword% or lower(p.surname) like %:keyword% or lower(p.initials) like %:keyword%  or lower(p.code) like %:keyword%) "
+            + "order by p.firstname ASC")
     public List<Subject> encontrarPorKeyword(String keyword);
 
 }

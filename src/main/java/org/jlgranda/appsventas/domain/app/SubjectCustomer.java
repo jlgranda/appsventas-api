@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jlgranda.appsventas.domain;
+package org.jlgranda.appsventas.domain.app;
 
 import java.io.Serializable;
 import javax.persistence.Column;
@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jlgranda.appsventas.domain.DeletableObject;
 
 /**
  *

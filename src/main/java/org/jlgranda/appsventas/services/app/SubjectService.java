@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.Optional;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.repository.app.SubjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +27,20 @@ public class SubjectService {
     }
 
     /**
+     * Devolver las instancias <tt>Subject</tt> para el id dado como parámentro,
+     * discriminando el campo eliminado
+     *
+     * @param id
+     * @return
+     */
+    public Optional<Subject> encontrarPorId(Long id) {
+        return this.getRepository().encontrarPorId(id);
+    }
+
+    /**
      * Devolver las instancias <tt>Subject</tt> activos, discriminando el campo
      * eliminado
      *
-     * @param keyword
      * @return
      */
     public List<Subject> encontrarActivos() {

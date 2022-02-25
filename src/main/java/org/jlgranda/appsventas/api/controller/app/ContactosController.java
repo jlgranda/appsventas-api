@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.domain.Subject;
-import org.jlgranda.appsventas.domain.SubjectCustomer;
+import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
 import org.jlgranda.appsventas.services.app.SubjectCustomerService;
@@ -54,12 +54,13 @@ public class ContactosController {
             @AuthenticationPrincipal UserData user,
             @PathVariable("keyword") String keyword,
             @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "20") int limit) {
-        Api.imprimirGetLogAuditoria("contactos/activos/keyword", user.getId());
+            @RequestParam(value = "limit", defaultValue = "20") int limit
+    ) {
         List<SubjectCustomerData> subjectCustomersData = buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword));
         if (subjectCustomersData.isEmpty()) {
             subjectCustomersData.addAll(buildResultListSubjectCustomerBaseSubject(subjectService.encontrarPorKeyword(keyword)));
         }
+        Api.imprimirGetLogAuditoria("contactos/activos/keyword", user.getId());
         return ResponseEntity.ok(subjectCustomersData);
     }
 
@@ -67,7 +68,8 @@ public class ContactosController {
     public ResponseEntity encontrarPorSubjectId(
             @AuthenticationPrincipal UserData user,
             @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "20") int limit) {
+            @RequestParam(value = "limit", defaultValue = "20") int limit
+    ) {
         Api.imprimirGetLogAuditoria("contactos/usuario/activos", user.getId());
         return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectId(user.getId())));
     }
@@ -77,7 +79,8 @@ public class ContactosController {
             @AuthenticationPrincipal UserData user,
             @PathVariable("keyword") String keyword,
             @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "20") int limit) {
+            @RequestParam(value = "limit", defaultValue = "20") int limit
+    ) {
         Api.imprimirGetLogAuditoria("contactos/usuario/activos/keyword", user.getId());
         return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword)));
     }

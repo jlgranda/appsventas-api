@@ -5,10 +5,13 @@
  */
 package org.jlgranda.appsventas.dto.app;
 
+import java.math.BigDecimal;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jlgranda.appsventas.domain.util.ProductType;
+import org.jlgranda.appsventas.domain.util.TaxType;
 
 /**
  *
@@ -18,18 +21,19 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class SubjectCustomerData {
+public class ProductData {
 
     private Long id;
     private String uuid;
 
-    private Long subjectId;
-    private Long customerId;
+    private String name;
+    private BigDecimal price;
+    private ProductType productType;
+    private TaxType taxType;
+    private String icon;
+    private byte[] photo;
 
     //Auxiliares
-    private String customerCode;
-    private String customerFullName;
-    private String customerInitials;
-    private String customerEmail;
+    private String categoryName;
 
 }

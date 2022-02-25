@@ -7,7 +7,7 @@ package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
 import org.jlgranda.appsventas.domain.Subject;
-import org.jlgranda.appsventas.domain.SubjectCustomer;
+import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
 import org.jlgranda.appsventas.repository.app.SubjectCustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
