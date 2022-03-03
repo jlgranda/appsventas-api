@@ -95,4 +95,19 @@ public class Constantes {
     public static final String WH = "retenciones";
     public static final String PC = "liquidaciones-compra";
     
+    //Desde Veronica API
+    public static final String URI_API_AUTH = "/oauth/token";
+    public static final String URI_API_V1 = "/api/v1.0/";
+    public static final String URI_API_V1_INVOICE = URI_API_V1 + "facturas";
+    public static final String URI_API_V1_BOL = URI_API_V1 + "guias-remision";
+    public static final String URI_API_V1_CM = URI_API_V1 + "notas-credito";
+    public static final String URI_API_V1_DM = URI_API_V1 + "notas-debito";
+    public static final String URI_API_V1_WH = URI_API_V1 + "retenciones";
+    public static final String URI_API_V1_PC = URI_API_V1 + "liquidaciones-compra";
+    public static final String URI_OPERATIONS = "/operaciones/";
+    public static final String URI_PUBLIC = "/publico/";
+    
+    
+    public static final String JSON_FACTURA_TEMPLATE = "";
+    
 }
