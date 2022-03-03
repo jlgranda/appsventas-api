@@ -28,11 +28,13 @@ public class InvoiceData {
 
     private Date emissionOn;
     private BigDecimal subTotal;
+    private BigDecimal descuento;
+    private BigDecimal propina;
     private BigDecimal iva0Total;
     private BigDecimal iva12Total;
     private BigDecimal importeTotal;
 
-    private SubjectCustomerData customer;
+    private SubjectCustomerData subjectCustomer;
     private ProductData product;
 
     private List<DetailData> details;

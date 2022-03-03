@@ -232,24 +232,40 @@ public class SRIComprobantesController {
             Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
             if (subjectOpt.isPresent()) {
                 values.put("dirMatriz", "" + subjectOpt.get().getDescription());
-        values.put("dirEstablecimiento", "" + subjectOpt.get().getDescription());
+                values.put("dirEstablecimiento", "" + subjectOpt.get().getDescription());
+                values.put("contribuyenteEspecial", "" + subjectOpt.get().getNumeroContribuyenteEspecial());
+                values.put("obligadoContabilidad", "" + "NO");
+                values.put("tipoIdentificacionComprador", "" + "04");
+                values.put("guiaRemision", "" + "001-001-000000001");
+
             }
         }
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>INFOFACTURA");
         //Datos del invoiceData (infoFactura)
-        System.out.println("invoiceData:::" + invoiceData.getCustomer());
-
-
+        System.out.println("invoiceData:::" + invoiceData);
         values.put("fechaEmision", "" + invoiceData.getEmissionOn());
-        values.put("contribuyenteEspecial", "" + invoiceData.getEmissionOn());
-        values.put("obligadoContabilidad", "" + invoiceData.getEmissionOn());
-        values.put("tipoIdentificacionComprador", "" + invoiceData.getEmissionOn());
-        values.put("guiaRemision", "" + invoiceData.getEmissionOn());
-        values.put("razonSocialComprador", "" + invoiceData.getEmissionOn());
-        values.put("identificacionComprador", "" + invoiceData.getEmissionOn());
-        values.put("direccionComprador", "" + invoiceData.getEmissionOn());
-        values.put("totalSinImpuestos", "" + invoiceData.getEmissionOn());
-        values.put("totalDescuento", "" + invoiceData.getEmissionOn());
+        Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
+        if (customerOpt.isPresent()) {
+            values.put("razonSocialComprador", "" + customerOpt.get().getFullName());
+            values.put("identificacionComprador", "" + customerOpt.get().getCode());
+            values.put("direccionComprador", "" + customerOpt.get().getDescription());
+        }
+        values.put("totalSinImpuestos", invoiceData.getSubTotal());
+        values.put("totalDescuento", invoiceData.getDescuento());
+
+        //Falta el array de totalImpuesto
+
+        values.put("propina", invoiceData.getPropina());
+        values.put("importeTotal", invoiceData.getImporteTotal());
+        values.put("moneda", "DOLAR");
+        
+        //Falta el array de pagos
+
+        values.put("valorRetIva", invoiceData.getSubTotal());
+        values.put("valorRetRenta", invoiceData.getSubTotal());
+
+        //Falta el array de detalle
+        //Falta el array de campoAdicional
 
         //TODO inyectar todos los datos
         StringBuilder json = new StringBuilder("$");

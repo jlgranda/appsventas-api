@@ -85,7 +85,6 @@ public class FacturacionController {
                 invd.setPayments(buildResultListPayment(paymentService.encontrarPorInvoiceId(invd.getId())));
             });
         }
-        System.out.println("invoicesData::::" + invoicesData);
         Api.imprimirGetLogAuditoria("facturacion/facturas/organizacion/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
     }
@@ -102,7 +101,6 @@ public class FacturacionController {
     }
 
     private List<InvoiceData> buildResultListInvoice(List<InternalInvoice> invoices) {
-        System.out.println("invoices:::" + invoices);
         List<InvoiceData> invoicesData = new ArrayList<>();
         if (!invoices.isEmpty()) {
             invoices.forEach(inv -> {
