@@ -342,7 +342,10 @@ public class SRIComprobantesController {
                 }
             }
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3772332 (Preparación para invocar intregración de appsventas y verónica api v2)
         return Api.responseError("El servidor no pudo generar el comprobante", new Error());
     }
 
