@@ -87,4 +87,12 @@ public class Constantes {
     
     public static final String VERONICA_NO_TOKEN = "NO TOKEN";
     
+    
+    public static final String INVOICE =  "facturas";
+    public static final String BOL = "guias-remision";
+    public static final String CM = "notas-credito";
+    public static final String DM = "notas-debito";
+    public static final String WH = "retenciones";
+    public static final String PC = "liquidaciones-compra";
+    
 }

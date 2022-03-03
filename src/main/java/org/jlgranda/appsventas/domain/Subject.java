@@ -33,16 +33,6 @@ import net.tecnopro.util.Strings;
 
 @Entity
 @Table(name = "Subject")
-/*
- * Consultas nombradas para Subject
- */
-@NamedQueries({
-    @NamedQuery(name = "Subject.findUserByLogin", query = "select u from Subject u where u.username = ?1"),
-    @NamedQuery(name = "Subject.findByCode", query = "select s from Subject s where s.code = ?1"),
-    @NamedQuery(name = "Subject.findUsersByNameOrUsername", query = "select u from Subject u where lower(u.username)  LIKE lower(:name) or lower(u.name) LIKE lower(:name)"),
-    @NamedQuery(name = "Subject.findUserByEmail", query = "from Subject u where u.email = ?1"),
-    @NamedQuery(name = "Subject.findUserByUUID", query = "from Subject u where u.uuid = ?1")})
-
 public class Subject extends DeletableObject<Subject> implements Serializable {
 
     private static final long serialVersionUID = 274770881776410973L;

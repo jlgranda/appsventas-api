@@ -22,6 +22,7 @@ import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.TokenData;
+import org.jlgranda.appsventas.services.app.ComprobantesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -35,6 +36,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
@@ -50,6 +52,9 @@ import org.springframework.web.client.RestTemplate;
 public class ComprobantesController {
     
     private String veronicaAPI;
+    
+    @Autowired
+    private ComprobantesService comprobantesService;
 
     @Autowired
     public ComprobantesController(@Value("${appsventas.veronica.api.url}") String veronicaAPI) {
@@ -104,7 +109,7 @@ public class ComprobantesController {
     public ResponseEntity getComprobantesPorTipo(@AuthenticationPrincipal UserData user,
             @PathVariable("tipo") String tipo){
         
-        
+        return ResponseEntity.ok(comprobantesService.findAllBySupplierId(tipo));
     }
     
     @GetMapping("/{tipo}/{claveAcceso}")
@@ -159,6 +164,13 @@ public class ComprobantesController {
         
         return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
     }
+    
+    
+    @PostMapping
+    public ResponseEntity crearEnviarFactura(@AuthenticationPrincipal UserData user, ){
+        
+    }
+        
     
     
 }

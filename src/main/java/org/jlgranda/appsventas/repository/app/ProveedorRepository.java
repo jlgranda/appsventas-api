@@ -5,16 +5,14 @@
  */
 package org.jlgranda.appsventas.repository.app;
 
-import java.util.List;
-import org.jlgranda.appsventas.domain.app.Proveedor;
-import org.springframework.data.jpa.repository.Query;
+import com.rolandopalermo.facturacion.ec.domain.Supplier;
 import org.springframework.data.repository.CrudRepository;
 
 /**
  *
  * @author usuario
  */
-public interface ProveedorRepository extends CrudRepository<Proveedor, Long> {
+public interface ProveedorRepository extends CrudRepository<Supplier, Long> {
     
 //    @Query("")
 //    public List<Proveedor> encontrarPorOrganizacionId();

@@ -32,6 +32,10 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     *
+     * @return
+     */
     public UserRepository getUserRepository() {
         return userRepository;
     }
