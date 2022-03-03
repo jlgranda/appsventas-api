@@ -69,7 +69,7 @@ public class ContactosController {
     ) {
         List<SubjectCustomerData> subjectCustomersData = buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword));
         if (subjectCustomersData.isEmpty()) {
-            subjectCustomersData.addAll(buildResultListSubjectCustomerBaseSubject(subjectService.encontrarPorKeyword(keyword)));
+            subjectCustomersData.addAll(buildResultListSubjectCustomerBaseSubject(user.getId(), subjectService.encontrarPorKeyword(keyword)));
         }
         Api.imprimirGetLogAuditoria("contactos/activos/keyword", user.getId());
         return ResponseEntity.ok(subjectCustomersData);
@@ -102,17 +102,17 @@ public class ContactosController {
             Map<Long, Subject> subjectsMap = new HashMap<>();
             subjectService.encontrarActivos().forEach(s -> subjectsMap.put(s.getId(), s));
             subjectCustomers.forEach(sc -> {
-                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(subjectsMap.get(sc.getSubjectId())));
+                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(sc, subjectsMap.get(sc.getSubjectId())));
             });
         }
         return subjectCustomersData;
     }
 
-    private List<SubjectCustomerData> buildResultListSubjectCustomerBaseSubject(List<Subject> subjects) {
+    private List<SubjectCustomerData> buildResultListSubjectCustomerBaseSubject(Long subjectId, List<Subject> subjects) {
         List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
         if (!subjects.isEmpty()) {
             subjects.forEach(s -> {
-                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(s));
+                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(subjectId, s));
             });
         }
         return subjectCustomersData;

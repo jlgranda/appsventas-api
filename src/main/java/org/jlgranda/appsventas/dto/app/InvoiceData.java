@@ -5,15 +5,13 @@
  */
 package org.jlgranda.appsventas.dto.app;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.jlgranda.appsventas.domain.util.DocumentType;
-import org.jlgranda.appsventas.domain.util.EmissionType;
-import org.jlgranda.appsventas.domain.util.EnvironmentType;
 
 /**
  *
@@ -28,23 +26,34 @@ public class InvoiceData {
     private Long id;
     private String uuid;
 
-    public static final double IVA = 0d;
-    private String boardNumber;
-    private EnvironmentType environmentType;
-    private EmissionType emissionType;
     private Date emissionOn;
-    private Long organizacionId;
-    private DocumentType documentType;
-    private DocumentType documentTypeSource;
-    private Long establishmentId;
-    private Long emissionpointId;
-    private String sequencial;
-    private Boolean printAlias;
-    protected String printAliasSummary;
-    protected Long pax;
-    private Long recordId;
+    private BigDecimal subTotal;
+    private BigDecimal iva0Total;
+    private BigDecimal iva12Total;
+    private BigDecimal importeTotal;
+
+    private SubjectCustomerData customer;
+    private ProductData product;
 
     private List<DetailData> details;
     private List<PaymentData> payments;
 
+    private String customerFullName;
+
+    //UX
+//    public static final double IVA = 0d;
+//    private String boardNumber;
+//    private EnvironmentType environmentType;
+//    private EmissionType emissionType;
+//    private Date emissionOn;
+//    private Long organizacionId;
+//    private DocumentType documentType;
+//    private DocumentType documentTypeSource;
+//    private Long establishmentId;
+//    private Long emissionpointId;
+//    private String sequencial;
+//    private Boolean printAlias;
+//    protected String printAliasSummary;
+//    protected Long pax;
+//    private Long recordId;
 }

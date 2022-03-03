@@ -72,12 +72,9 @@ public class ServiciosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         List<ProductData> productsData = new ArrayList<>();
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        if (subjectOpt.isPresent()) {
-            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
-            if (!organization.isEmpty()) {
-                productsData = buildResultListProduct(productService.encontrarPorOrganizacionId(organization.get(0).getId()));
-            }
+        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
+        if (organizacion != null) {
+            productsData = buildResultListProduct(productService.encontrarPorOrganizacionId(organizacion.getId()));
         }
         Api.imprimirGetLogAuditoria("servicios/organizacion/activos", user.getId());
         return ResponseEntity.ok(productsData);
@@ -91,15 +88,23 @@ public class ServiciosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         List<ProductData> productsData = new ArrayList<>();
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        if (subjectOpt.isPresent()) {
-            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
-            if (!organization.isEmpty()) {
-                productsData = buildResultListProduct(productService.encontrarPorOrganizacionIdYProductType(organization.get(0).getId(), productType));
-            }
+        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
+        if (organizacion != null) {
+            productsData = buildResultListProduct(productService.encontrarPorOrganizacionIdYProductType(organizacion.getId(), productType));
         }
         Api.imprimirGetLogAuditoria("servicios/organizacion/tipo/productType/activos", user.getId());
         return ResponseEntity.ok(productsData);
+    }
+
+    private Organization encontrarOrganizacionPorSubjectId(Long userId) {
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
+        if (subjectOpt.isPresent()) {
+            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
+            if (!organization.isEmpty()) {
+                return organization.get(0);
+            }
+        }
+        return null;
     }
 
     private List<ProductData> buildResultListProduct(List<Product> products) {
