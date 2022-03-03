@@ -39,5 +39,6 @@ spring.h2.console.enabled: false
 
 appsventas:
     persistence.ignore_properties: id,uuid,code,createdOn,lastUpdate,deletedOn,status
+    veronica.api.url: http://localhost:8080/veronica
 
 

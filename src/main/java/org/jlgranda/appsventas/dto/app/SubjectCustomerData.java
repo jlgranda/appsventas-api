@@ -31,5 +31,7 @@ public class SubjectCustomerData {
     private String customerFullName;
     private String customerInitials;
     private String customerEmail;
+    
+    private String customerPhoto;
 
 }

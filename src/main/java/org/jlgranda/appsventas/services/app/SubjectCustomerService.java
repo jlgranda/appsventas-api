@@ -10,6 +10,7 @@ import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
 import org.jlgranda.appsventas.repository.app.SubjectCustomerRepository;
+import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +57,7 @@ public class SubjectCustomerService {
         subjectCustomerData.setCustomerEmail(s == null ? "No definido" : s.getEmail());
         subjectCustomerData.setCustomerFullName(s == null ? "No definido" : s.getFullName());
         subjectCustomerData.setCustomerInitials(s == null ? "No definido" : s.getInitials());
+        subjectCustomerData.setCustomerPhoto( s == null ? null : s.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(s.getPhoto()) : null );
         return subjectCustomerData;
     }
 
