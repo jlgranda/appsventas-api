@@ -77,20 +77,28 @@ public class FacturacionController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         List<InvoiceData> invoicesData = new ArrayList<>();
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        if (subjectOpt.isPresent()) {
-            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
-            if (!organization.isEmpty()) {
-                invoicesData = buildResultListInvoice(invoiceService.encontrarPorOrganizacionIdYDocumentType(organization.get(0).getId(), DocumentType.INVOICE));
-                invoicesData.forEach(invd -> {
-                    invd.setDetails(buildResultListDetail(detailService.encontrarPorInvoiceId(invd.getId())));
-                    invd.setPayments(buildResultListPayment(paymentService.encontrarPorInvoiceId(invd.getId())));
-                });
-            }
+        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
+        if (organizacion != null) {
+            invoicesData = buildResultListInvoice(invoiceService.encontrarPorOrganizacionIdYDocumentType(organizacion.getId(), DocumentType.INVOICE));
+            invoicesData.forEach(invd -> {
+                invd.setDetails(buildResultListDetail(detailService.encontrarPorInvoiceId(invd.getId())));
+                invd.setPayments(buildResultListPayment(paymentService.encontrarPorInvoiceId(invd.getId())));
+            });
         }
         System.out.println("invoicesData::::" + invoicesData);
         Api.imprimirGetLogAuditoria("facturacion/facturas/organizacion/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
+    }
+
+    private Organization encontrarOrganizacionPorSubjectId(Long userId) {
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
+        if (subjectOpt.isPresent()) {
+            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
+            if (!organization.isEmpty()) {
+                return organization.get(0);
+            }
+        }
+        return null;
     }
 
     private List<InvoiceData> buildResultListInvoice(List<InternalInvoice> invoices) {

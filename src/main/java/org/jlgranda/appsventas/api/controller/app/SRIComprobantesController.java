@@ -18,17 +18,24 @@ package org.jlgranda.appsventas.api.controller.app;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.validation.Valid;
 import net.tecnopro.util.VelocityHelper;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
+import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.TokenData;
+import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.services.app.ComprobantesService;
+import org.jlgranda.appsventas.services.app.OrganizationService;
+import org.jlgranda.appsventas.services.app.SubjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -40,9 +47,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
@@ -56,48 +65,56 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 @RequestMapping(path = "/comprobantes")
 public class SRIComprobantesController {
-    
+
     private String veronicaAPI;
-    
+
     @Autowired
     private ComprobantesService comprobantesService;
 
+    private SubjectService subjectService;
+    private OrganizationService organizationService;
+
     @Autowired
-    public SRIComprobantesController(@Value("${appsventas.veronica.api.url}") String veronicaAPI) {
+    public SRIComprobantesController(
+            @Value("${appsventas.veronica.api.url}") String veronicaAPI,
+            SubjectService subjectService,
+            OrganizationService organizationService) {
         this.veronicaAPI = veronicaAPI;
+        this.subjectService = subjectService;
+        this.organizationService = organizationService;
     }
 
-    private String getVeronicaToken(UserData user){
-        
+    private String getVeronicaToken(UserData user) {
+
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
         System.out.println("Username: " + user.getUsername());
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-        
+
         final String uri = this.veronicaAPI + Constantes.URI_API_AUTH;
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic " + "dmVyb25pY2E6dmVyb25pY2E=");
-        
+
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        
-        
+
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("username", user.getUsername());
         requestBody.add("password", "veronica");
         requestBody.add("grant_type", "password");
-        
+
         HttpEntity request = new HttpEntity<>(requestBody, headers);
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<TokenData> response = null;
-        
+
         TokenData token = null;
         try {
             response = restTemplate.exchange(uri, HttpMethod.POST, request, TokenData.class);
             if (HttpStatus.OK.equals(response.getStatusCode())
                     && response.getBody() != null) {
-                
+
                 token = response.getBody();
-            } /*else {
+            }
+            /*else {
 
             }*/
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
@@ -107,34 +124,32 @@ public class SRIComprobantesController {
             }
             httpClientOrServerExc.printStackTrace();
         }
-        
-        return token != null ?  token.getAccess_token() : Constantes.VERONICA_NO_TOKEN;
+
+        return token != null ? token.getAccess_token() : Constantes.VERONICA_NO_TOKEN;
     }
-    
+
     @GetMapping("/{tipo}")
     public ResponseEntity getComprobantesPorTipo(@AuthenticationPrincipal UserData user,
-            @PathVariable("tipo") String tipo){
-        
+            @PathVariable("tipo") String tipo) {
+
         return ResponseEntity.ok(comprobantesService.findAllBySupplierId(tipo));
     }
-    
+
     @GetMapping("/{tipo}/{claveAcceso}")
     public ResponseEntity getComprobante(@AuthenticationPrincipal UserData user,
-            @PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso){
-        
-        
+            @PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
+
         final String path = this.veronicaAPI + Constantes.URI_API_V1;
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo);
-        
-        
+
         String token = this.getVeronicaToken(user);
         System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
         System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
-        
-        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)){
+
+        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return Api.responseError("No se pudó obtener un token del API Verónica", null);
         }
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + token);
@@ -152,7 +167,7 @@ public class SRIComprobantesController {
                 //Convertir la respuesta 
                 return response;
             } else {
-                
+
                 System.out.println(">>>>>>>>>>>>>>>>>>");
                 System.out.println("" + response.getStatusCode());
                 System.out.println(">>>>>>>>>>>>>>>>>>");
@@ -162,76 +177,120 @@ public class SRIComprobantesController {
             if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
             } else {
             }
-            
+
             httpClientOrServerExc.printStackTrace();
         }
         return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
     }
-    
-    
+
     @PostMapping("/factura")
-    public ResponseEntity crearEnviarFactura(@AuthenticationPrincipal UserData user, 
-            InvoiceData invoiceData){
-        
+    public ResponseEntity crearEnviarFactura(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody InvoiceData invoiceData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
-        
         //Invocar servicio veronica API
         final String path = this.veronicaAPI + Constantes.URI_API_V1_INVOICE;
-        final String uri = path; 
-        
-        
-        String token = this.getVeronicaToken(user);
+        final String uri = path;
+
+//        String token = this.getVeronicaToken(user);
+        String token = " ";
         System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
         System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
-        
-        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)){
+
+        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return Api.responseError("No se pudó obtener un token del API Verónica", null);
         }
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + token);
 
-        //TODO recuperar organización por invoiceData.getOrganizacionId()
-        Organization organizacion = new Organization();
+        //TODO recuperar datos para la plantilla de facturación
         Map<String, Object> values = new HashMap<>();
-        values.put("razonSocial", "" + organizacion.getName());
-        values.put("nombreComercial", "" + organizacion.getInitials());
-        values.put("ruc", "" + organizacion.getRuc());
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>INFOTRIBUTARIA");
+        //Datos de la Organización (infoTributaria)
+        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
+        System.out.println("organizacion:::" + organizacion);
+        if (organizacion != null) {
+            values.put("ambiente", "" + "1");
+            values.put("tipoEmision", "" + "1");
+            values.put("razonSocial", "" + organizacion.getName());
+            values.put("nombreComercial", "" + organizacion.getInitials());
+            values.put("ruc", "" + organizacion.getRuc());
+            values.put("codDoc", "" + "1001");
+            values.put("estab", "" + "001");
+            values.put("ptoEmi", "" + "1245");
+            values.put("secuencial", "" + "0151656");
+            Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+            if (subjectOpt.isPresent()) {
+                values.put("dirMatriz", "" + subjectOpt.get().getDescription());
+        values.put("dirEstablecimiento", "" + subjectOpt.get().getDescription());
+            }
+        }
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>INFOFACTURA");
+        //Datos del invoiceData (infoFactura)
+        System.out.println("invoiceData:::" + invoiceData.getCustomer());
+
+
+        values.put("fechaEmision", "" + invoiceData.getEmissionOn());
+        values.put("contribuyenteEspecial", "" + invoiceData.getEmissionOn());
+        values.put("obligadoContabilidad", "" + invoiceData.getEmissionOn());
+        values.put("tipoIdentificacionComprador", "" + invoiceData.getEmissionOn());
+        values.put("guiaRemision", "" + invoiceData.getEmissionOn());
+        values.put("razonSocialComprador", "" + invoiceData.getEmissionOn());
+        values.put("identificacionComprador", "" + invoiceData.getEmissionOn());
+        values.put("direccionComprador", "" + invoiceData.getEmissionOn());
+        values.put("totalSinImpuestos", "" + invoiceData.getEmissionOn());
+        values.put("totalDescuento", "" + invoiceData.getEmissionOn());
+
         //TODO inyectar todos los datos
-        
         StringBuilder json = new StringBuilder("$");
-        
+
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
         } catch (Exception ex) {
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println("JSON GENERADO::::" + json);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = null;
         try {
-            
+
             response = restTemplate.exchange(uri, HttpMethod.POST, request, String.class);
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+//                System.out.println("response.getBody() A:::" + response.getBody());
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 //OK
                 return ResponseEntity.ok(response.getBody());
             } else {
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+//                System.out.println("response.getBody() B:::" + response.getBody());
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 return ResponseEntity.ok(response.getBody());
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-            
+
             if (null != httpClientOrServerExc.getStatusCode()) {
                 switch (httpClientOrServerExc.getStatusCode()) {
                     case NOT_FOUND:
-                        return Api.responseError("Warning", "RNA: " + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
+                        return Api.responseError("Warning", "VERONICAAPI: " + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
                     case BAD_REQUEST:
-                        return Api.responseError("Warning", "RNA:" + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
+                        return Api.responseError("Warning", "VERONICAAPI:" + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
                     case INTERNAL_SERVER_ERROR:
-                        return Api.responseError("Warning", "RNA: Registro ingresado ya existe", httpClientOrServerExc.getStatusText());
+                        return Api.responseError("Warning", "VERONICAAPI: Registro ingresado ya existe", httpClientOrServerExc.getStatusText());
                     default:
                         break;
                 }
@@ -239,7 +298,16 @@ public class SRIComprobantesController {
         }
         return Api.responseError("El servidor no pudo generar el comprobante", new Error());
     }
-    
-    
-    
+
+    private Organization encontrarOrganizacionPorSubjectId(Long userId) {
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
+        if (subjectOpt.isPresent()) {
+            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
+            if (!organization.isEmpty()) {
+                return organization.get(0);
+            }
+        }
+        return null;
+    }
+
 }

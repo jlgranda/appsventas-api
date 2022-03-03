@@ -11,6 +11,7 @@ import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
 import org.jlgranda.appsventas.repository.app.SubjectCustomerRepository;
 import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -51,13 +52,26 @@ public class SubjectCustomerService {
         return this.getRepository().encontrarPorSubjectIdYKeyword(subjectId, keyword);
     }
 
-    public SubjectCustomerData buildSubjectCustomerData(Subject s) {
+    public SubjectCustomerData buildSubjectCustomerData(SubjectCustomer sc, Subject s) {
         SubjectCustomerData subjectCustomerData = new SubjectCustomerData();
+        BeanUtils.copyProperties(sc, subjectCustomerData);
         subjectCustomerData.setCustomerCode(s == null ? "No definido" : s.getCode());
         subjectCustomerData.setCustomerEmail(s == null ? "No definido" : s.getEmail());
         subjectCustomerData.setCustomerFullName(s == null ? "No definido" : s.getFullName());
         subjectCustomerData.setCustomerInitials(s == null ? "No definido" : s.getInitials());
-        subjectCustomerData.setCustomerPhoto( s == null ? null : s.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(s.getPhoto()) : null );
+        subjectCustomerData.setCustomerPhoto(s == null ? null : s.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(s.getPhoto()) : null);
+        return subjectCustomerData;
+    }
+
+    public SubjectCustomerData buildSubjectCustomerData(Long subjectId, Subject s) {
+        SubjectCustomerData subjectCustomerData = new SubjectCustomerData();
+        subjectCustomerData.setSubjectId(subjectId);
+        subjectCustomerData.setCustomerId(s == null ? null : s.getId());
+        subjectCustomerData.setCustomerCode(s == null ? "No definido" : s.getCode());
+        subjectCustomerData.setCustomerEmail(s == null ? "No definido" : s.getEmail());
+        subjectCustomerData.setCustomerFullName(s == null ? "No definido" : s.getFullName());
+        subjectCustomerData.setCustomerInitials(s == null ? "No definido" : s.getInitials());
+        subjectCustomerData.setCustomerPhoto(s == null ? null : s.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(s.getPhoto()) : null);
         return subjectCustomerData;
     }
 
