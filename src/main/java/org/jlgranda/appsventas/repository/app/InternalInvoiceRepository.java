@@ -18,18 +18,20 @@ package org.jlgranda.appsventas.repository.app;
 
 import com.rolandopalermo.facturacion.ec.domain.Invoice;
 import java.util.List;
+import org.jlgranda.appsventas.domain.app.InternalInvoice;
+import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 /**
- * Repositorio de entidades Invoice del SRI
+ *
  * @author jlgranda
  */
-public interface InvoiceRepository  extends CrudRepository<Invoice, Long> {
+public interface InternalInvoiceRepository extends CrudRepository<InternalInvoice, Long> {
+
+    @Query("select p from InternalInvoice p where p.deleted = false and p.organizacionId = :#{#organizacionId} order by p.emissionOn DESC")
+    public List<InternalInvoice> encontrarPorOrganizacionId(Long organizacionId);
     
-    @Query("select i.accessKey from Invoice i where i.supplierId = ?1 and i.isDeleted = ?2")
-    List<String> findBySupplierIdAndIsDeleted(String supplierId, boolean isDeleted);
-    
-    @Query("select i from Invoice i where i.supplierId = ?1 and i.isDeleted = false")
-    List<Invoice> findBySupplierId(String supplierId);
+    @Query("select p from InternalInvoice p where p.deleted = false and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    public List<InternalInvoice> encontrarPorOrganizacionIdYDocumentType(Long organizacionId, DocumentType documentType);
 }

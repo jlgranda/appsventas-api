@@ -21,6 +21,7 @@ import java.util.Map;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.dto.UserData;
+import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.TokenData;
 import org.jlgranda.appsventas.services.app.ComprobantesService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @RestController
 @RequestMapping(path = "/comprobantes")
-public class ComprobantesController {
+public class SRIComprobantesController {
     
     private String veronicaAPI;
     
@@ -57,7 +58,7 @@ public class ComprobantesController {
     private ComprobantesService comprobantesService;
 
     @Autowired
-    public ComprobantesController(@Value("${appsventas.veronica.api.url}") String veronicaAPI) {
+    public SRIComprobantesController(@Value("${appsventas.veronica.api.url}") String veronicaAPI) {
         this.veronicaAPI = veronicaAPI;
     }
 
@@ -167,8 +168,8 @@ public class ComprobantesController {
     
     
     @PostMapping
-    public ResponseEntity crearEnviarFactura(@AuthenticationPrincipal UserData user, ){
-        
+    public ResponseEntity crearEnviarFactura(@AuthenticationPrincipal UserData user, InvoiceData invoiceData){
+        return null;
     }
         
     
