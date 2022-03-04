@@ -216,10 +216,8 @@ public class SRIComprobantesController {
 
         //TODO recuperar datos para la plantilla de facturación
         Map<String, Object> values = new HashMap<>();
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>INFOTRIBUTARIA");
         //Datos de la Organización (infoTributaria)
         Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
-        System.out.println("organizacion:::" + organizacion);
         if (organizacion != null) {
             values.put("ambiente", "" + "1");
             values.put("tipoEmision", "" + "1");
@@ -241,9 +239,7 @@ public class SRIComprobantesController {
 
             }
         }
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>INFOFACTURA");
         //Datos del invoiceData (infoFactura)
-        System.out.println("invoiceData:::" + invoiceData);
         values.put("fechaEmision", "" + invoiceData.getEmissionOn());
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
         if (customerOpt.isPresent()) {
@@ -251,24 +247,54 @@ public class SRIComprobantesController {
             values.put("identificacionComprador", "" + customerOpt.get().getCode());
             values.put("direccionComprador", "" + customerOpt.get().getDescription());
         }
-        values.put("totalSinImpuestos", invoiceData.getSubTotal());
-        values.put("totalDescuento", invoiceData.getDescuento());
+        values.put("totalSinImpuestos", "" + invoiceData.getSubTotal());
+        values.put("totalDescuento", "" + invoiceData.getDescuento());
 
         //Falta el array de totalImpuesto
+        values.put("totalImpuestoCodigo", "" + "2");
+        values.put("totalImpuestoCodigoPorcentaje", "" + "2");
+        values.put("descuentoAdicional", "" + 0.00);
+        values.put("totalImpuestoBaseImponible", "" + 0.00);
+        values.put("totalImpuestoValor", "" + 0.00);
 
-        values.put("propina", invoiceData.getPropina());
-        values.put("importeTotal", invoiceData.getImporteTotal());
-        values.put("moneda", "DOLAR");
-        
+        values.put("propina", "" + invoiceData.getPropina());
+        values.put("importeTotal", "" + invoiceData.getImporteTotal());
+        values.put("moneda", "" + "DOLAR");
+
         //Falta el array de pagos
+        values.put("formaPago", "" + "Efectivo");
+        values.put("total", "" + 0.00);
+        values.put("plazo", "" + "plazo");
+        values.put("unidadTiempo", "" + "unidadTiempo");
 
-        values.put("valorRetIva", invoiceData.getSubTotal());
-        values.put("valorRetRenta", invoiceData.getSubTotal());
+        values.put("valorRetIva", "" + 0.00);
+        values.put("valorRetRenta", "" + 0.00);
 
         //Falta el array de detalle
-        //Falta el array de campoAdicional
+        values.put("codigoPrincipal", "" + "codigoPrincipal");
+        values.put("codigoAuxiliar", "" + "codigoAuxiliar");
+        values.put("descripcion", "" + "descripcion");
+        values.put("cantidad", "" + 0.00);
+        values.put("precioUnitario", "" + 0.00);
+        values.put("descuento", "" + 0.00);
+        values.put("precioTotalSinImpuesto", "" + 0.00);
 
-        //TODO inyectar todos los datos
+        values.put("detAdicionalNombre1", "" + "Nombre1");
+        values.put("detAdicionalValor1", "" + "Valor1");
+        values.put("detAdicionalNombre2", "" + "Nombre2");
+        values.put("detAdicionalValor2", "" + "Valor2");
+        values.put("detAdicionalNombre3", "" + "Nombre3");
+        values.put("detAdicionalValor3", "" + "Valor3");
+
+        values.put("impuestoCodigo", "" + "impuestoCodigo");
+        values.put("impuestoCodigoPorcentaje", "" + "impuestoCodigoPorcentaje");
+        values.put("tarifa", "" + 0.00);
+        values.put("impuestoBaseImponible", "" + 0.00);
+        values.put("impuestoValor", "" + 0.00);
+
+        //Falta el array de campoAdicional
+        values.put("campoAdicional", "" + "campoAdicional");
+
         StringBuilder json = new StringBuilder("$");
 
         try {
@@ -277,7 +303,7 @@ public class SRIComprobantesController {
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
         }
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println("JSON GENERADO::::" + json);
+        System.out.println("JSON GENERADO " + json);
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
@@ -286,16 +312,19 @@ public class SRIComprobantesController {
         try {
 
             response = restTemplate.exchange(uri, HttpMethod.POST, request, String.class);
+            System.out.println("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            System.out.println("response:::" + response);
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
-//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-//                System.out.println("response.getBody() A:::" + response.getBody());
-//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.println("response.getBody() A:::" + response.getBody());
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 //OK
                 return ResponseEntity.ok(response.getBody());
             } else {
-//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-//                System.out.println("response.getBody() B:::" + response.getBody());
-//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.println("response.getBody() B:::" + response.getBody());
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 return ResponseEntity.ok(response.getBody());
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
