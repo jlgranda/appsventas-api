@@ -189,6 +189,7 @@ public class SRIComprobantesController {
             @Valid @RequestBody InvoiceData invoiceData,
             BindingResult bindingResult
     ) {
+        
         //Verificar binding
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
