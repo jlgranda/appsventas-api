@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.domain.app.Product;
@@ -53,12 +54,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "/servicios")
 public class ServiciosController {
-    
+
     private ProductService productService;
     private OrganizationService organizationService;
     private SubjectService subjectService;
     private final String ignoreProperties;
-    
+
     @Autowired
     public ServiciosController(
             ProductService productService,
@@ -71,7 +72,7 @@ public class ServiciosController {
         this.subjectService = subjectService;
         this.ignoreProperties = ignoreProperties;
     }
-    
+
     @GetMapping("organizacion/activos")
     public ResponseEntity encontrarPorOrganizacionId(
             @AuthenticationPrincipal UserData user,
@@ -86,7 +87,7 @@ public class ServiciosController {
         Api.imprimirGetLogAuditoria("servicios/organizacion/activos", user.getId());
         return ResponseEntity.ok(productsData);
     }
-    
+
     @GetMapping("organizacion/tipo/{productType}/activos")
     public ResponseEntity encontrarPorOrganizacionIdYProductType(
             @AuthenticationPrincipal UserData user,
@@ -102,7 +103,7 @@ public class ServiciosController {
         Api.imprimirGetLogAuditoria("servicios/organizacion/tipo/productType/activos", user.getId());
         return ResponseEntity.ok(productsData);
     }
-    
+
     private Organization encontrarOrganizacionPorSubjectId(Long userId) {
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
         if (subjectOpt.isPresent()) {
@@ -113,7 +114,7 @@ public class ServiciosController {
         }
         return null;
     }
-    
+
     private List<ProductData> buildResultListProduct(List<Product> products) {
         List<ProductData> productsData = new ArrayList<>();
         if (!products.isEmpty()) {
@@ -123,7 +124,7 @@ public class ServiciosController {
         }
         return productsData;
     }
-    
+
     @PostMapping()
     public ResponseEntity crearProducto(
             @AuthenticationPrincipal UserData user,
@@ -138,19 +139,24 @@ public class ServiciosController {
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         if (subjectOpt.isPresent()) {
             product = productService.crearInstancia(subjectOpt.get());
-            
             BeanUtils.copyProperties(productData, product, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-            
+            //Agregar detalles del producto
             Organization organizacion = encontrarOrganizacionPorSubjectId(subjectOpt.get().getId());
             if (organizacion != null) {
                 product.setOrganizacionId(organizacion.getId());
             }
-            product.setTaxType(productData.getTaxType());
-            product.setProductType(ProductType.SERVICE);
+            product.setDescription(product.getDescription() == null ? product.getName() : product.getDescription());
+            product.setIcon(Constantes.ICON_DEFAULT);
+            product.setPriceCost(product.getPrice());
+            product.setPriceB(product.getPrice());
+            product.setPriceC(product.getPrice());
             productService.guardar(product);
+            //Devolver productData
+            productData = productService.buildProductData(product);
+
         }
         Api.imprimirPostLogAuditoria("/servicios", user.getId());
-        return ResponseEntity.ok(Api.response("servicio", product));
+        return ResponseEntity.ok(Api.response("product", productData));
     }
-    
+
 }
