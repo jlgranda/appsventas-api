@@ -342,6 +342,7 @@ public class SRIComprobantesController {
                 }
             }
         }
+
         return Api.responseError("El servidor no pudo generar el comprobante", new Error());
     }
 
