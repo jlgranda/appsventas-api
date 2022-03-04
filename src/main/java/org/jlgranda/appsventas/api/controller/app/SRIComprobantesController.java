@@ -294,7 +294,6 @@ public class SRIComprobantesController {
         //Falta el array de campoAdicional
         values.put("campoAdicional", "" + "campoAdicional");
 
-        //TODO inyectar todos los datos
         StringBuilder json = new StringBuilder("$");
 
         try {
