@@ -28,4 +28,9 @@ public interface SubjectRepository extends CrudRepository<Subject, Long> {
             + "order by p.firstname ASC")
     public List<Subject> encontrarPorKeyword(String keyword);
 
+    @Query("select distinct p.initials from Subject p where p.deleted = false "
+            + "and (p.initials != null and lower(p.initials) like %:keyword%) "
+            + "order by p.initials ASC")
+    public List<String> encontrarInitialsPorKeyword(String keyword);
+
 }

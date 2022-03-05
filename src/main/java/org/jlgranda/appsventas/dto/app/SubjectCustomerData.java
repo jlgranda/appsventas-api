@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jlgranda.appsventas.domain.Subject;
 
 /**
  *
@@ -27,11 +28,11 @@ public class SubjectCustomerData {
     private Long customerId;
 
     //Auxiliares
+    private Subject customer;
     private String customerCode;
     private String customerFullName;
     private String customerInitials;
     private String customerEmail;
-    
     private String customerPhoto;
 
 }

@@ -6,6 +6,8 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
@@ -73,6 +75,27 @@ public class SubjectCustomerService {
         subjectCustomerData.setCustomerInitials(s == null ? "No definido" : s.getInitials());
         subjectCustomerData.setCustomerPhoto(s == null ? null : s.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(s.getPhoto()) : null);
         return subjectCustomerData;
+    }
+
+    public SubjectCustomer crearInstancia() {
+        SubjectCustomer _instance = new SubjectCustomer();
+        _instance.setCreatedOn(Dates.now());
+        _instance.setLastUpdate(Dates.now());
+        _instance.setStatus(StatusType.ACTIVE.toString());
+        _instance.setActivationTime(Dates.now());
+        _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        return _instance;
+    }
+
+    public SubjectCustomer crearInstancia(Subject user) {
+        SubjectCustomer _instance = crearInstancia();
+        _instance.setAuthor(user); //Establecer al usuario actual
+        _instance.setOwner(user); //Establecer al usuario actual
+        return _instance;
+    }
+
+    public SubjectCustomer guardar(SubjectCustomer subjectCustomer) {
+        return this.getRepository().save(subjectCustomer);
     }
 
 }

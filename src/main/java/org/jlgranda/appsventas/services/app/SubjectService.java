@@ -7,6 +7,8 @@ package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
 import java.util.Optional;
+import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.repository.app.SubjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +58,38 @@ public class SubjectService {
      */
     public List<Subject> encontrarPorKeyword(String keyword) {
         return this.getRepository().encontrarPorKeyword(keyword);
+    }
+
+    /**
+     * Devolver el campo initials para la palabra clave dada como parámentro,
+     * discriminando el campo eliminado
+     *
+     * @param keyword
+     * @return
+     */
+    public List<String> encontrarInitialsPorKeyword(String keyword) {
+        return this.getRepository().encontrarInitialsPorKeyword(keyword);
+    }
+
+    public Subject crearInstancia() {
+        Subject _instance = new Subject();
+        _instance.setCreatedOn(Dates.now());
+        _instance.setLastUpdate(Dates.now());
+        _instance.setStatus(StatusType.ACTIVE.toString());
+        _instance.setActivationTime(Dates.now());
+        _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        return _instance;
+    }
+
+    public Subject crearInstancia(Subject user) {
+        Subject _instance = crearInstancia();
+        _instance.setAuthor(user); //Establecer al usuario actual
+        _instance.setOwner(user); //Establecer al usuario actual
+        return _instance;
+    }
+
+    public Subject guardar(Subject subject) {
+        return this.getRepository().save(subject);
     }
 
 }
