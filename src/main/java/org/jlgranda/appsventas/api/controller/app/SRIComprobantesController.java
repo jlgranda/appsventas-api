@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.validation.Valid;
+import net.tecnopro.util.Dates;
+import net.tecnopro.util.Strings;
 import net.tecnopro.util.VelocityHelper;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
@@ -33,9 +35,11 @@ import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.TokenData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
+import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.ComprobantesService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.app.SubjectService;
+import org.jlgranda.appsventas.services.secuencias.SerialService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -73,17 +77,30 @@ public class SRIComprobantesController {
 
     private SubjectService subjectService;
     private OrganizationService organizationService;
+    private SerialService serialService;
 
     @Autowired
     public SRIComprobantesController(
             @Value("${appsventas.veronica.api.url}") String veronicaAPI,
             SubjectService subjectService,
-            OrganizationService organizationService) {
+            OrganizationService organizationService,
+            SerialService serialService) {
         this.veronicaAPI = veronicaAPI;
         this.subjectService = subjectService;
         this.organizationService = organizationService;
+        this.serialService = serialService;
     }
 
+    /**
+     * Obtiene el token para el usuario administrador para temas de operaciones
+     * @return 
+     */
+    private String getVeronicaAdminToken() {
+        UserData user = new UserData();
+        user.setUsername(Constantes.ADMIN_USERNAME);
+        return this.getVeronicaToken(user);
+    }
+    
     private String getVeronicaToken(UserData user) {
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
@@ -200,10 +217,9 @@ public class SRIComprobantesController {
         final String path = this.veronicaAPI + Constantes.URI_API_V1_INVOICE;
         final String uri = path;
 
-//        String token = this.getVeronicaToken(user);
-        String token = " ";
-        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
-        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
+        String token = this.getVeronicaToken(user);
+        //System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+        //System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
 
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return Api.responseError("No se pudó obtener un token del API Verónica", null);
@@ -214,87 +230,102 @@ public class SRIComprobantesController {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + token);
 
-        //TODO recuperar datos para la plantilla de facturación
-        Map<String, Object> values = new HashMap<>();
         //Datos de la Organización (infoTributaria)
-        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
-        if (organizacion != null) {
-            values.put("ambiente", "" + "1");
-            values.put("tipoEmision", "" + "1");
-            values.put("razonSocial", "" + organizacion.getName());
-            values.put("nombreComercial", "" + organizacion.getInitials());
-            values.put("ruc", "" + organizacion.getRuc());
-            values.put("codDoc", "" + "1001");
-            values.put("estab", "" + "001");
-            values.put("ptoEmi", "" + "1245");
-            values.put("secuencial", "" + "0151656");
-            Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-            if (subjectOpt.isPresent()) {
-                values.put("dirMatriz", "" + subjectOpt.get().getDescription());
-                values.put("dirEstablecimiento", "" + subjectOpt.get().getDescription());
-                values.put("contribuyenteEspecial", "" + subjectOpt.get().getNumeroContribuyenteEspecial());
-                values.put("obligadoContabilidad", "" + "NO");
-                values.put("tipoIdentificacionComprador", "" + "04");
-                values.put("guiaRemision", "" + "001-001-000000001");
-
-            }
-        }
-        //Datos del invoiceData (infoFactura)
-        values.put("fechaEmision", "" + invoiceData.getEmissionOn());
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
-        if (customerOpt.isPresent()) {
-            values.put("razonSocialComprador", "" + customerOpt.get().getFullName());
-            values.put("identificacionComprador", "" + customerOpt.get().getCode());
-            values.put("direccionComprador", "" + customerOpt.get().getDescription());
+        
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
+        }
+        if (!customerOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una sujeto destinatario válido para el usuario autenticado.");
+        }
+        
+        //Cargar generadores de serie para facturas
+        
+        Subject subject = subjectOpt.get();
+        Subject customer = customerOpt.get();
+        String estab = "001";
+        String ptoEmi = "001";
+        String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+        System.out.println("secuencial: " + secuencial);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+        Map<String, Object> values = new HashMap<>();
+        values.put("ambiente", "" + "1");
+        values.put("tipoEmision", "" + "1");
+        values.put("razonSocial", "" + organizacion.getName());
+        values.put("nombreComercial", "" + organizacion.getInitials());
+        values.put("ruc", "" + organizacion.getRuc());
+        values.put("codDoc", "" + "01");
+        values.put("estab", estab); //Por defecto un establecimiento
+        values.put("ptoEmi", ptoEmi); ////Por defecto un punto de emision
+        values.put("secuencial", Strings.extractLast(secuencial, "-"));
+
+        values.put("dirMatriz", "" + subject.getDescription());
+        values.put("dirEstablecimiento", "" + subject.getDescription());
+        values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "5368" : subject.getNumeroContribuyenteEspecial());
+        values.put("obligadoContabilidad", "" + "NO");
+        
+        //Datos del invoiceData (infoFactura) //comprador
+        values.put("fechaEmision", Dates.toString(invoiceData.getEmissionOn(), Constantes.FORMATO_FECHA_SRI));
+        //[0-9]{3}-[0-9]{3}-[0-9]{9}
+        //values.put("guiaRemision", "000-000-000000000"); //Según Karina no es necesario para servicios
+        
+        //Ver Pag 13, Tabla 6 para  más tipos de Identificación 04 -> RUc, 05 -> CEDULA
+        values.put("tipoIdentificacionComprador", customer.getCode().length() == 13 ? "04" :  "05");
+        values.put("razonSocialComprador", "" + customer.getFullName());
+        values.put("identificacionComprador", "" + customer.getCode());
+        values.put("direccionComprador", "" + customer.getDescription());
+        
         values.put("totalSinImpuestos", "" + invoiceData.getSubTotal());
         values.put("totalDescuento", "" + invoiceData.getDescuento());
 
-        //Falta el array de totalImpuesto
+        //IVA
         values.put("totalImpuestoCodigo", "" + "2");
         values.put("totalImpuestoCodigoPorcentaje", "" + "2");
         values.put("descuentoAdicional", "" + 0.00);
-        values.put("totalImpuestoBaseImponible", "" + 0.00);
-        values.put("totalImpuestoValor", "" + 0.00);
+        values.put("totalImpuestoBaseImponible", invoiceData.getSubTotal());
+        values.put("totalImpuestoValor", invoiceData.getIva12Total());
 
         values.put("propina", "" + invoiceData.getPropina());
         values.put("importeTotal", "" + invoiceData.getImporteTotal());
         values.put("moneda", "" + "DOLAR");
 
         //Falta el array de pagos
-        values.put("formaPago", "" + "Efectivo");
-        values.put("total", "" + 0.00);
-        values.put("plazo", "" + "plazo");
-        values.put("unidadTiempo", "" + "unidadTiempo");
+        values.put("formaPago", "" + "01");
+        values.put("total", "" + "" + invoiceData.getImporteTotal());
+        values.put("plazo", "" + "30");
+        values.put("unidadTiempo", "dias");
 
         values.put("valorRetIva", "" + 0.00);
         values.put("valorRetRenta", "" + 0.00);
 
-        //Falta el array de detalle
-        values.put("codigoPrincipal", "" + "codigoPrincipal");
-        values.put("codigoAuxiliar", "" + "codigoAuxiliar");
-        values.put("descripcion", "" + "descripcion");
-        values.put("cantidad", "" + 0.00);
-        values.put("precioUnitario", "" + 0.00);
+        //detalle
+        values.put("codigoPrincipal", "" + invoiceData.getProduct().getId());
+        values.put("codigoAuxiliar", "" + invoiceData.getProduct().getId());
+        values.put("descripcion", "" + invoiceData.getProduct().getName());
+        values.put("cantidad", "" + 1.00);
+        values.put("precioUnitario", "" + invoiceData.getSubTotal());
         values.put("descuento", "" + 0.00);
-        values.put("precioTotalSinImpuesto", "" + 0.00);
+        values.put("precioTotalSinImpuesto", invoiceData.getSubTotal());
 
-        values.put("detAdicionalNombre1", "" + "Nombre1");
-        values.put("detAdicionalValor1", "" + "Valor1");
-        values.put("detAdicionalNombre2", "" + "Nombre2");
-        values.put("detAdicionalValor2", "" + "Valor2");
-        values.put("detAdicionalNombre3", "" + "Nombre3");
-        values.put("detAdicionalValor3", "" + "Valor3");
+        values.put("detAdicionalNombre1", "" + invoiceData.getProduct().getName());
+        values.put("detAdicionalValor1", "" + invoiceData.getSubTotal());
 
-        values.put("impuestoCodigo", "" + "impuestoCodigo");
-        values.put("impuestoCodigoPorcentaje", "" + "impuestoCodigoPorcentaje");
-        values.put("tarifa", "" + 0.00);
-        values.put("impuestoBaseImponible", "" + 0.00);
-        values.put("impuestoValor", "" + 0.00);
+        values.put("impuestoCodigo", "2");
+        values.put("impuestoCodigoPorcentaje", "2");
+        values.put("tarifa", "12");
+        values.put("impuestoBaseImponible", invoiceData.getSubTotal());
+        values.put("impuestoValor", "" + invoiceData.getImporteTotal());
 
         //Falta el array de campoAdicional
         values.put("campoAdicional", "" + "campoAdicional");
-
+       
         StringBuilder json = new StringBuilder("$");
 
         try {
@@ -302,9 +333,10 @@ public class SRIComprobantesController {
         } catch (Exception ex) {
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println("JSON GENERADO " + json);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>><<");
+        System.out.println("JSON: " + json);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>><<");
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -312,48 +344,31 @@ public class SRIComprobantesController {
         try {
 
             response = restTemplate.exchange(uri, HttpMethod.POST, request, String.class);
-            System.out.println("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            System.out.println("response:::" + response);
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-                System.out.println("response.getBody() A:::" + response.getBody());
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-                //OK
                 return ResponseEntity.ok(response.getBody());
             } else {
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-                System.out.println("response.getBody() B:::" + response.getBody());
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 return ResponseEntity.ok(response.getBody());
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
+            httpClientOrServerExc.printStackTrace();
             if (null != httpClientOrServerExc.getStatusCode()) {
                 switch (httpClientOrServerExc.getStatusCode()) {
                     case NOT_FOUND:
-                        return Api.responseError("Warning", "VERONICAAPI: " + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
+                        return Api.responseError("Warning", "VERONICA API: " + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
                     case BAD_REQUEST:
-                        return Api.responseError("Warning", "VERONICAAPI:" + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
+                        return Api.responseError("Warning", "VERONICA API:" + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
                     case INTERNAL_SERVER_ERROR:
-                        return Api.responseError("Warning", "VERONICAAPI: Registro ingresado ya existe", httpClientOrServerExc.getStatusText());
+                        return Api.responseError("Warning", "VERONICA API: Error interno del servicio, consulte con el administrador", httpClientOrServerExc.getStatusText());
+                    case FORBIDDEN:
+                        return Api.responseError("Warning", "VERONICA API: Acceso denegado", httpClientOrServerExc.getStatusText());
                     default:
                         break;
                 }
             }
+            
         }
         return Api.responseError("El servidor no pudo generar el comprobante", new Error());
-    }
-
-    private Organization encontrarOrganizacionPorSubjectId(Long userId) {
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
-        if (subjectOpt.isPresent()) {
-            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
-            if (!organization.isEmpty()) {
-                return organization.get(0);
-            }
-        }
-        return null;
     }
 
 }

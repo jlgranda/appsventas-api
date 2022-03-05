@@ -15,31 +15,31 @@ import java.util.Date;
 @Setter
 public abstract class BaseSRIEntity {
 
-    @Column
+    @Column ( name="access_key" )
     @NaturalId
     private String accessKey;
 
-    @Column
+    @Column ( name="sri_version" )
     private String sriVersion;
 
-    @Column
+    @Column ( name="issue_date" )
     private Date issueDate;
 
-    @Column
+    @Column ( name="xml_content" )
     @Type(type = "XMLType")
     private String xmlContent;
 
-    @Column
+    @Column ( name="authorization_date" )
     private Timestamp authorizationDate;
 
-    @Column
+    @Column ( name="internal_status_id" )
     private long internalStatusId;
 
-    @Column
+    @Column ( name="xml_authorization" )
     @Type(type = "XMLType")
     private String xmlAuthorization;
 
-    @Column
+    @Column ( name="is_deleted" )
     private boolean isDeleted;
 
 }

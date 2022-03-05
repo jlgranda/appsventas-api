@@ -30,13 +30,13 @@ public class CreditMemo extends BaseSRIEntity implements Serializable {
     @Column(name = "credit_memo_id", updatable = false, nullable = false)
     private long creditMemoId;
 
-    @Column
+    @Column (name = "supplier_id")
     private String supplierId;
 
-    @Column
+    @Column (name = "customer_id")
     private String customerId;
 
-    @Column
+    @Column (name = "credit_memo_number")
     private String creditMemoNumber;
 
 }

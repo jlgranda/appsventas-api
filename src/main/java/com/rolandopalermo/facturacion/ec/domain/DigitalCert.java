@@ -13,6 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import java.util.Date;
+import javax.persistence.Temporal;
 
 @Getter
 @Setter
@@ -39,7 +40,7 @@ public class DigitalCert implements Serializable {
     )
     private String password;
 
-    @Column
+    @Column (name = "digital_cert")
     private byte[] digitalCert;
 
     @Column
@@ -48,7 +49,8 @@ public class DigitalCert implements Serializable {
     @Column
     private boolean active;
 
-    @Column
+    @Column (name = "insert_date")
+    @Temporal(javax.persistence.TemporalType.DATE)
     private Date insertDate;
 
 }

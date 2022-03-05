@@ -27,23 +27,23 @@ public class Consignee implements Serializable {
     @Column(name = "consignneId", updatable = false, nullable = false)
     private long consignneId;
 
-    @Column
+    @Column (name = "consignne_number")
     private String consignneNumber;
 
-    @Column
+    @Column (name = "custom_doc_number")
     private String customDocNumber;
 
-    @Column
+    @Column (name = "reference_doc_cod")
     private String referenceDocCod;
 
-    @Column
+    @Column (name = "reference_doc_number")
     private String referenceDocNumber;
 
-    @Column
+    @Column (name = "reference_doc_auth_number")
     private String referenceDocAuthNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "access_key", referencedColumnName = "accessKey")
+    @JoinColumn(name = "access_key", referencedColumnName = "access_key")
     private Bol bol;
 
     @Override

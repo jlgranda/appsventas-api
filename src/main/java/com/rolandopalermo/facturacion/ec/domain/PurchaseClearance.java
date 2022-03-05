@@ -30,13 +30,13 @@ public class PurchaseClearance extends BaseSRIEntity implements Serializable {
     @Column(name = "purchase_clearance_id", updatable = false, nullable = false)
     private long purchaseClearanceId;
 
-    @Column
+    @Column ( name="supplier_id" )
     private String supplierId;
 
-    @Column
+    @Column ( name="customer_id" )
     private String customerId;
 
-    @Column
+    @Column ( name="purchase_clearance_number" )
     private String purchaseClearanceNumber;
 
 }

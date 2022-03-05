@@ -30,13 +30,13 @@ public class Invoice extends BaseSRIEntity implements Serializable {
     @Column(name = "invoice_id", updatable = false, nullable = false)
     private long invoiceId;
 
-    @Column
+    @Column (name = "supplier_id")
     private String supplierId;
 
-    @Column
+    @Column (name = "customer_id")
     private String customerId;
 
-    @Column
+    @Column (name = "invoice_number")
     private String invoiceNumber;
 
 }

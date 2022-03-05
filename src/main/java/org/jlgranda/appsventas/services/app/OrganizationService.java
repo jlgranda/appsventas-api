@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.Optional;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.repository.app.OrganizationRepository;
@@ -19,6 +20,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrganizationService {
 
+    @Autowired
+    private SubjectService subjectService;
+    
     @Autowired
     private OrganizationRepository repository;
 
@@ -35,5 +39,47 @@ public class OrganizationService {
      */
     public List<Organization> encontrarPorOwner(Subject owner) {
         return this.getRepository().encontrarPorOwner(owner);
+    }
+    /**
+     * Devolver las instancias <tt>Organization</tt> para el owner dado como
+     * parámentro, discriminando el campo eliminado
+     *
+     * @param ownerId
+     * @return
+     */
+    public List<Organization> encontrarPorOwnerId(Long ownerId) {
+        return this.getRepository().encontrarPorOwnerId(ownerId);
+    }
+    
+    /**
+     * Devolver las instancia <tt>Organization</tt> para el ruc dado como
+     * parámentro, discriminando el campo eliminado
+     *
+     * @param ruc
+     * @return
+     */
+    public Optional<Organization> encontrarPorRuc(String ruc) {
+        return this.getRepository().findByRuc(ruc);
+    }
+    
+    /**
+     *
+     * @param userId
+     * @return
+     */
+    public Organization encontrarPorSubjectId(Long userId) {
+        List<Organization> organization = this.encontrarPorOwnerId(userId);
+        if (!organization.isEmpty()) {
+            return organization.get(0);
+        } else { //Es posible que la organizacin tenga el mismo RUC que el usuario
+            Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
+            if ( subjectOpt.isPresent() ){
+                Optional<Organization> organizationOpt = this.encontrarPorRuc(subjectOpt.get().getCode());
+                if ( organizationOpt.isPresent() ){
+                    return organizationOpt.get();
+                }
+            }
+        }
+        return null; //No existe organización alguna
     }
 }

@@ -49,6 +49,7 @@ public class Constantes {
     public static final String TIPO_EXTERNO = "EXTERNO";
 
     public static final String SERIE_PREFIJO = "FACTURA";
+    public static final String ADMIN_USERNAME = "admin"; //El administrador
     public static final Long ADMIN_ID = 1L; //El administrador
 
     public static final String CAMPO_SIN_UNIDAD = "Sin unidad";
@@ -62,6 +63,7 @@ public class Constantes {
     public static final String NOTIFICACION = "Notificación";
 
     public static final String FORMATO_FECHA = "yyyy-MM-dd";
+    public static final String FORMATO_FECHA_SRI = "dd/MM/yyyy";
     public static final String FORMATO_FECHA_HORA = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
     public static final String FORMATO_FECHA_HORAZ = "yyyy-MM-dd'T'HH:mm:ss";
 
@@ -121,7 +123,7 @@ public class Constantes {
             + "      \"contribuyenteEspecial\":\"$contribuyenteEspecial\",\n"
             + "      \"obligadoContabilidad\":\"$obligadoContabilidad\",\n"
             + "      \"tipoIdentificacionComprador\":\"$tipoIdentificacionComprador\",\n"
-            + "      \"guiaRemision\":\"$guiaRemision\",\n"
+            //+ "      \"guiaRemision\":\"$guiaRemision\",\n"
             + "      \"razonSocialComprador\":\"$razonSocialComprador\",\n"
             + "      \"identificacionComprador\":\"$identificacionComprador\",\n"
             + "      \"direccionComprador\":\"$direccionComprador\",\n"
@@ -130,7 +132,7 @@ public class Constantes {
             + "      \"totalImpuesto\":[\n"
             + "         {\n"
             + "            \"codigo\":\"$totalImpuestoCodigo\",\n"
-            + "            \"codigoPorcentaje\":\"$totalImpuestoCodigoPorcentaje\",\n"
+            + "            \"codigoPorcentaje\":$totalImpuestoCodigoPorcentaje,\n"
             + "            \"descuentoAdicional\":$descuentoAdicional,\n"
             + "            \"baseImponible\":$totalImpuestoBaseImponible,\n"
             + "            \"valor\":$totalImpuestoValor\n"
@@ -163,20 +165,12 @@ public class Constantes {
             + "            {\n"
             + "               \"nombre\":\"$detAdicionalNombre1\",\n"
             + "               \"valor\":\"$detAdicionalValor1\"\n"
-            + "            },\n"
-            + "            {\n"
-            + "               \"nombre\":\"$detAdicionalNombre2\",\n"
-            + "               \"valor\":\"$detAdicionalValor2\"\n"
-            + "            },\n"
-            + "            {\n"
-            + "               \"nombre\":\"$detAdicionalNombre3\",\n"
-            + "               \"valor\":\"$detAdicionalValor3\"\n"
             + "            }\n"
             + "         ],\n"
             + "         \"impuesto\":[\n"
             + "            {\n"
             + "               \"codigo\":\"$impuestoCodigo\",\n"
-            + "               \"codigoPorcentaje\":\"impuestoCodigoPorcentaje\",\n"
+            + "               \"codigoPorcentaje\":\"$impuestoCodigoPorcentaje\",\n"
             + "               \"tarifa\":$tarifa,\n"
             + "               \"baseImponible\":$impuestoBaseImponible,\n"
             + "               \"valor\":$impuestoValor\n"

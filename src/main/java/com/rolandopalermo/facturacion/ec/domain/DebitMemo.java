@@ -30,13 +30,13 @@ public class DebitMemo extends BaseSRIEntity implements Serializable {
     @Column(name = "debit_memo_id", updatable = false, nullable = false)
     private long debitMemoId;
 
-    @Column
+    @Column (name = "supplier_id")
     private String supplierId;
 
-    @Column
+    @Column (name = "customer_id")
     private String customerId;
 
-    @Column
+    @Column (name = "debit_memo_number")
     private String debitMemoNumber;
 
 }

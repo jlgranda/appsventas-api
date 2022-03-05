@@ -29,9 +29,11 @@ import org.jlgranda.appsventas.domain.util.ProductType;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.ProductData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
+import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.app.ProductService;
 import org.jlgranda.appsventas.services.app.SubjectService;
+import org.jlgranda.appsventas.services.auth.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,7 +81,7 @@ public class ServiciosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         List<ProductData> productsData = new ArrayList<>();
-        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         if (organizacion != null) {
             productsData = buildResultListProduct(productService.encontrarPorOrganizacionId(organizacion.getId()));
         }
@@ -94,26 +96,19 @@ public class ServiciosController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
+        
+        
         List<ProductData> productsData = new ArrayList<>();
-        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         if (organizacion != null) {
             productsData = buildResultListProduct(productService.encontrarPorOrganizacionIdYProductType(organizacion.getId(), productType));
+        } else {
+            throw new NotFoundException("No existe una organización para el usuario " + user.getId());
         }
-        Api.imprimirGetLogAuditoria("servicios/organizacion/tipo/productType/activos", user.getId());
+        Api.imprimirGetLogAuditoria("servicios/organizacion/tipo/" + productType + "/activos", user.getId());
         return ResponseEntity.ok(productsData);
     }
-    
-    private Organization encontrarOrganizacionPorSubjectId(Long userId) {
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
-        if (subjectOpt.isPresent()) {
-            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
-            if (!organization.isEmpty()) {
-                return organization.get(0);
-            }
-        }
-        return null;
-    }
-    
+
     private List<ProductData> buildResultListProduct(List<Product> products) {
         List<ProductData> productsData = new ArrayList<>();
         if (!products.isEmpty()) {
@@ -141,7 +136,7 @@ public class ServiciosController {
             
             BeanUtils.copyProperties(productData, product, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             
-            Organization organizacion = encontrarOrganizacionPorSubjectId(subjectOpt.get().getId());
+            Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
             if (organizacion != null) {
                 product.setOrganizacionId(organizacion.getId());
             }

@@ -34,16 +34,16 @@ public class Bol extends BaseSRIEntity implements Serializable {
     @Column(name = "bol_id", updatable = false, nullable = false)
     private long bolId;
 
-    @Column
+    @Column (name = "supplier_id")
     private String supplierId;
 
-    @Column
+    @Column (name = "bol_number")
     private String bolNumber;
 
-    @Column
+    @Column (name = "shipper_ruc")
     private String shipperRuc;
 
-    @Column
+    @Column (name = "registration_number")
     private String registrationNumber;
 
     @OneToMany(mappedBy = "bol", cascade = CascadeType.ALL, orphanRemoval = true)

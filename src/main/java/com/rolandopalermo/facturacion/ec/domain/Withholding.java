@@ -30,10 +30,10 @@ public class Withholding extends BaseSRIEntity implements Serializable {
     @Column(name = "withholding_id", updatable = false, nullable = false)
     private long withholdingId;
 
-    @Column
+    @Column (name = "supplier_id")
     private String supplierId;
 
-    @Column
+    @Column (name = "customer_id")
     private String customerId;
 
 }
