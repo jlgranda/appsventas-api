@@ -90,6 +90,8 @@ public class Constantes {
     public static final String WH = "retenciones";
     public static final String PC = "liquidaciones-compra";
 
+    public static final String ICON_DEFAULT = "fa fa-question-circle";
+
     //Desde Veronica API
     public static final String URI_API_AUTH = "/oauth/token";
     public static final String URI_API_V1 = "/api/v1.0/";
