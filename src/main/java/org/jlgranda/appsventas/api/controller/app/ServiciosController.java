@@ -131,21 +131,29 @@ public class ServiciosController {
         }
         Product product = null;
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        if (subjectOpt.isPresent()) {
+        
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        
+        if ( !subjectOpt.isPresent() ) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+        
+        if (subjectOpt.isPresent() && organization != null ) {
             product = productService.crearInstancia(subjectOpt.get());
+            
             BeanUtils.copyProperties(productData, product, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-
-            Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-
-            if (organizacion != null) {
-                product.setOrganizacionId(organizacion.getId());
-            }
+            product.setOrganizacionId(organizacion.getId());
             product.setDescription(product.getDescription() == null ? product.getName() : product.getDescription());
             product.setIcon(Constantes.ICON_DEFAULT);
             product.setPriceCost(product.getPrice());
             product.setPriceB(product.getPrice());
             product.setPriceC(product.getPrice());
             productService.guardar(product);
+            
             //Devolver productData
             productData = productService.buildProductData(product);
 
