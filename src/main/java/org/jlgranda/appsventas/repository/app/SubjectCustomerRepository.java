@@ -23,7 +23,8 @@ public interface SubjectCustomerRepository extends CrudRepository<SubjectCustome
 
     @Query("select p from SubjectCustomer p, Subject s "
             + "where p.deleted = false and p.subjectId = s.id and s.deleted = false and p.subjectId = :#{#subjectId} "
-            + "and (lower(s.firstname) like %:keyword% or lower(s.surname) like %:keyword% or lower(s.initials) like %:keyword%  or lower(s.code) like %:keyword%) "
+            + "and (lower(trim(s.firstname)) like %:keyword% or lower(trim(s.surname)) like %:keyword% "
+            + "or lower(trim(s.initials)) like %:keyword% or lower(trim(s.code)) like %:keyword%) "
             + "order by s.firstname ASC")
     public List<SubjectCustomer> encontrarPorSubjectIdYKeyword(Long subjectId, String keyword);
 

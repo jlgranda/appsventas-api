@@ -27,11 +27,11 @@ public class SubjectCustomerData {
     private Long customerId;
 
     //Auxiliares
+    private SubjectData customer;
     private String customerCode;
     private String customerFullName;
     private String customerInitials;
     private String customerEmail;
-    
     private String customerPhoto;
 
 }

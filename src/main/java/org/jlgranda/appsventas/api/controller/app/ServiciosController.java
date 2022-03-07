@@ -142,7 +142,8 @@ public class ServiciosController {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
         
-        if (subjectOpt.isPresent() && organization != null ) {
+
+        if (subjectOpt.isPresent() && organizacion != null ) {
             product = productService.crearInstancia(subjectOpt.get());
             
             BeanUtils.copyProperties(productData, product, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
