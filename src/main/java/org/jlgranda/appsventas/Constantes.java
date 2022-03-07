@@ -20,6 +20,14 @@ public class Constantes {
     public static final Long ESTADO_MANTENIMIENTO = 2L;
     public static final Long ESTADO_CREADA = 3L;
     public static final Long ESTADO_CERRADO = 4L;
+    
+    public static final String ESTADO_COMPROBANTE_CREADA = "CREADA";
+    public static final String ESTADO_COMPROBANTE_RECIBIDA = "RECIBIDA";
+    
+    public static final String ACCION_COMPROBANTE_ANULAR = "anular";
+    public static final String ACCION_COMPROBANTE_ENVIAR = "enviar";
+    public static final String ACCION_COMPROBANTE_AUTORIZAR = "autorizar";
+    public static final String ACCION_COMPROBANTE_EMITIR = "emitir"; //enviar+autorizar
 
     public static final String ETAPA_INICIO = "INICIO";
     public static final String ETAPA_EJECUCION = "EJECUCION";
