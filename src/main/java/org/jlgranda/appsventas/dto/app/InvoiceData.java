@@ -41,6 +41,9 @@ public class InvoiceData {
     private List<PaymentData> payments;
 
     private String customerFullName;
+    
+    private Boolean enviarSRI = false;
+    private String accionSRI = "enviar";
 
     //UX
 //    public static final double IVA = 0d;

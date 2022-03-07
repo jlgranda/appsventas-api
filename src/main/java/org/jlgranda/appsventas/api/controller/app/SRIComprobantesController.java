@@ -31,7 +31,10 @@ import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
+import org.jlgranda.appsventas.dto.ErrorData;
+import org.jlgranda.appsventas.dto.ResultData;
 import org.jlgranda.appsventas.dto.UserData;
+import org.jlgranda.appsventas.dto.VeronicaAPIData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.TokenData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
@@ -214,15 +217,43 @@ public class SRIComprobantesController {
 
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
         //Invocar servicio veronica API
-        final String path = this.veronicaAPI + Constantes.URI_API_V1_INVOICE;
-        final String uri = path;
-
         String token = this.getVeronicaToken(user);
-        //System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
-        //System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
+        VeronicaAPIData data = crearComprobante( token, Constantes.URI_API_V1_INVOICE, invoiceData, user );
+        if ( invoiceData.getEnviarSRI() ){
+            String accion = invoiceData.getAccionSRI();
+            if ( Constantes.ACCION_COMPROBANTE_ENVIAR.equalsIgnoreCase(accion) 
+                    || Constantes.ACCION_COMPROBANTE_AUTORIZAR.equalsIgnoreCase(accion)
+                    || Constantes.ACCION_COMPROBANTE_EMITIR.equalsIgnoreCase(accion) ) {
+                data = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, data.getResult().getClaveAcceso(), accion);
+                //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
+            }
+        }
+        
+        return ResponseEntity.ok(data);
+    }
+    
+    /**
+     * 
+     * @param tipo el tipo de comprobante
+     * @return 
+     */
+    private VeronicaAPIData crearComprobante(String token, String tipo, InvoiceData invoiceData, UserData user){
+        
+        VeronicaAPIData data = new VeronicaAPIData();
+        
+        final String path = this.veronicaAPI + tipo;
+        final String uri = path;
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
 
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
-            return Api.responseError("No se pudó obtener un token del API Verónica", null);
+            String message = "No se consiguió el token desde Veronica API";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setType("error");
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            return data;
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -236,13 +267,36 @@ public class SRIComprobantesController {
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
         
         if (organizacion == null) {
-            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+            String message = "No se encontró una organización válida para el usuario autenticado.";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setSuccess(false);
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            
+            return data;
+            ///throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
         if (!subjectOpt.isPresent()) {
-            throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
+            String message = "No se encontró una sujeto emisor válido para el usuario autenticado.";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setSuccess(false);
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            
+            return data;
+            //throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
         }
         if (!customerOpt.isPresent()) {
-            throw new NotFoundException("No se encontró una sujeto destinatario válido para el usuario autenticado.");
+            String message = "No se encontró una sujeto destinatario válido para el usuario autenticado.";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setSuccess(false);
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            return data;
+            //throw new NotFoundException("No se encontró una sujeto destinatario válido para el usuario autenticado.");
         }
         
         //Cargar generadores de serie para facturas
@@ -252,9 +306,6 @@ public class SRIComprobantesController {
         String estab = "001";
         String ptoEmi = "001";
         String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-        System.out.println("secuencial: " + secuencial);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
         Map<String, Object> values = new HashMap<>();
         values.put("ambiente", "" + "1");
         values.put("tipoEmision", "" + "1");
@@ -331,44 +382,104 @@ public class SRIComprobantesController {
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
         } catch (Exception ex) {
+            
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
+            String message = ex.getLocalizedMessage();
+            ResultData errorData = new ResultData(false, message, ex);
+            errorData.setSuccess(false);
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            return data;
         }
         
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>><<");
-        System.out.println("JSON: " + json);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>><<");
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = null;
+        ResponseEntity<VeronicaAPIData> response = null;
         try {
 
-            response = restTemplate.exchange(uri, HttpMethod.POST, request, String.class);
+            response = restTemplate.exchange(uri, HttpMethod.POST, request, VeronicaAPIData.class);
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
-                return ResponseEntity.ok(response.getBody());
+                data = response.getBody();
+                data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
+            } 
+        } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
+
+            httpClientOrServerExc.printStackTrace();
+            if (null != httpClientOrServerExc.getStatusCode()) {
+                String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
+                ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
+                errorData.setSuccess(false);
+                
+                data.setSuccess(false);
+                data.setErrors(errorData);
+                return data;
+            }
+            
+        }
+        
+        return data;
+    }
+    
+     /**
+     * 
+     * @param token el tipo de comprobante
+     * @param tipo el tipo de comprobante
+     * @param claveAcceso el tipo de comprobante
+     * @param accion la acción sobre el comprobante: enviar, autorizar, emitir, anular 
+     * @return 
+     */
+    private VeronicaAPIData enviarComprobante(String token, String tipo, String claveAcceso, String accion){
+        
+        VeronicaAPIData data = new VeronicaAPIData();
+        
+        final String uri = this.veronicaAPI + tipo + "/" + claveAcceso + "/" + accion;
+
+        if (Strings.isNullOrEmpty(claveAcceso)) {
+            String message = "No se recibió una clave de acceso para enviar el comprobante";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setType("error");
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            return data;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.set("Authorization", "Bearer " + token);
+
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<VeronicaAPIData> response = null;
+        try {
+
+            response = restTemplate.exchange(uri, HttpMethod.PUT, request, VeronicaAPIData.class);
+            if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
+                data = response.getBody();
             } else {
-                return ResponseEntity.ok(response.getBody());
+                data = response.getBody();
+                data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
             httpClientOrServerExc.printStackTrace();
             if (null != httpClientOrServerExc.getStatusCode()) {
-                switch (httpClientOrServerExc.getStatusCode()) {
-                    case NOT_FOUND:
-                        return Api.responseError("Warning", "VERONICA API: " + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
-                    case BAD_REQUEST:
-                        return Api.responseError("Warning", "VERONICA API:" + httpClientOrServerExc.getMessage(), httpClientOrServerExc.getStatusText());
-                    case INTERNAL_SERVER_ERROR:
-                        return Api.responseError("Warning", "VERONICA API: Error interno del servicio, consulte con el administrador", httpClientOrServerExc.getStatusText());
-                    case FORBIDDEN:
-                        return Api.responseError("Warning", "VERONICA API: Acceso denegado", httpClientOrServerExc.getStatusText());
-                    default:
-                        break;
-                }
+                String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
+                ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
+                errorData.setSuccess(false);
+                
+                data.setSuccess(false);
+                data.setErrors(errorData);
+                return data;
             }
             
         }
-        return Api.responseError("El servidor no pudo generar el comprobante", new Error());
+        
+        return data;
     }
 
 }
