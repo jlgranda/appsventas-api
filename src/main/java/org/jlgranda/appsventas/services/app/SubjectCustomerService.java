@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
@@ -23,10 +24,10 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SubjectCustomerService {
-
+    
     @Autowired
     private SubjectCustomerRepository repository;
-
+    
     public SubjectCustomerRepository getRepository() {
         return repository;
     }
@@ -53,7 +54,7 @@ public class SubjectCustomerService {
     public List<SubjectCustomer> encontrarPorSubjectIdYKeyword(Long subjectId, String keyword) {
         return this.getRepository().encontrarPorSubjectIdYKeyword(subjectId, keyword);
     }
-
+    
     public SubjectCustomerData buildSubjectCustomerData(SubjectCustomer sc, Subject s) {
         SubjectCustomerData subjectCustomerData = new SubjectCustomerData();
         BeanUtils.copyProperties(sc, subjectCustomerData);
@@ -64,7 +65,7 @@ public class SubjectCustomerService {
         subjectCustomerData.setCustomerPhoto(s == null ? null : s.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(s.getPhoto()) : null);
         return subjectCustomerData;
     }
-
+    
     public SubjectCustomerData buildSubjectCustomerData(Long subjectId, Subject c) {
         SubjectCustomerData subjectCustomerData = new SubjectCustomerData();
         subjectCustomerData.setSubjectId(subjectId);
@@ -76,7 +77,7 @@ public class SubjectCustomerService {
         subjectCustomerData.setCustomerPhoto(c == null ? null : c.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(c.getPhoto()) : null);
         return subjectCustomerData;
     }
-
+    
     public SubjectCustomer crearInstancia() {
         SubjectCustomer _instance = new SubjectCustomer();
         _instance.setCreatedOn(Dates.now());
@@ -84,18 +85,19 @@ public class SubjectCustomerService {
         _instance.setStatus(StatusType.ACTIVE.toString());
         _instance.setActivationTime(Dates.now());
         _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        _instance.setUuid(UUID.randomUUID().toString());
         return _instance;
     }
-
+    
     public SubjectCustomer crearInstancia(Subject user) {
         SubjectCustomer _instance = crearInstancia();
         _instance.setAuthor(user); //Establecer al usuario actual
         _instance.setOwner(user); //Establecer al usuario actual
         return _instance;
     }
-
+    
     public SubjectCustomer guardar(SubjectCustomer subjectCustomer) {
         return this.getRepository().save(subjectCustomer);
     }
-
+    
 }

@@ -16,9 +16,9 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
+import com.rolandopalermo.facturacion.ec.domain.Invoice;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -30,8 +30,10 @@ import net.tecnopro.util.VelocityHelper;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
+import org.jlgranda.appsventas.domain.app.Detail;
+import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.Organization;
-import org.jlgranda.appsventas.dto.ErrorData;
+import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.ResultData;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.VeronicaAPIData;
@@ -40,9 +42,13 @@ import org.jlgranda.appsventas.dto.app.TokenData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.ComprobantesService;
+import org.jlgranda.appsventas.services.app.DetailService;
+import org.jlgranda.appsventas.services.app.InternalInvoiceService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
+import org.jlgranda.appsventas.services.app.SubjectCustomerService;
 import org.jlgranda.appsventas.services.app.SubjectService;
 import org.jlgranda.appsventas.services.secuencias.SerialService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -74,36 +80,49 @@ import org.springframework.web.client.RestTemplate;
 public class SRIComprobantesController {
 
     private String veronicaAPI;
+    private final String ignoreProperties;
 
     @Autowired
     private ComprobantesService comprobantesService;
-
     private SubjectService subjectService;
     private OrganizationService organizationService;
     private SerialService serialService;
+    private InternalInvoiceService invoiceService;
+    private DetailService detailService;
+    private SubjectCustomerService subjectCustomerService;
 
     @Autowired
     public SRIComprobantesController(
             @Value("${appsventas.veronica.api.url}") String veronicaAPI,
             SubjectService subjectService,
             OrganizationService organizationService,
-            SerialService serialService) {
+            SerialService serialService,
+            InternalInvoiceService invoiceService,
+            DetailService detailService,
+            SubjectCustomerService subjectCustomerService,
+            @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
+    ) {
         this.veronicaAPI = veronicaAPI;
         this.subjectService = subjectService;
         this.organizationService = organizationService;
         this.serialService = serialService;
+        this.invoiceService = invoiceService;
+        this.detailService = detailService;
+        this.subjectCustomerService = subjectCustomerService;
+        this.ignoreProperties = ignoreProperties;
     }
 
     /**
      * Obtiene el token para el usuario administrador para temas de operaciones
-     * @return 
+     *
+     * @return
      */
     private String getVeronicaAdminToken() {
         UserData user = new UserData();
         user.setUsername(Constantes.ADMIN_USERNAME);
         return this.getVeronicaToken(user);
     }
-    
+
     private String getVeronicaToken(UserData user) {
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
@@ -209,38 +228,94 @@ public class SRIComprobantesController {
             @Valid @RequestBody InvoiceData invoiceData,
             BindingResult bindingResult
     ) {
-        
+
         //Verificar binding
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
 
-        //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
         //Invocar servicio veronica API
-        String token = this.getVeronicaToken(user);
-        VeronicaAPIData data = crearComprobante( token, Constantes.URI_API_V1_INVOICE, invoiceData, user );
-        if ( invoiceData.getEnviarSRI() ){
+//        String token = this.getVeronicaToken(user);
+        String token = Constantes.VERONICA_NO_TOKEN;
+        VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, invoiceData, user);
+
+        //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
+        InternalInvoice invoice = null;
+        Detail detail = null;
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
+        if (!customerOpt.isPresent()) {
+            throw new NotFoundException("No se encontró un cliente válido para el usuario autenticado.");
+        }
+
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        if (subjectOpt.isPresent() && customerOpt.isPresent() && organizacion != null) {
+
+            //Guardar el invoice
+            invoice = invoiceService.crearInstancia(subjectOpt.get());
+            BeanUtils.copyProperties(invoiceData, invoice, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+            invoice.setOrganizacionId(organizacion.getId());
+            invoice.setSequencial(Constantes.INVOICE_SEQUENCIAL);
+            invoice.setBoardNumber(Constantes.INVOICE_BOARD);
+            invoice.setPax(Long.valueOf(Constantes.INVOICE_PAX));
+            invoice.setPrintAlias(Boolean.FALSE);
+            if (data.getResult() != null) {
+                invoice.setClaveAcceso(data.getResult().getClaveAcceso());
+            }
+            invoice.setOwner(customerOpt.get());
+            invoiceService.guardar(invoice);
+
+            //Guardar el detail
+            detail = detailService.crearInstancia(subjectOpt.get());
+            detail.setProductId(invoiceData.getProduct().getId());
+            detail.setPrice(invoiceData.getSubTotal());
+            detail.setAmount(invoiceData.getAmount());
+            detail.setIva12(invoiceData.getIva12());
+            detailService.guardar(detail);
+
+
+            //Guardar el subjectCustomer en caso aún no sea parte del usuario
+            if (invoiceData.getSubjectCustomer() != null && invoiceData.getSubjectCustomer().getId() == null) {
+                SubjectCustomer subjectCustomer = null;
+                subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
+                subjectCustomer.setSubjectId(user.getId());
+                subjectCustomer.setCustomerId(customerOpt.get().getId());
+                subjectCustomerService.guardar(subjectCustomer);
+            }
+        }
+
+        if (invoiceData.getEnviarSRI()) {
             String accion = invoiceData.getAccionSRI();
-            if ( Constantes.ACCION_COMPROBANTE_ENVIAR.equalsIgnoreCase(accion) 
+            if (Constantes.ACCION_COMPROBANTE_ENVIAR.equalsIgnoreCase(accion)
                     || Constantes.ACCION_COMPROBANTE_AUTORIZAR.equalsIgnoreCase(accion)
-                    || Constantes.ACCION_COMPROBANTE_EMITIR.equalsIgnoreCase(accion) ) {
-                data = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, data.getResult().getClaveAcceso(), accion);
+                    || Constantes.ACCION_COMPROBANTE_EMITIR.equalsIgnoreCase(accion)) {
+                data = enviarComprobante(token, Constantes.URI_API_V1_INVOICE, data.getResult().getClaveAcceso(), accion);
                 //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
             }
         }
-        
+
         return ResponseEntity.ok(data);
     }
-    
+
     /**
-     * 
+     *
      * @param tipo el tipo de comprobante
-     * @return 
+     * @return
      */
-    private VeronicaAPIData crearComprobante(String token, String tipo, InvoiceData invoiceData, UserData user){
-        
+    private VeronicaAPIData crearComprobante(String token, String tipo, InvoiceData invoiceData, UserData user) {
+
         VeronicaAPIData data = new VeronicaAPIData();
-        
+
         final String path = this.veronicaAPI + tipo;
         final String uri = path;
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
@@ -265,7 +340,7 @@ public class SRIComprobantesController {
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
-        
+
         if (organizacion == null) {
             String message = "No se encontró una organización válida para el usuario autenticado.";
             ResultData errorData = new ResultData(false, message, new Error());
@@ -273,7 +348,7 @@ public class SRIComprobantesController {
 
             data.setSuccess(false);
             data.setErrors(errorData);
-            
+
             return data;
             ///throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
@@ -284,7 +359,7 @@ public class SRIComprobantesController {
 
             data.setSuccess(false);
             data.setErrors(errorData);
-            
+
             return data;
             //throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
         }
@@ -298,9 +373,8 @@ public class SRIComprobantesController {
             return data;
             //throw new NotFoundException("No se encontró una sujeto destinatario válido para el usuario autenticado.");
         }
-        
+
         //Cargar generadores de serie para facturas
-        
         Subject subject = subjectOpt.get();
         Subject customer = customerOpt.get();
         String estab = "001";
@@ -321,18 +395,18 @@ public class SRIComprobantesController {
         values.put("dirEstablecimiento", "" + subject.getDescription());
         values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "5368" : subject.getNumeroContribuyenteEspecial());
         values.put("obligadoContabilidad", "" + "NO");
-        
+
         //Datos del invoiceData (infoFactura) //comprador
         values.put("fechaEmision", Dates.toString(invoiceData.getEmissionOn(), Constantes.FORMATO_FECHA_SRI));
         //[0-9]{3}-[0-9]{3}-[0-9]{9}
         //values.put("guiaRemision", "000-000-000000000"); //Según Karina no es necesario para servicios
-        
+
         //Ver Pag 13, Tabla 6 para  más tipos de Identificación 04 -> RUc, 05 -> CEDULA
-        values.put("tipoIdentificacionComprador", customer.getCode().length() == 13 ? "04" :  "05");
+        values.put("tipoIdentificacionComprador", customer.getCode().length() == 13 ? "04" : "05");
         values.put("razonSocialComprador", "" + customer.getFullName());
         values.put("identificacionComprador", "" + customer.getCode());
         values.put("direccionComprador", "" + customer.getDescription());
-        
+
         values.put("totalSinImpuestos", "" + invoiceData.getSubTotal());
         values.put("totalDescuento", "" + invoiceData.getDescuento());
 
@@ -376,13 +450,13 @@ public class SRIComprobantesController {
 
         //Falta el array de campoAdicional
         values.put("campoAdicional", "" + "campoAdicional");
-       
+
         StringBuilder json = new StringBuilder("$");
 
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
         } catch (Exception ex) {
-            
+
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
             String message = ex.getLocalizedMessage();
             ResultData errorData = new ResultData(false, message, ex);
@@ -392,7 +466,7 @@ public class SRIComprobantesController {
             data.setErrors(errorData);
             return data;
         }
-        
+
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -403,7 +477,7 @@ public class SRIComprobantesController {
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
                 data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
-            } 
+            }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
             httpClientOrServerExc.printStackTrace();
@@ -411,29 +485,30 @@ public class SRIComprobantesController {
                 String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
                 ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
                 errorData.setSuccess(false);
-                
+
                 data.setSuccess(false);
                 data.setErrors(errorData);
                 return data;
             }
-            
+
         }
-        
+
         return data;
     }
-    
-     /**
-     * 
+
+    /**
+     *
      * @param token el tipo de comprobante
      * @param tipo el tipo de comprobante
      * @param claveAcceso el tipo de comprobante
-     * @param accion la acción sobre el comprobante: enviar, autorizar, emitir, anular 
-     * @return 
+     * @param accion la acción sobre el comprobante: enviar, autorizar, emitir,
+     * anular
+     * @return
      */
-    private VeronicaAPIData enviarComprobante(String token, String tipo, String claveAcceso, String accion){
-        
+    private VeronicaAPIData enviarComprobante(String token, String tipo, String claveAcceso, String accion) {
+
         VeronicaAPIData data = new VeronicaAPIData();
-        
+
         final String uri = this.veronicaAPI + tipo + "/" + claveAcceso + "/" + accion;
 
         if (Strings.isNullOrEmpty(claveAcceso)) {
@@ -471,14 +546,14 @@ public class SRIComprobantesController {
                 String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
                 ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
                 errorData.setSuccess(false);
-                
+
                 data.setSuccess(false);
                 data.setErrors(errorData);
                 return data;
             }
-            
+
         }
-        
+
         return data;
     }
 

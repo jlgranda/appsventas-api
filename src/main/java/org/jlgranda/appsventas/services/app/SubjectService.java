@@ -7,6 +7,7 @@ package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
@@ -78,6 +79,7 @@ public class SubjectService {
         _instance.setStatus(StatusType.ACTIVE.toString());
         _instance.setActivationTime(Dates.now());
         _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        _instance.setUuid(UUID.randomUUID().toString());
         return _instance;
     }
 

@@ -27,11 +27,13 @@ public class InvoiceData {
     private String uuid;
 
     private Date emissionOn;
+    private BigDecimal amount;
     private BigDecimal subTotal;
     private BigDecimal descuento;
-    private BigDecimal propina;
     private BigDecimal iva0Total;
     private BigDecimal iva12Total;
+    private Boolean iva12;
+    private BigDecimal propina;
     private BigDecimal importeTotal;
 
     private SubjectCustomerData subjectCustomer;
@@ -41,24 +43,8 @@ public class InvoiceData {
     private List<PaymentData> payments;
 
     private String customerFullName;
-    
+
     private Boolean enviarSRI = false;
     private String accionSRI = "enviar";
 
-    //UX
-//    public static final double IVA = 0d;
-//    private String boardNumber;
-//    private EnvironmentType environmentType;
-//    private EmissionType emissionType;
-//    private Date emissionOn;
-//    private Long organizacionId;
-//    private DocumentType documentType;
-//    private DocumentType documentTypeSource;
-//    private Long establishmentId;
-//    private Long emissionpointId;
-//    private String sequencial;
-//    private Boolean printAlias;
-//    protected String printAliasSummary;
-//    protected Long pax;
-//    private Long recordId;
 }

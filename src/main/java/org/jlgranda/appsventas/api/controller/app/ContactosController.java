@@ -16,7 +16,6 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
-import com.fasterxml.jackson.databind.util.BeanUtil;
 import io.jsonwebtoken.lang.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,16 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
-import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
-import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
+import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.SubjectCustomerService;
 import org.jlgranda.appsventas.services.app.SubjectService;
 import org.springframework.beans.BeanUtils;
@@ -57,11 +55,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "/contactos")
 public class ContactosController {
-    
+
     private SubjectCustomerService subjectCustomerService;
     private SubjectService subjectService;
     private final String ignoreProperties;
-    
+
     @Autowired
     public ContactosController(
             SubjectCustomerService subjectCustomerService,
@@ -72,7 +70,7 @@ public class ContactosController {
         this.subjectService = subjectService;
         this.ignoreProperties = ignoreProperties;
     }
-    
+
     @GetMapping("activos/keyword/{keyword}")
     public ResponseEntity encontrarPorKeyword(
             @AuthenticationPrincipal UserData user,
@@ -87,7 +85,7 @@ public class ContactosController {
         Api.imprimirGetLogAuditoria("contactos/activos/keyword", user.getId());
         return ResponseEntity.ok(subjectCustomersData);
     }
-    
+
     @GetMapping("usuario/activos")
     public ResponseEntity encontrarPorSubjectId(
             @AuthenticationPrincipal UserData user,
@@ -97,7 +95,7 @@ public class ContactosController {
         Api.imprimirGetLogAuditoria("contactos/usuario/activos", user.getId());
         return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectId(user.getId())));
     }
-    
+
     @GetMapping("usuario/activos/keyword/{keyword}")
     public ResponseEntity encontrarPorSubjectIdYKeyword(
             @AuthenticationPrincipal UserData user,
@@ -108,7 +106,7 @@ public class ContactosController {
         Api.imprimirGetLogAuditoria("contactos/usuario/activos/keyword", user.getId());
         return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim())));
     }
-    
+
     private List<SubjectCustomerData> buildResultListSubjectCustomer(List<SubjectCustomer> subjectCustomers) {
         List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
         if (!subjectCustomers.isEmpty()) {
@@ -120,7 +118,7 @@ public class ContactosController {
         }
         return subjectCustomersData;
     }
-    
+
     private List<SubjectCustomerData> buildResultListSubjectCustomerBaseCustomer(Long subjectId, List<Subject> customers) {
         List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
         if (!customers.isEmpty()) {
@@ -130,7 +128,7 @@ public class ContactosController {
         }
         return subjectCustomersData;
     }
-    
+
     @GetMapping("activos/initials/keyword/{keyword}")
     public ResponseEntity encontrarInitialsPorKeyword(
             @AuthenticationPrincipal UserData user,
@@ -141,7 +139,7 @@ public class ContactosController {
         Api.imprimirGetLogAuditoria("activos/initials/keyword", user.getId());
         return ResponseEntity.ok(subjectService.encontrarInitialsPorKeyword(keyword.trim()));
     }
-    
+
     @PostMapping()
     public ResponseEntity crearSubjectCustomer(
             @AuthenticationPrincipal UserData user,
@@ -152,13 +150,17 @@ public class ContactosController {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
-        
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        
+
         Subject customer = null;
         SubjectCustomer subjectCustomer = null;
-        
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
         if (subjectOpt.isPresent()) {
+
             //Guardar el customer
             customer = subjectService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
@@ -186,9 +188,9 @@ public class ContactosController {
             //Devolver subjectCustomerData
             subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customer);
         }
-        
+
         Api.imprimirPostLogAuditoria("/contactos", user.getId());
         return ResponseEntity.ok(Api.response("subjectCustomer", subjectCustomerData));
     }
-    
+
 }

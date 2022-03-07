@@ -112,6 +112,10 @@ public class Constantes {
     public static final String URI_OPERATIONS = "/operaciones/";
     public static final String URI_PUBLIC = "/publico/";
     public static final String PASSWORD = "U;\"PsfDL?4F2X[@h";
+    public static final String INVOICE_SEQUENCIAL = "001-001-00000";
+    public static final String INVOICE_PAX = "1";
+    public static final String INVOICE_BOARD = "0";
+    public static final String INVOICE_UNIT = "u";
 
     public static final String JSON_FACTURA_TEMPLATE = "{\n"
             + "   \"id\":\"comprobante\",\n"

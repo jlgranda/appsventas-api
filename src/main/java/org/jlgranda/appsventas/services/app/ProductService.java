@@ -6,13 +6,13 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Product;
 import org.jlgranda.appsventas.domain.util.ProductType;
 import org.jlgranda.appsventas.domain.util.TaxType;
-import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.ProductData;
 import org.jlgranda.appsventas.repository.app.ProductRepository;
 import org.springframework.beans.BeanUtils;
@@ -69,6 +69,7 @@ public class ProductService {
         _instance.setStatus(StatusType.ACTIVE.toString());
         _instance.setActivationTime(Dates.now());
         _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        _instance.setUuid(UUID.randomUUID().toString());
         _instance.setProductType(ProductType.RAW_MATERIAL);
         _instance.setTaxType(TaxType.IVA);
         return _instance;

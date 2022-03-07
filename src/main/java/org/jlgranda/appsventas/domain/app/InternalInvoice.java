@@ -57,5 +57,7 @@ public class InternalInvoice extends DeletableObject<InternalInvoice> implements
     protected Long pax;
     @Column(name = "record_id", nullable = true)
     private Long recordId;
+    @Column(name = "sri_clave_acceso", nullable = true)
+    private String claveAcceso;
 
 }

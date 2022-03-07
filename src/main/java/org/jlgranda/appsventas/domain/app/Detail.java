@@ -38,6 +38,8 @@ public class Detail extends PersistentObject implements Comparable<Detail>, Seri
     private BigDecimal amount;
     private String unit;
     private BigDecimal price;
+    @Column(name = "iva_12", insertable = true, updatable = true, nullable = true)
+    private boolean iva12;
 
     @Override
     public int hashCode() {
