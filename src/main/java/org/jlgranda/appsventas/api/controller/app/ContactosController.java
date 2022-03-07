@@ -26,6 +26,8 @@ import java.util.Optional;
 import javax.validation.Valid;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.Constantes;
+import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.domain.app.SubjectCustomer;
@@ -78,9 +80,9 @@ public class ContactosController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        List<SubjectCustomerData> subjectCustomersData = buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword));
+        List<SubjectCustomerData> subjectCustomersData = buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim()));
         if (subjectCustomersData.isEmpty()) {
-            subjectCustomersData.addAll(buildResultListSubjectCustomerBaseSubject(user.getId(), subjectService.encontrarPorKeyword(keyword)));
+            subjectCustomersData.addAll(buildResultListSubjectCustomerBaseCustomer(user.getId(), subjectService.encontrarPorKeyword(keyword.trim())));
         }
         Api.imprimirGetLogAuditoria("contactos/activos/keyword", user.getId());
         return ResponseEntity.ok(subjectCustomersData);
@@ -104,7 +106,7 @@ public class ContactosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         Api.imprimirGetLogAuditoria("contactos/usuario/activos/keyword", user.getId());
-        return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword)));
+        return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim())));
     }
     
     private List<SubjectCustomerData> buildResultListSubjectCustomer(List<SubjectCustomer> subjectCustomers) {
@@ -113,17 +115,17 @@ public class ContactosController {
             Map<Long, Subject> subjectsMap = new HashMap<>();
             subjectService.encontrarActivos().forEach(s -> subjectsMap.put(s.getId(), s));
             subjectCustomers.forEach(sc -> {
-                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(sc, subjectsMap.get(sc.getSubjectId())));
+                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(sc, subjectsMap.get(sc.getCustomerId())));
             });
         }
         return subjectCustomersData;
     }
     
-    private List<SubjectCustomerData> buildResultListSubjectCustomerBaseSubject(Long subjectId, List<Subject> subjects) {
+    private List<SubjectCustomerData> buildResultListSubjectCustomerBaseCustomer(Long subjectId, List<Subject> customers) {
         List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
-        if (!subjects.isEmpty()) {
-            subjects.forEach(s -> {
-                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(subjectId, s));
+        if (!customers.isEmpty()) {
+            customers.forEach(c -> {
+                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(subjectId, c));
             });
         }
         return subjectCustomersData;
@@ -137,11 +139,11 @@ public class ContactosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         Api.imprimirGetLogAuditoria("activos/initials/keyword", user.getId());
-        return ResponseEntity.ok(subjectService.encontrarInitialsPorKeyword(keyword));
+        return ResponseEntity.ok(subjectService.encontrarInitialsPorKeyword(keyword.trim()));
     }
     
     @PostMapping()
-    public ResponseEntity crearSubject(
+    public ResponseEntity crearSubjectCustomer(
             @AuthenticationPrincipal UserData user,
             @Valid @RequestBody SubjectCustomerData subjectCustomerData,
             BindingResult bindingResult
@@ -160,15 +162,26 @@ public class ContactosController {
             //Guardar el customer
             customer = subjectService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-            customer.setUsername(customer.getFirstname().concat(Dates.now().toString()));
-            customer.setPassword("12345");
-            customer.setSubjectType(Subject.Type.PUBLIC);
+            customer.setCode(subjectCustomerData.getCustomer().getCode());
+            if (customer.getCode() != null && customer.getCode().length() == 10) {
+                customer.setCodeType(CodeType.CEDULA);
+            } else if (customer.getCode() != null && customer.getCode().length() == 13) {
+                customer.setCodeType(CodeType.RUC);
+            } else {
+                customer.setCodeType(CodeType.NONE);
+            }
+            customer.setUsername(customer.getCode());
+            customer.setPassword(Constantes.PASSWORD);
+            customer.setSubjectType(Subject.Type.NATURAL);
+            customer.setEmailSecret(Boolean.TRUE);
+            customer.setContactable(Boolean.FALSE);
             subjectService.guardar(customer);
+
             //Guardar el subjectCustomer
             subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(subjectCustomerData, subjectCustomer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             subjectCustomer.setSubjectId(user.getId());
-            subjectCustomer.setSubjectId(customer.getId());
+            subjectCustomer.setCustomerId(customer.getId());
             subjectCustomerService.guardar(subjectCustomer);
             //Devolver subjectCustomerData
             subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customer);

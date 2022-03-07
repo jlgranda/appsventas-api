@@ -103,6 +103,7 @@ public class Constantes {
     public static final String URI_API_V1_PC = URI_API_V1 + "liquidaciones-compra";
     public static final String URI_OPERATIONS = "/operaciones/";
     public static final String URI_PUBLIC = "/publico/";
+    public static final String PASSWORD = "U;\"PsfDL?4F2X[@h";
 
     public static final String JSON_FACTURA_TEMPLATE = "{\n"
             + "   \"id\":\"comprobante\",\n"
