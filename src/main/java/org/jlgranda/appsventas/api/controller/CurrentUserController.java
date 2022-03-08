@@ -24,6 +24,7 @@ import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserWithToken;
 import org.jlgranda.appsventas.services.auth.UserService;
 import org.jlgranda.appsventas.util.UserDataBuilder;
+import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 
 @RestController
 @RequestMapping(path = "/user")
@@ -55,6 +56,7 @@ public class CurrentUserController {
             userData.setNombre(user.getFullName());
             userData.setEmail(user.getEmail());
             userData.setBio(user.getBio());
+            userData.setImage(user.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(user.getPhoto()) : null);
         }
         List<String> roles = userData.getAuthorities().stream()
                 .map(item -> item.getAuthority())
