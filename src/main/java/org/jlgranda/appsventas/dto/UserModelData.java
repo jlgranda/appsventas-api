@@ -39,7 +39,7 @@ public class UserModelData extends BaseObjectData {
     private Boolean contraseniaModificada = false;
     
     private String codigoNombre;
-
+    
     public String getEmail() {
         return email;
     }
@@ -140,8 +140,7 @@ public class UserModelData extends BaseObjectData {
     public void setCodigoNombre(String codigoNombre) {
         this.codigoNombre = codigoNombre;
     }
-    
-    
+
     @Override
     public int hashCode() {
         int hash = 7;
@@ -169,10 +168,7 @@ public class UserModelData extends BaseObjectData {
         if (!Objects.equals(this.username, other.username)) {
             return false;
         }
-        if (!Objects.equals(this.personId, other.personId)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.personId, other.personId);
     }
 
     

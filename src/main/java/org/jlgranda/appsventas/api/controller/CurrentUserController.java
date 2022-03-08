@@ -52,7 +52,7 @@ public class CurrentUserController {
             user = userOpt.get();
             userData.setId(user.getId());
             userData.setUuid(user.getUuid());
-            userData.setNombre(user.getName());
+            userData.setNombre(user.getFullName());
             userData.setEmail(user.getEmail());
             userData.setBio(user.getBio());
         }

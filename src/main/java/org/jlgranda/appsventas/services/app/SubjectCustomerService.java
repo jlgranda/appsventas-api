@@ -73,7 +73,7 @@ public class SubjectCustomerService {
         subjectCustomerData.setCustomerEmail(c == null ? "No definido" : c.getEmail());
         subjectCustomerData.setCustomerFullName(c == null ? "No definido" : c.getFullName());
         subjectCustomerData.setCustomerInitials(c == null ? "No definido" : c.getInitials());
-        subjectCustomerData.setCustomerPhoto(c == null ? null : c.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(c.getPhoto()) : null);
+        subjectCustomerData.setCustomerPhoto(c == null ? null : c.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(c.getPhoto()) : null);
         return subjectCustomerData;
     }
 
