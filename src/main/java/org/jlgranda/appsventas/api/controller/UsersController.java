@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.api.controller.app.SRIComprobantesController;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserModelData;
@@ -47,7 +48,7 @@ public class UsersController {
     private String defaultImage;
     private EncryptService encryptService;
     private JwtService jwtService;
-
+    
     private static ObjectMapper mapper;
 
     @Autowired
@@ -123,24 +124,6 @@ public class UsersController {
             //Fin de enviar notificación de cuenta creada
 
             return ResponseEntity.ok(Api.response("user", user));
-        }).orElseThrow(ResourceNotFoundException::new);
-    }
-
-    @RequestMapping(path = "/profile/{uuid}", method = PUT)
-    public ResponseEntity updateUserProfile(@PathVariable("uuid") String uuid,
-            @AuthenticationPrincipal UserData userDataAuth,
-            @Valid @RequestBody UserModelData userModelData,
-            BindingResult bindingResult) {
-        //checkInput(userModelData, bindingResult);
-        return userService.getUserRepository().findByUUID(uuid).map(user -> {
-            if (!AuthorizationService.canWrite(userDataAuth, user)) {
-                throw new NoAuthorizationException();
-            }
-            //No copiar maplayers
-            BeanUtils.copyProperties(userModelData, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-            userService.getUserRepository().save(user);
-            //Api.imprimirUpdateLogAuditoria("profile/", user.getPersonId(), userModelData);
-            return ResponseEntity.ok(Api.response("user", userService.findById(user.getId()).get()));
         }).orElseThrow(ResourceNotFoundException::new);
     }
 

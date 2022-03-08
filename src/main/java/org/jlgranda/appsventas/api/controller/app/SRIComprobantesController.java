@@ -37,6 +37,7 @@ import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.dto.ResultData;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.VeronicaAPIData;
+import org.jlgranda.appsventas.dto.app.CertificadoDigitalData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.TokenData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
@@ -66,7 +67,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -75,7 +75,6 @@ import org.springframework.web.client.RestTemplate;
  *
  * @author jlgranda
  */
-@RestController
 @RequestMapping(path = "/comprobantes")
 public class SRIComprobantesController {
 
@@ -334,11 +333,6 @@ public class SRIComprobantesController {
             return data;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        headers.set("Authorization", "Bearer " + token);
-
         //Datos de la Organización (infoTributaria)
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
@@ -469,7 +463,11 @@ public class SRIComprobantesController {
             data.setErrors(errorData);
             return data;
         }
-
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.set("Authorization", "Bearer " + token);
+        
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -498,9 +496,9 @@ public class SRIComprobantesController {
 
         return data;
     }
-
+    
     /**
-     *
+     * 
      * @param token el tipo de comprobante
      * @param tipo el tipo de comprobante
      * @param claveAcceso el tipo de comprobante
@@ -559,5 +557,124 @@ public class SRIComprobantesController {
 
         return data;
     }
+    
+    @PostMapping("/certificado")
+    public ResponseEntity regsitrarCertificadoDigital(@AuthenticationPrincipal UserData user,
+            @Valid @RequestBody CertificadoDigitalData certificadoDigitalData,
+            BindingResult bindingResult) {
+        
+        String token = this.getVeronicaAdminToken();
+        
+        return ResponseEntity.ok(enviarCertificadoDigital(token, user, certificadoDigitalData));
+        
+    }
+    
+    /**
+     * 
+     * @param token el tipo de comprobante
+     * @return 
+     */
+    private VeronicaAPIData enviarCertificadoDigital(String token, UserData user, CertificadoDigitalData certificadoDigitalData){
+        
+        VeronicaAPIData data = new VeronicaAPIData();
+        
+        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
+            String message = "No se consiguió el token desde Veronica API";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setType("error");
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            return data;
+        }
+        
+        //Datos de la Organización (infoTributaria)
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        
+        if (organizacion == null) {
+            String message = "No se encontró una organización válida para el usuario autenticado.";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setSuccess(false);
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            
+            return data;
+            ///throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+        if (!subjectOpt.isPresent()) {
+            String message = "No se encontró una sujeto emisor válido para el usuario autenticado.";
+            ResultData errorData = new ResultData(false, message, new Error());
+            errorData.setSuccess(false);
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            
+            return data;
+            //throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
+        }
+
+        //Cargar generadores de serie para facturas
+        
+        Subject subject = subjectOpt.get();
+        
+        final String uri = this.veronicaAPI + Constantes.URI_OPERATIONS + "certificados-digitales/empresas/" + organizacion.getRuc();
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("base64", "" + certificadoDigitalData.getBase64());
+        values.put("password", "" + certificadoDigitalData.getPassword());
+        
+       
+        StringBuilder json = new StringBuilder("$");
+
+        try {
+            json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_CERTIFICADO_DIGITAL, values));
+        } catch (Exception ex) {
+            
+            Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
+            String message = ex.getLocalizedMessage();
+            ResultData errorData = new ResultData(false, message, ex);
+            errorData.setSuccess(false);
+
+            data.setSuccess(false);
+            data.setErrors(errorData);
+            return data;
+        }
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.set("Authorization", "Bearer " + token);
+        
+        HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<VeronicaAPIData> response = null;
+        try {
+
+            response = restTemplate.exchange(uri, HttpMethod.POST, request, VeronicaAPIData.class);
+            if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
+                data = response.getBody();
+                data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
+            } 
+        } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
+
+            httpClientOrServerExc.printStackTrace();
+            if (null != httpClientOrServerExc.getStatusCode()) {
+                String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
+                ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
+                errorData.setSuccess(false);
+                
+                data.setSuccess(false);
+                data.setErrors(errorData);
+                return data;
+            }
+            
+        }
+        
+        return data;
+    }
+    
 
 }

@@ -82,7 +82,7 @@ public class ContactosController {
         if (subjectCustomersData.isEmpty()) {
             subjectCustomersData.addAll(buildResultListSubjectCustomerBaseCustomer(user.getId(), subjectService.encontrarPorKeyword(keyword.trim())));
         }
-        Api.imprimirGetLogAuditoria("contactos/activos/keyword", user.getId());
+        Api.imprimirGetLogAuditoria("contactos/activos/keyword" + keyword, user.getId());
         return ResponseEntity.ok(subjectCustomersData);
     }
 
@@ -114,7 +114,7 @@ public class ContactosController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        Api.imprimirGetLogAuditoria("activos/initials/keyword", user.getId());
+        Api.imprimirGetLogAuditoria("activos/initials/keyword/" + keyword, user.getId());
         return ResponseEntity.ok(subjectService.encontrarInitialsPorKeyword(keyword.trim()));
     }
 
