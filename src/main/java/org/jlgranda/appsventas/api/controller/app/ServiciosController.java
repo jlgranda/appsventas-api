@@ -139,7 +139,6 @@ public class ServiciosController {
         if (organizacion == null) {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
-
         if (subjectOpt.isPresent() && organizacion != null) {
             product = productService.crearInstancia(subjectOpt.get());
 
