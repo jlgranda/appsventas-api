@@ -235,8 +235,8 @@ public class SRIComprobantesController {
         }
 
         //Invocar servicio veronica API
-//        String token = this.getVeronicaToken(user);
-        String token = Constantes.VERONICA_NO_TOKEN;
+        String token = this.getVeronicaToken(user);
+//        String token = Constantes.VERONICA_NO_TOKEN;
         VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, invoiceData, user);
 
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
