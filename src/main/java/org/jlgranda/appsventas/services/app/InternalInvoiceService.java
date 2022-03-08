@@ -62,6 +62,13 @@ public class InternalInvoiceService {
         return invoiceData;
     }
 
+    public InvoiceData buildInvoiceData(InternalInvoice inv, Subject c) {
+        InvoiceData invoiceData = new InvoiceData();
+        BeanUtils.copyProperties(inv, invoiceData);
+        invoiceData.setCustomerFullName(c == null ? "No definido" : c.getFullName());
+        return invoiceData;
+    }
+
     public InternalInvoice crearInstancia() {
         InternalInvoice _instance = new InternalInvoice();
         _instance.setCreatedOn(Dates.now());

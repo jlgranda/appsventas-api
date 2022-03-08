@@ -55,14 +55,14 @@ public class SubjectCustomerService {
         return this.getRepository().encontrarPorSubjectIdYKeyword(subjectId, keyword);
     }
     
-    public SubjectCustomerData buildSubjectCustomerData(SubjectCustomer sc, Subject s) {
+    public SubjectCustomerData buildSubjectCustomerData(SubjectCustomer sc, Subject c) {
         SubjectCustomerData subjectCustomerData = new SubjectCustomerData();
         BeanUtils.copyProperties(sc, subjectCustomerData);
-        subjectCustomerData.setCustomerCode(s == null ? "No definido" : s.getCode());
-        subjectCustomerData.setCustomerEmail(s == null ? "No definido" : s.getEmail());
-        subjectCustomerData.setCustomerFullName(s == null ? "No definido" : s.getFullName());
-        subjectCustomerData.setCustomerInitials(s == null ? "No definido" : s.getInitials());
-        subjectCustomerData.setCustomerPhoto(s == null ? null : s.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(s.getPhoto()) : null);
+        subjectCustomerData.setCustomerCode(c == null ? "No definido" : c.getCode());
+        subjectCustomerData.setCustomerEmail(c == null ? "No definido" : c.getEmail());
+        subjectCustomerData.setCustomerFullName(c == null ? "No definido" : c.getFullName());
+        subjectCustomerData.setCustomerInitials(c == null ? "No definido" : c.getInitials());
+        subjectCustomerData.setCustomerPhoto(c == null ? null : c.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(c.getPhoto()) : null);
         return subjectCustomerData;
     }
     

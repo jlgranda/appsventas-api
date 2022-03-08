@@ -7,6 +7,7 @@ package org.jlgranda.appsventas.services.app;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.Constantes;
@@ -25,10 +26,10 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class DetailService {
-    
+
     @Autowired
     private DetailRepository repository;
-    
+
     public DetailRepository getRepository() {
         return repository;
     }
@@ -43,13 +44,24 @@ public class DetailService {
     public List<Detail> encontrarPorInvoiceId(Long invoiceId) {
         return this.getRepository().encontrarPorInvoiceId(invoiceId);
     }
-    
+
+    /**
+     * Devolver el total de las instancias <tt>Detail</tt> para el invoiceId
+     * dado como parámentro, discriminando el campo eliminado
+     *
+     * @param invoiceId
+     * @return
+     */
+    public Optional<BigDecimal> encontrarTotalPorInvoiceId(Long invoiceId) {
+        return this.getRepository().encontrarTotalPorInvoiceId(invoiceId);
+    }
+
     public DetailData buildDetailData(Detail d) {
         DetailData detailData = new DetailData();
         BeanUtils.copyProperties(d, detailData);
         return detailData;
     }
-    
+
     public Detail crearInstancia() {
         Detail _instance = new Detail();
         _instance.setCreatedOn(Dates.now());
@@ -62,16 +74,16 @@ public class DetailService {
         _instance.setUnit(Constantes.INVOICE_UNIT);
         return _instance;
     }
-    
+
     public Detail crearInstancia(Subject user) {
         Detail _instance = crearInstancia();
         _instance.setAuthor(user); //Establecer al usuario actual
         _instance.setOwner(user); //Establecer al usuario actual
         return _instance;
     }
-    
+
     public Detail guardar(Detail detail) {
         return this.getRepository().save(detail);
     }
-    
+
 }

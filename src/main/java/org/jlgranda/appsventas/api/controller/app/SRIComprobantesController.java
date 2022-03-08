@@ -16,7 +16,6 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
-import com.rolandopalermo.facturacion.ec.domain.Invoice;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +33,7 @@ import org.jlgranda.appsventas.domain.app.Detail;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.domain.app.SubjectCustomer;
+import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.dto.ResultData;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.VeronicaAPIData;
@@ -265,6 +265,7 @@ public class SRIComprobantesController {
             invoice = invoiceService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(invoiceData, invoice, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             invoice.setOrganizacionId(organizacion.getId());
+            invoice.setDocumentType(DocumentType.INVOICE);
             invoice.setSequencial(Constantes.INVOICE_SEQUENCIAL);
             invoice.setBoardNumber(Constantes.INVOICE_BOARD);
             invoice.setPax(Long.valueOf(Constantes.INVOICE_PAX));
@@ -277,12 +278,14 @@ public class SRIComprobantesController {
 
             //Guardar el detail
             detail = detailService.crearInstancia(subjectOpt.get());
-            detail.setProductId(invoiceData.getProduct().getId());
-            detail.setPrice(invoiceData.getSubTotal());
-            detail.setAmount(invoiceData.getAmount());
-            detail.setIva12(invoiceData.getIva12());
-            detailService.guardar(detail);
-
+            if (invoice.getId() != null && invoiceData.getProduct() != null) {
+                detail.setInvoiceId(invoice.getId());
+                detail.setProductId(invoiceData.getProduct().getId());
+                detail.setPrice(invoiceData.getSubTotal());
+                detail.setAmount(invoiceData.getAmount());
+                detail.setIva12(invoiceData.getIva12());
+                detailService.guardar(detail);
+            }
 
             //Guardar el subjectCustomer en caso aún no sea parte del usuario
             if (invoiceData.getSubjectCustomer() != null && invoiceData.getSubjectCustomer().getId() == null) {

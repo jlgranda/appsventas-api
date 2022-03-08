@@ -81,7 +81,12 @@ public class ServiciosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         List<ProductData> productsData = new ArrayList<>();
+
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
         if (organizacion != null) {
             productsData = buildResultListProduct(productService.encontrarPorOrganizacionId(organizacion.getId()));
         }
@@ -96,10 +101,13 @@ public class ServiciosController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        
-        
         List<ProductData> productsData = new ArrayList<>();
+
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
         if (organizacion != null) {
             productsData = buildResultListProduct(productService.encontrarPorOrganizacionIdYProductType(organizacion.getId(), productType));
         } else {
@@ -107,16 +115,6 @@ public class ServiciosController {
         }
         Api.imprimirGetLogAuditoria("servicios/organizacion/tipo/" + productType + "/activos", user.getId());
         return ResponseEntity.ok(productsData);
-    }
-
-    private List<ProductData> buildResultListProduct(List<Product> products) {
-        List<ProductData> productsData = new ArrayList<>();
-        if (!products.isEmpty()) {
-            products.forEach(p -> {
-                productsData.add(productService.buildProductData(p));
-            });
-        }
-        return productsData;
     }
 
     @PostMapping()
@@ -131,20 +129,20 @@ public class ServiciosController {
         }
         Product product = null;
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        
+
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-        
-        if ( !subjectOpt.isPresent() ) {
+
+        if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
-        
+
         if (organizacion == null) {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
-        
-        if (subjectOpt.isPresent() && organizacion != null ) {
+
+        if (subjectOpt.isPresent() && organizacion != null) {
             product = productService.crearInstancia(subjectOpt.get());
-            
+
             BeanUtils.copyProperties(productData, product, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             product.setOrganizacionId(organizacion.getId());
             product.setDescription(product.getDescription() == null ? product.getName() : product.getDescription());
@@ -153,13 +151,23 @@ public class ServiciosController {
             product.setPriceB(product.getPrice());
             product.setPriceC(product.getPrice());
             productService.guardar(product);
-            
+
             //Devolver productData
             productData = productService.buildProductData(product);
 
         }
         Api.imprimirPostLogAuditoria("/servicios", user.getId());
         return ResponseEntity.ok(Api.response("product", productData));
+    }
+
+    private List<ProductData> buildResultListProduct(List<Product> products) {
+        List<ProductData> productsData = new ArrayList<>();
+        if (!products.isEmpty()) {
+            products.forEach(p -> {
+                productsData.add(productService.buildProductData(p));
+            });
+        }
+        return productsData;
     }
 
 }

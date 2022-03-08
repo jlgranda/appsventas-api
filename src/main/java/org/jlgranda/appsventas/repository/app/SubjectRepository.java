@@ -23,6 +23,12 @@ public interface SubjectRepository extends CrudRepository<Subject, Long> {
     @Query("select p from Subject p where p.deleted = false order by p.firstname ASC")
     public List<Subject> encontrarActivos();
 
+    @Query("select p from Subject p, SubjectCustomer sc "
+            + "where p.deleted = false and sc.deleted = false "
+            + "and p.id = sc.customerId and sc.subjectId = :#{#subjectId} "
+            + "order by p.firstname ASC")
+    public List<Subject> encontrarPorSubjectCustomerSubjectId(Long subjectId);
+
     @Query("select p from Subject p where p.deleted = false "
             + "and (lower(trim(p.firstname)) like %:keyword% or lower(trim(p.surname)) like %:keyword% "
             + "or lower(trim(p.initials)) like %:keyword%  or lower(trim(p.code)) like %:keyword%) "

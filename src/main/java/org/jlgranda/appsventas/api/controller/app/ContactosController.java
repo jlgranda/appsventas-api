@@ -78,7 +78,7 @@ public class ContactosController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        List<SubjectCustomerData> subjectCustomersData = buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim()));
+        List<SubjectCustomerData> subjectCustomersData = buildResultListSubjectCustomer(user.getId(), subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim()));
         if (subjectCustomersData.isEmpty()) {
             subjectCustomersData.addAll(buildResultListSubjectCustomerBaseCustomer(user.getId(), subjectService.encontrarPorKeyword(keyword.trim())));
         }
@@ -93,7 +93,7 @@ public class ContactosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         Api.imprimirGetLogAuditoria("contactos/usuario/activos", user.getId());
-        return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectId(user.getId())));
+        return ResponseEntity.ok(buildResultListSubjectCustomer(user.getId(), subjectCustomerService.encontrarPorSubjectId(user.getId())));
     }
 
     @GetMapping("usuario/activos/keyword/{keyword}")
@@ -104,29 +104,7 @@ public class ContactosController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         Api.imprimirGetLogAuditoria("contactos/usuario/activos/keyword", user.getId());
-        return ResponseEntity.ok(buildResultListSubjectCustomer(subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim())));
-    }
-
-    private List<SubjectCustomerData> buildResultListSubjectCustomer(List<SubjectCustomer> subjectCustomers) {
-        List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
-        if (!subjectCustomers.isEmpty()) {
-            Map<Long, Subject> subjectsMap = new HashMap<>();
-            subjectService.encontrarActivos().forEach(s -> subjectsMap.put(s.getId(), s));
-            subjectCustomers.forEach(sc -> {
-                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(sc, subjectsMap.get(sc.getCustomerId())));
-            });
-        }
-        return subjectCustomersData;
-    }
-
-    private List<SubjectCustomerData> buildResultListSubjectCustomerBaseCustomer(Long subjectId, List<Subject> customers) {
-        List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
-        if (!customers.isEmpty()) {
-            customers.forEach(c -> {
-                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(subjectId, c));
-            });
-        }
-        return subjectCustomersData;
+        return ResponseEntity.ok(buildResultListSubjectCustomer(user.getId(), subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim())));
     }
 
     @GetMapping("activos/initials/keyword/{keyword}")
@@ -152,15 +130,14 @@ public class ContactosController {
         }
 
         Subject customer = null;
+
         SubjectCustomer subjectCustomer = null;
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
 
         if (subjectOpt.isPresent()) {
-
             //Guardar el customer
             customer = subjectService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
@@ -178,7 +155,6 @@ public class ContactosController {
             customer.setEmailSecret(Boolean.TRUE);
             customer.setContactable(Boolean.FALSE);
             subjectService.guardar(customer);
-
             //Guardar el subjectCustomer
             subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(subjectCustomerData, subjectCustomer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
@@ -191,6 +167,28 @@ public class ContactosController {
 
         Api.imprimirPostLogAuditoria("/contactos", user.getId());
         return ResponseEntity.ok(Api.response("subjectCustomer", subjectCustomerData));
+    }
+
+    private List<SubjectCustomerData> buildResultListSubjectCustomer(Long subjectId, List<SubjectCustomer> subjectCustomers) {
+        List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
+        if (!subjectCustomers.isEmpty()) {
+            Map<Long, Subject> customersMap = new HashMap<>();
+            subjectService.encontrarPorSubjectCustomerSubjectId(subjectId).forEach(c -> customersMap.put(c.getId(), c));
+            subjectCustomers.forEach(sc -> {
+                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(sc, customersMap.get(sc.getCustomerId())));
+            });
+        }
+        return subjectCustomersData;
+    }
+
+    private List<SubjectCustomerData> buildResultListSubjectCustomerBaseCustomer(Long subjectId, List<Subject> customers) {
+        List<SubjectCustomerData> subjectCustomersData = new ArrayList<>();
+        if (!customers.isEmpty()) {
+            customers.forEach(c -> {
+                subjectCustomersData.add(subjectCustomerService.buildSubjectCustomerData(subjectId, c));
+            });
+        }
+        return subjectCustomersData;
     }
 
 }

@@ -5,8 +5,11 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import org.jlgranda.appsventas.Api;
@@ -20,7 +23,7 @@ import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.DetailData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.PaymentData;
-import org.jlgranda.appsventas.exception.InvalidRequestException;
+import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.DetailService;
 import org.jlgranda.appsventas.services.app.InternalInvoiceService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
@@ -30,10 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -77,74 +77,35 @@ public class FacturacionController {
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
         List<InvoiceData> invoicesData = new ArrayList<>();
-        Organization organizacion = encontrarOrganizacionPorSubjectId(user.getId());
+
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
         if (organizacion != null) {
-            invoicesData = buildResultListInvoice(invoiceService.encontrarPorOrganizacionIdYDocumentType(organizacion.getId(), DocumentType.INVOICE));
+            invoicesData = buildResultListInvoice(user.getId(), invoiceService.encontrarPorOrganizacionIdYDocumentType(organizacion.getId(), DocumentType.INVOICE));
             invoicesData.forEach(invd -> {
-                invd.setDetails(buildResultListDetail(detailService.encontrarPorInvoiceId(invd.getId())));
-                invd.setPayments(buildResultListPayment(paymentService.encontrarPorInvoiceId(invd.getId())));
+                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
+                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
+
             });
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/organizacion/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
     }
 
-    private Organization encontrarOrganizacionPorSubjectId(Long userId) {
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
-        if (subjectOpt.isPresent()) {
-            List<Organization> organization = organizationService.encontrarPorOwner(subjectOpt.get());
-            if (!organization.isEmpty()) {
-                return organization.get(0);
-            }
-        }
-        return null;
-    }
-
-    private List<InvoiceData> buildResultListInvoice(List<InternalInvoice> invoices) {
+    private List<InvoiceData> buildResultListInvoice(Long subjectId, List<InternalInvoice> invoices) {
         List<InvoiceData> invoicesData = new ArrayList<>();
         if (!invoices.isEmpty()) {
+            Map<Long, Subject> customersMap = new HashMap<>();
+            subjectService.encontrarPorSubjectCustomerSubjectId(subjectId).forEach(c -> customersMap.put(c.getId(), c));
             invoices.forEach(inv -> {
-                invoicesData.add(invoiceService.buildInvoiceData(inv));
+                invoicesData.add(invoiceService.buildInvoiceData(inv, customersMap.get(inv.getOwner().getId())));
             });
         }
         return invoicesData;
 
-    }
-
-    private List<DetailData> buildResultListDetail(List<Detail> details) {
-        List<DetailData> detailsData = new ArrayList<>();
-        if (!details.isEmpty()) {
-            details.forEach(d -> {
-                detailsData.add(detailService.buildDetailData(d));
-            });
-        }
-        return detailsData;
-
-    }
-
-    private List<PaymentData> buildResultListPayment(List<Payment> payments) {
-        List<PaymentData> paymentsData = new ArrayList<>();
-        if (!payments.isEmpty()) {
-            payments.forEach(d -> {
-                paymentsData.add(paymentService.buildPaymentData(d));
-            });
-        }
-        return paymentsData;
-
-    }
-
-    @PostMapping()
-    public ResponseEntity guardarFactura(
-            @AuthenticationPrincipal UserData user,
-            @Valid @RequestBody InvoiceData newInvoice,
-            BindingResult bindingResult
-    ) {
-        //Verificar binding
-        if (bindingResult.hasErrors()) {
-            throw new InvalidRequestException(bindingResult);
-        }
-
-        return ResponseEntity.ok(Api.response("factura", newInvoice));
     }
 
 }

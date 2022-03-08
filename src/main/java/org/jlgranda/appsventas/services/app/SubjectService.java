@@ -51,6 +51,17 @@ public class SubjectService {
     }
 
     /**
+     * Devolver las instancias <tt>Subject</tt> activos, vinculados con
+     * <tt>SubjectCustomer</tt> para el campo subjectId discriminando el campo
+     * eliminado
+     *
+     * @return
+     */
+    public List<Subject> encontrarPorSubjectCustomerSubjectId(Long subjectId) {
+        return this.getRepository().encontrarPorSubjectCustomerSubjectId(subjectId);
+    }
+
+    /**
      * Devolver las instancias <tt>Subject</tt> para la palabra clave dada como
      * parámentro, discriminando el campo eliminado
      *
