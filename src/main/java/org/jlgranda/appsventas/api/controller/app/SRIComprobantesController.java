@@ -467,7 +467,7 @@ public class SRIComprobantesController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + token);
-        
+
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -496,9 +496,9 @@ public class SRIComprobantesController {
 
         return data;
     }
-    
+
     /**
-     * 
+     *
      * @param token el tipo de comprobante
      * @param tipo el tipo de comprobante
      * @param claveAcceso el tipo de comprobante
@@ -557,27 +557,28 @@ public class SRIComprobantesController {
 
         return data;
     }
-    
+
     @PostMapping("/certificado")
-    public ResponseEntity regsitrarCertificadoDigital(@AuthenticationPrincipal UserData user,
+    public ResponseEntity regsitrarCertificadoDigital(
+            @AuthenticationPrincipal UserData user,
             @Valid @RequestBody CertificadoDigitalData certificadoDigitalData,
             BindingResult bindingResult) {
-        
+
         String token = this.getVeronicaAdminToken();
-        
+
         return ResponseEntity.ok(enviarCertificadoDigital(token, user, certificadoDigitalData));
-        
+
     }
-    
+
     /**
-     * 
+     *
      * @param token el tipo de comprobante
-     * @return 
+     * @return
      */
-    private VeronicaAPIData enviarCertificadoDigital(String token, UserData user, CertificadoDigitalData certificadoDigitalData){
-        
+    private VeronicaAPIData enviarCertificadoDigital(String token, UserData user, CertificadoDigitalData certificadoDigitalData) {
+
         VeronicaAPIData data = new VeronicaAPIData();
-        
+
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             String message = "No se consiguió el token desde Veronica API";
             ResultData errorData = new ResultData(false, message, new Error());
@@ -587,11 +588,11 @@ public class SRIComprobantesController {
             data.setErrors(errorData);
             return data;
         }
-        
+
         //Datos de la Organización (infoTributaria)
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        
+
         if (organizacion == null) {
             String message = "No se encontró una organización válida para el usuario autenticado.";
             ResultData errorData = new ResultData(false, message, new Error());
@@ -599,7 +600,7 @@ public class SRIComprobantesController {
 
             data.setSuccess(false);
             data.setErrors(errorData);
-            
+
             return data;
             ///throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
@@ -610,28 +611,26 @@ public class SRIComprobantesController {
 
             data.setSuccess(false);
             data.setErrors(errorData);
-            
+
             return data;
             //throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
         }
 
         //Cargar generadores de serie para facturas
-        
         Subject subject = subjectOpt.get();
-        
+
         final String uri = this.veronicaAPI + Constantes.URI_OPERATIONS + "certificados-digitales/empresas/" + organizacion.getRuc();
 
         Map<String, Object> values = new HashMap<>();
         values.put("base64", "" + certificadoDigitalData.getBase64());
         values.put("password", "" + certificadoDigitalData.getPassword());
-        
-       
+
         StringBuilder json = new StringBuilder("$");
 
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_CERTIFICADO_DIGITAL, values));
         } catch (Exception ex) {
-            
+
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
             String message = ex.getLocalizedMessage();
             ResultData errorData = new ResultData(false, message, ex);
@@ -641,12 +640,12 @@ public class SRIComprobantesController {
             data.setErrors(errorData);
             return data;
         }
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + token);
-        
+
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -657,7 +656,7 @@ public class SRIComprobantesController {
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
                 data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
-            } 
+            }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
             httpClientOrServerExc.printStackTrace();
@@ -665,16 +664,15 @@ public class SRIComprobantesController {
                 String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
                 ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
                 errorData.setSuccess(false);
-                
+
                 data.setSuccess(false);
                 data.setErrors(errorData);
                 return data;
             }
-            
+
         }
-        
+
         return data;
     }
-    
 
 }
