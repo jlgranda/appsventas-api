@@ -35,30 +35,60 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>Invoice</tt> para la organizacionId dado como
-     * parámentro, discriminando el campo eliminado
+     * Devolver las instancias <tt>Invoice</tt> para el author, la
+     * organizacionId y documentType dados como parámentros, discriminando el
+     * campo eliminado
      *
+     * @param author
      * @param organizacionId
+     * @param documentType
      * @return
      */
-    public List<InternalInvoice> encontrarPorOrganizacionId(Long organizacionId) {
-        return this.getRepository().encontrarPorOrganizacionId(organizacionId);
+    public List<InternalInvoice> encontrarPorAuthorYOrganizacionIdYDocumentType(Subject author, Long organizacionId, DocumentType documentType) {
+        return this.getRepository().encontrarPorAuthorYOrganizacionIdYDocumentType(author, organizacionId, documentType);
     }
 
     /**
-     * Devolver las instancias <tt>Invoice</tt> para la organizacionId y
-     * documentType dados como parámentros, discriminando el campo eliminado
+     * Devolver las instancias <tt>Invoice</tt> para el owner, la organizacionId
+     * y documentType dados como parámentros, discriminando el campo eliminado
      *
+     * @param owner
      * @param organizacionId
+     * @param documentType
      * @return
      */
-    public List<InternalInvoice> encontrarPorOrganizacionIdYDocumentType(Long organizacionId, DocumentType documentType) {
-        return this.getRepository().encontrarPorOrganizacionIdYDocumentType(organizacionId, documentType);
+    public List<InternalInvoice> encontrarPorOwnerYOrganizacionIdYDocumentType(Subject owner, Long organizacionId, DocumentType documentType) {
+        return this.getRepository().encontrarPorOwnerYOrganizacionIdYDocumentType(owner, organizacionId, documentType);
+    }
+
+    /**
+     * Devolver las instancias <tt>Invoice</tt> para el author y documentType
+     * dados como parámentros, discriminando el campo eliminado
+     *
+     * @param author
+     * @param documentType
+     * @return
+     */
+    public List<InternalInvoice> encontrarPorAuthorYDocumentType(Subject author, DocumentType documentType) {
+        return this.getRepository().encontrarPorAuthorYDocumentType(author, documentType);
+    }
+
+    /**
+     * Devolver las instancias <tt>Invoice</tt> para el owner y documentType
+     * dados como parámentros, discriminando el campo eliminado
+     *
+     * @param owner
+     * @param documentType
+     * @return
+     */
+    public List<InternalInvoice> encontrarPorOwnerYDocumentType(Subject owner, DocumentType documentType) {
+        return this.getRepository().encontrarPorOwnerYDocumentType(owner, documentType);
     }
 
     public InvoiceData buildInvoiceData(InternalInvoice inv) {
         InvoiceData invoiceData = new InvoiceData();
         BeanUtils.copyProperties(inv, invoiceData);
+        invoiceData.setSubjectFullName(inv.getAuthor() == null ? "No definido" : inv.getAuthor().getFullName());
         return invoiceData;
     }
 

@@ -43,6 +43,7 @@ public class InvoiceData {
     private List<PaymentData> payments;
 
     private String customerFullName;
+    private String subjectFullName;
 
     private Boolean enviarSRI = false;
     private String accionSRI = "enviar";
