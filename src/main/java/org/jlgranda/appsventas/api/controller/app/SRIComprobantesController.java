@@ -67,6 +67,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -75,6 +76,7 @@ import org.springframework.web.client.RestTemplate;
  *
  * @author jlgranda
  */
+@RestController
 @RequestMapping(path = "/comprobantes")
 public class SRIComprobantesController {
 
@@ -221,7 +223,7 @@ public class SRIComprobantesController {
         return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
     }
 
-    @PostMapping("/factura")
+    @PostMapping(path = "/factura")
     public ResponseEntity crearEnviarFactura(
             @AuthenticationPrincipal UserData user,
             @Valid @RequestBody InvoiceData invoiceData,
@@ -558,12 +560,17 @@ public class SRIComprobantesController {
         return data;
     }
 
-    @PostMapping("/certificado")
-    public ResponseEntity regsitrarCertificadoDigital(
+    @PostMapping(path = "/firmaelectronica")
+    public ResponseEntity registrarCertificadoDigital(
             @AuthenticationPrincipal UserData user,
             @Valid @RequestBody CertificadoDigitalData certificadoDigitalData,
             BindingResult bindingResult) {
 
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+        
         String token = this.getVeronicaAdminToken();
 
         return ResponseEntity.ok(enviarCertificadoDigital(token, user, certificadoDigitalData));
@@ -622,7 +629,7 @@ public class SRIComprobantesController {
         final String uri = this.veronicaAPI + Constantes.URI_OPERATIONS + "certificados-digitales/empresas/" + organizacion.getRuc();
 
         Map<String, Object> values = new HashMap<>();
-        values.put("base64", "" + certificadoDigitalData.getBase64());
+        values.put("certificado", "" + certificadoDigitalData.getCertificado());
         values.put("password", "" + certificadoDigitalData.getPassword());
 
         StringBuilder json = new StringBuilder("$");

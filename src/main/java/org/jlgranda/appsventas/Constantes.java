@@ -196,7 +196,7 @@ public class Constantes {
             + "   \"campoAdicional\":[]\n"
             + "}";
     public static final String JSON_CERTIFICADO_DIGITAL = "{\n"
-            + "  \"certificado\":\"$base64\",\n"
+            + "  \"certificado\":\"$certificado\",\n"
             + "  \"password\": \"$password\"\n" +
 "}";
 

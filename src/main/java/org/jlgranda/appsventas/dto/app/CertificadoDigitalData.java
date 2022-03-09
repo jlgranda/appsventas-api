@@ -16,14 +16,20 @@
  */
 package org.jlgranda.appsventas.dto.app;
 
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  *
  * @author jlgranda
  */
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode(callSuper = false)
 public class CertificadoDigitalData {
-    private String base64;
+    private String certificado;
     private String password;
 }
