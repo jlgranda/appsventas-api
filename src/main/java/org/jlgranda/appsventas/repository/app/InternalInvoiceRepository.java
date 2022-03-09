@@ -16,8 +16,8 @@
  */
 package org.jlgranda.appsventas.repository.app;
 
-import com.rolandopalermo.facturacion.ec.domain.Invoice;
 import java.util.List;
+import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.springframework.data.jpa.repository.Query;
@@ -29,9 +29,17 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface InternalInvoiceRepository extends CrudRepository<InternalInvoice, Long> {
 
-    @Query("select p from InternalInvoice p where p.deleted = false and p.organizacionId = :#{#organizacionId} order by p.emissionOn DESC")
-    public List<InternalInvoice> encontrarPorOrganizacionId(Long organizacionId);
+    @Query("select p from InternalInvoice p where p.deleted = false and p.author = :#{#author} and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    public List<InternalInvoice> encontrarPorAuthorYOrganizacionIdYDocumentType(Subject author, Long organizacionId, DocumentType documentType);
     
-    @Query("select p from InternalInvoice p where p.deleted = false and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
-    public List<InternalInvoice> encontrarPorOrganizacionIdYDocumentType(Long organizacionId, DocumentType documentType);
+    @Query("select p from InternalInvoice p where p.deleted = false and p.owner = :#{#owner} and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    public List<InternalInvoice> encontrarPorOwnerYOrganizacionIdYDocumentType(Subject owner, Long organizacionId, DocumentType documentType);
+
+    @Query("select p from InternalInvoice p where p.deleted = false and p.author = :#{#author} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    public List<InternalInvoice> encontrarPorAuthorYDocumentType(Subject author, DocumentType documentType);
+    
+    @Query("select p from InternalInvoice p where p.deleted = false and p.owner = :#{#owner} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    public List<InternalInvoice> encontrarPorOwnerYDocumentType(Subject owner, DocumentType documentType);
+
+
 }

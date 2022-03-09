@@ -14,6 +14,4 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface ProveedorRepository extends CrudRepository<Supplier, Long> {
     
-//    @Query("")
-//    public List<Proveedor> encontrarPorOrganizacionId();
 }
