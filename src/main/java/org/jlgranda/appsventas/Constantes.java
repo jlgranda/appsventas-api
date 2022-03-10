@@ -116,6 +116,10 @@ public class Constantes {
     public static final String INVOICE_PAX = "1";
     public static final String INVOICE_BOARD = "0";
     public static final String INVOICE_UNIT = "u";
+    
+    
+    public static final String NO_ORGANIZACION = "NO ORGANIZACION DEFINIDA";
+    public static final String NO_RUC = "RUC NO VALIDO";
 
     public static final String JSON_FACTURA_TEMPLATE = "{\n"
             + "   \"id\":\"comprobante\",\n"

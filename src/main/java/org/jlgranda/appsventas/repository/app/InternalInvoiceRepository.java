@@ -29,16 +29,16 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface InternalInvoiceRepository extends CrudRepository<InternalInvoice, Long> {
 
-    @Query("select p from InternalInvoice p where p.deleted = false and p.author = :#{#author} and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    @Query("select p from InternalInvoice p where p.deleted = false and p.author = :#{#author} and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} and not p.claveAcceso is null order by p.emissionOn DESC")
     public List<InternalInvoice> encontrarPorAuthorYOrganizacionIdYDocumentType(Subject author, Long organizacionId, DocumentType documentType);
     
-    @Query("select p from InternalInvoice p where p.deleted = false and p.owner = :#{#owner} and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    @Query("select p from InternalInvoice p where p.deleted = false and p.owner = :#{#owner} and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} and not p.claveAcceso is null order by p.emissionOn DESC")
     public List<InternalInvoice> encontrarPorOwnerYOrganizacionIdYDocumentType(Subject owner, Long organizacionId, DocumentType documentType);
 
-    @Query("select p from InternalInvoice p where p.deleted = false and p.author = :#{#author} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    @Query("select p from InternalInvoice p where p.deleted = false and p.author = :#{#author} and p.documentType = :#{#documentType} and not p.claveAcceso is null order by p.emissionOn DESC")
     public List<InternalInvoice> encontrarPorAuthorYDocumentType(Subject author, DocumentType documentType);
     
-    @Query("select p from InternalInvoice p where p.deleted = false and p.owner = :#{#owner} and p.documentType = :#{#documentType} order by p.emissionOn DESC")
+    @Query("select p from InternalInvoice p where p.deleted = false and p.owner = :#{#owner} and p.documentType = :#{#documentType} and not p.claveAcceso is null order by p.emissionOn DESC")
     public List<InternalInvoice> encontrarPorOwnerYDocumentType(Subject owner, DocumentType documentType);
 
 

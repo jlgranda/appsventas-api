@@ -65,7 +65,7 @@ public class FacturacionController {
         this.ignoreProperties = ignoreProperties;
     }
 
-    @GetMapping("facturas/emitidas/activos")
+    @GetMapping("/facturas/emitidas/activos")
     public ResponseEntity encontrarPorOrganizacionIdYDocumentType(
             @AuthenticationPrincipal UserData user,
             @RequestParam(value = "offset", defaultValue = "0") int offset,
@@ -95,7 +95,7 @@ public class FacturacionController {
         return ResponseEntity.ok(invoicesData);
     }
 
-    @GetMapping("facturas/recibidas/activos")
+    @GetMapping("/facturas/recibidas/activos")
     public ResponseEntity encontrarParaOwnerYDocumentType(
             @AuthenticationPrincipal UserData user,
             @RequestParam(value = "offset", defaultValue = "0") int offset,

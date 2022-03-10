@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -32,8 +31,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
@@ -648,7 +645,7 @@ public final class Strings {
 
     public static boolean validateNationalIdentityDocument(String nid) {
 
-        if (nid.length() < 10) {
+        if (nid != null && nid.length() < 10) {
             return false;
         }
         String spatron = "[0-9]{10}";// \\d{10}
@@ -700,6 +697,10 @@ public final class Strings {
 
     public static boolean validateTaxpayerDocument(String nid) {
 
+        if (nid == null) {
+            return false;
+        }
+        
         if (nid.length() < 13) {
             return false;
         }
@@ -717,8 +718,8 @@ public final class Strings {
         char typeRucChar = nid.charAt(2);
         int typeRuc = Integer.parseInt(typeRucChar + "");
         if (typeRuc < 6) {
-            //return Strings.verifyNationalIdentityDocument(nid);
-            return false;
+            return Strings.verifyNationalIdentityDocument(nid);
+            //return false;
         } else if (typeRuc == 6) {
             return Strings.verifyTaxPayerPublic(nid);
         } else if (typeRuc == 9) {

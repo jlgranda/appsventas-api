@@ -35,6 +35,7 @@ public class Organization extends DeletableObject<Organization> implements Seria
     private String ruc;
     private String initials;
     private String url;
+    private String direccion;
     @Column(name = "registro_contable_habilitado")
     private Boolean accountingEnabled = Boolean.TRUE;
     @Column(name = "vista_ventas")

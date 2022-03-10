@@ -18,10 +18,14 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import net.tecnopro.util.Strings;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
+import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserWithToken;
+import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.auth.UserService;
 import org.jlgranda.appsventas.util.UserDataBuilder;
 import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
@@ -30,12 +34,15 @@ import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 @RequestMapping(path = "/user")
 public class CurrentUserController {
 
-    @Autowired
     private UserService userService;
+    
+    private OrganizationService organizationService;
    
     @Autowired
-    public CurrentUserController(UserService userService){
+    public CurrentUserController(UserService userService, 
+            OrganizationService organizationService){
         this.userService = userService;
+        this.organizationService = organizationService;
     }
 
     @GetMapping
@@ -56,12 +63,31 @@ public class CurrentUserController {
             userData.setNombre(user.getFullName());
             userData.setEmail(user.getEmail());
             userData.setBio(user.getBio());
-            userData.setImage(user.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(user.getPhoto()) : null);
+            //userData.setImage(user.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(user.getPhoto()) : null);
+            
+            //Datos de facturación, forzar creación de organización si tiene ruc.
+            if (Strings.validateTaxpayerDocument(user.getRuc())){
+                Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+                if (organizacion != null){
+                    userData.setRuc(organizacion.getRuc());
+                    userData.setNombre(organizacion.getName());
+                    userData.setInitials(organizacion.getInitials());
+                    userData.setDireccion(organizacion.getDireccion());
+                } else {
+                    userData.setInitials(Constantes.NO_ORGANIZACION);
+                }
+            } else {
+                userData.setInitials(Constantes.NO_RUC);
+                userData.setRuc(user.getRuc());
+            }
         }
         List<String> roles = userData.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+        System.out.println("user: " + userData);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
         Logger.getLogger(CurrentUserController.class.getName()).log(Level.INFO, "Current user uuid: {0}", userData.getUuid());
 
         return ResponseEntity.ok(Api.response("user",

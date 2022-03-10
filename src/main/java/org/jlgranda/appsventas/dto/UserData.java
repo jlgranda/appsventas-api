@@ -34,7 +34,12 @@ public class UserData {
     protected String image;
     protected Date expire;
     protected String token; // Algunos servicios internos precisan el token
-    private Boolean temporal;
+    protected Boolean temporal;
+    
+    //Datos de facturación
+    protected String ruc;
+    protected String initials;
+    protected String direccion;
 
     protected Collection<? extends GrantedAuthority> authorities;
 

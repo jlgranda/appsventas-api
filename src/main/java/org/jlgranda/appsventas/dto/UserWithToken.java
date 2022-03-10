@@ -39,6 +39,11 @@ public class UserWithToken extends UserData {
         this.image = userData.getImage();
         this.token = token;
         this.expire = userData.getExpire();
+        
+        this.ruc = userData.getRuc();
+        this.initials = userData.getInitials();
+        this.direccion = userData.getDireccion();
+        
         this.roles = roles;
     }
 

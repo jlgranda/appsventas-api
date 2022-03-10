@@ -74,9 +74,11 @@ public class OrganizationService {
         } else { //Es posible que la organizacin tenga el mismo RUC que el usuario
             Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
             if ( subjectOpt.isPresent() ){
-                Optional<Organization> organizationOpt = this.encontrarPorRuc(subjectOpt.get().getCode());
+                Optional<Organization> organizationOpt = this.encontrarPorRuc(subjectOpt.get().getRuc());
                 if ( organizationOpt.isPresent() ){
                     return organizationOpt.get();
+                } else {
+                    //Crear la organización si el RUC es valido
                 }
             }
         }
