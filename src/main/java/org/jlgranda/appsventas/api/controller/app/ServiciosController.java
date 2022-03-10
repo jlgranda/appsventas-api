@@ -75,7 +75,7 @@ public class ServiciosController {
         this.ignoreProperties = ignoreProperties;
     }
 
-    @GetMapping("organizacion/activos")
+    @GetMapping("/organizacion/activos")
     public ResponseEntity encontrarPorOrganizacionId(
             @AuthenticationPrincipal UserData user,
             @RequestParam(value = "offset", defaultValue = "0") int offset,
@@ -95,7 +95,7 @@ public class ServiciosController {
         return ResponseEntity.ok(productsData);
     }
 
-    @GetMapping("organizacion/tipo/{productType}/activos")
+    @GetMapping("/organizacion/tipo/{productType}/activos")
     public ResponseEntity encontrarPorOrganizacionIdYProductType(
             @AuthenticationPrincipal UserData user,
             @PathVariable("productType") ProductType productType,
