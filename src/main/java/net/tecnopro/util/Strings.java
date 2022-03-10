@@ -922,8 +922,8 @@ public final class Strings {
 //        System.out.println(">>>>>>>>>>>>>><<< 1103826961 > " + Strings.verifyNationalIdentityDocument("1103826961"));
 //        System.out.println(">>>>>>>>>>>>>><<< 1103826960001 > " + Strings.verifyTaxPayerPublic("1103826960001"));
 //        System.out.println(">>>>>>>>>>>>>><<< 1103826960001 > " + Strings.verifyTaxPayerPrivate("1103826960001"));
-//        System.out.println(">>>>>>>>>>>>>><<< 1103826960001 > " + Strings.validateTaxpayerDocument("1103826960001"));
-//        System.out.println(">>>>>>>>>>>>>><<< 1103826960801 > " + Strings.validateTaxpayerDocument("1103826960801"));
+        System.out.println(">>>>>>>>>>>>>><<< 1103826960001 > " + Strings.validateTaxpayerDocument("1103826960001"));
+        System.out.println(">>>>>>>>>>>>>><<< 1104499049001 > " + Strings.validateTaxpayerDocument("1104499049001"));
 //        
 //        CSV csv = new CSV();
 //        try {

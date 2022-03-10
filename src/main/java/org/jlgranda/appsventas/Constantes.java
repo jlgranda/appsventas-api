@@ -120,6 +120,8 @@ public class Constantes {
     
     public static final String NO_ORGANIZACION = "NO ORGANIZACION DEFINIDA";
     public static final String NO_RUC = "RUC NO VALIDO";
+    public static final String CREADO_POR = "CREADOR POR";
+    public static final String FAZIL = "FAZIL";
 
     public static final String JSON_FACTURA_TEMPLATE = "{\n"
             + "   \"id\":\"comprobante\",\n"
