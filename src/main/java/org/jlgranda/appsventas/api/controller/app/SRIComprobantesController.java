@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.validation.Valid;
@@ -273,6 +274,8 @@ public class SRIComprobantesController {
             invoice.setPrintAlias(Boolean.FALSE);
             if (data.getResult() != null) {
                 invoice.setClaveAcceso(data.getResult().getClaveAcceso());
+            } else {
+                invoice.setClaveAcceso("DEMO" + UUID.randomUUID().toString());
             }
             invoice.setOwner(customerOpt.get());
             invoiceService.guardar(invoice);
