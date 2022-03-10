@@ -129,14 +129,13 @@ public class ServiciosController {
             throw new InvalidRequestException(bindingResult);
         }
         Product product = null;
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
 
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
 
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
-
         if (organizacion == null) {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
@@ -171,6 +170,7 @@ public class ServiciosController {
             throw new InvalidRequestException(bindingResult);
         }
         Product product = null;
+
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
 
         if (!subjectOpt.isPresent()) {

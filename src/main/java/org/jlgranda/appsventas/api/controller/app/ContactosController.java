@@ -150,11 +150,11 @@ public class ContactosController {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
-
+        SubjectCustomer subjectCustomer = null;
         Subject customer = null;
 
-        SubjectCustomer subjectCustomer = null;
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
@@ -194,15 +194,23 @@ public class ContactosController {
     @PutMapping()
     public ResponseEntity editarSubjectCustomer(
             @AuthenticationPrincipal UserData user,
-            @Valid @RequestBody SubjectCustomerData subjectCustomerData
+            @Valid @RequestBody SubjectCustomerData subjectCustomerData,
+            BindingResult bindingResult
     ) {
-        SubjectCustomer subjectCustomer = null;
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Subject customer = null;
+
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
-        Subject customer = null;
+
         if (subjectOpt.isPresent() && subjectCustomerData.getCustomer() != null && subjectCustomerData.getCustomer().getId() != null) {
+
             //Guardar el customer
             Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomerData.getCustomer().getId());
 
@@ -220,8 +228,8 @@ public class ContactosController {
                 subjectService.guardar(customer);
             }
 
-            //Devolver subjectCustomerData
-            subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customer);
+            //Devolver subjectCustomerData, sólo hace falta agregar el customer modificado
+            subjectCustomerData.setCustomer(subjectService.buildSubjectData(customer));
         }
 
         Api.imprimirUpdateLogAuditoria("/contactos", user.getId(), subjectCustomerData.getCustomer());
