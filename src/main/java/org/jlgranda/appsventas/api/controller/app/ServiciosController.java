@@ -43,6 +43,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -118,7 +119,7 @@ public class ServiciosController {
     }
 
     @PostMapping()
-    public ResponseEntity crearProducto(
+    public ResponseEntity crearProduct(
             @AuthenticationPrincipal UserData user,
             @Valid @RequestBody ProductData productData,
             BindingResult bindingResult
@@ -156,6 +157,42 @@ public class ServiciosController {
 
         }
         Api.imprimirPostLogAuditoria("/servicios", user.getId());
+        return ResponseEntity.ok(Api.response("product", productData));
+    }
+
+    @PutMapping()
+    public ResponseEntity editarProduct(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody ProductData productData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+        Product product = null;
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        if (subjectOpt.isPresent() && productData.getId() != null) {
+            Optional<Product> productOpt = productService.encontrarPorId(productData.getId());
+            if (productOpt.isPresent()) {
+                product = productOpt.get();
+                BeanUtils.copyProperties(productData, product, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                product.setPriceCost(product.getPrice());
+                product.setPriceB(product.getPrice());
+                product.setPriceC(product.getPrice());
+                productService.guardar(product);
+            }
+
+            //Devolver productData
+            productData = productService.buildProductData(product);
+
+        }
+        Api.imprimirUpdateLogAuditoria("/servicios", user.getId(), product);
         return ResponseEntity.ok(Api.response("product", productData));
     }
 

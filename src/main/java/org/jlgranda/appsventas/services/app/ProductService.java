@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
@@ -31,6 +32,17 @@ public class ProductService {
 
     public ProductRepository getRepository() {
         return repository;
+    }
+
+    /**
+     * Devolver las instancias <tt>Product</tt> para el id dado como parámentro,
+     * discriminando el campo eliminado
+     *
+     * @param id
+     * @return
+     */
+    public Optional<Product> encontrarPorId(Long id) {
+        return this.getRepository().encontrarPorId(id);
     }
 
     /**
