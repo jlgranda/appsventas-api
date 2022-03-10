@@ -30,6 +30,7 @@ import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
+import org.jlgranda.appsventas.dto.app.SubjectData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.SubjectCustomerService;
@@ -43,6 +44,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -84,6 +86,26 @@ public class ContactosController {
         }
         Api.imprimirGetLogAuditoria("contactos/activos/keyword" + keyword, user.getId());
         return ResponseEntity.ok(subjectCustomersData);
+    }
+
+    @GetMapping("activos/{customerId}")
+    public ResponseEntity encontrarPorID(
+            @AuthenticationPrincipal UserData user,
+            @PathVariable("customerId") Long customerId,
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "20") int limit
+    ) {
+        SubjectData customerData = new SubjectData();
+
+        Optional<Subject> customerOpt = subjectService.encontrarPorId(customerId);
+        if (!customerOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        if (customerOpt.isPresent()) {
+            customerData = subjectService.buildSubjectData(customerOpt.get());
+        }
+        Api.imprimirGetLogAuditoria("contactos/activos", user.getId());
+        return ResponseEntity.ok(customerData);
     }
 
     @GetMapping("usuario/activos")
@@ -166,6 +188,43 @@ public class ContactosController {
         }
 
         Api.imprimirPostLogAuditoria("/contactos", user.getId());
+        return ResponseEntity.ok(Api.response("subjectCustomer", subjectCustomerData));
+    }
+
+    @PutMapping()
+    public ResponseEntity editarSubjectCustomer(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody SubjectCustomerData subjectCustomerData
+    ) {
+        SubjectCustomer subjectCustomer = null;
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        Subject customer = null;
+        if (subjectOpt.isPresent() && subjectCustomerData.getCustomer() != null && subjectCustomerData.getCustomer().getId() != null) {
+            //Guardar el customer
+            Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomerData.getCustomer().getId());
+
+            if (customerOpt.isPresent()) {
+                customer = customerOpt.get();
+                BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                customer.setCode(subjectCustomerData.getCustomer().getCode());
+                if (customer.getCode() != null && customer.getCode().length() == 10) {
+                    customer.setCodeType(CodeType.CEDULA);
+                } else if (customer.getCode() != null && customer.getCode().length() == 13) {
+                    customer.setCodeType(CodeType.RUC);
+                } else {
+                    customer.setCodeType(CodeType.NONE);
+                }
+                subjectService.guardar(customer);
+            }
+
+            //Devolver subjectCustomerData
+            subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customer);
+        }
+
+        Api.imprimirUpdateLogAuditoria("/contactos", user.getId(), subjectCustomerData.getCustomer());
         return ResponseEntity.ok(Api.response("subjectCustomer", subjectCustomerData));
     }
 

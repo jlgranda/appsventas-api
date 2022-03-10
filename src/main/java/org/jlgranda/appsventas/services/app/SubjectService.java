@@ -11,7 +11,9 @@ import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
+import org.jlgranda.appsventas.dto.app.SubjectData;
 import org.jlgranda.appsventas.repository.app.SubjectRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -81,6 +83,12 @@ public class SubjectService {
      */
     public List<String> encontrarInitialsPorKeyword(String keyword) {
         return this.getRepository().encontrarInitialsPorKeyword(keyword);
+    }
+
+    public SubjectData buildSubjectData(Subject s) {
+        SubjectData subjectData = new SubjectData();
+        BeanUtils.copyProperties(s, subjectData);
+        return subjectData;
     }
 
     public Subject crearInstancia() {

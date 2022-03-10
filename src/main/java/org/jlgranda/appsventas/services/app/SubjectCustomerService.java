@@ -24,10 +24,10 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SubjectCustomerService {
-    
+
     @Autowired
     private SubjectCustomerRepository repository;
-    
+
     public SubjectCustomerRepository getRepository() {
         return repository;
     }
@@ -54,10 +54,11 @@ public class SubjectCustomerService {
     public List<SubjectCustomer> encontrarPorSubjectIdYKeyword(Long subjectId, String keyword) {
         return this.getRepository().encontrarPorSubjectIdYKeyword(subjectId, keyword);
     }
-    
+
     public SubjectCustomerData buildSubjectCustomerData(SubjectCustomer sc, Subject c) {
         SubjectCustomerData subjectCustomerData = new SubjectCustomerData();
         BeanUtils.copyProperties(sc, subjectCustomerData);
+        subjectCustomerData.setCustomerId(c == null ? null : c.getId());
         subjectCustomerData.setCustomerCode(c == null ? "No definido" : c.getCode());
         subjectCustomerData.setCustomerEmail(c == null ? "No definido" : c.getEmail());
         subjectCustomerData.setCustomerFullName(c == null ? "No definido" : c.getFullName());
@@ -65,7 +66,7 @@ public class SubjectCustomerService {
         subjectCustomerData.setCustomerPhoto(c == null ? null : c.getPhoto() != null ? "data:image/png;" + Base64.toBase64String(c.getPhoto()) : null);
         return subjectCustomerData;
     }
-    
+
     public SubjectCustomerData buildSubjectCustomerData(Long subjectId, Subject c) {
         SubjectCustomerData subjectCustomerData = new SubjectCustomerData();
         subjectCustomerData.setSubjectId(subjectId);
@@ -77,7 +78,7 @@ public class SubjectCustomerService {
         subjectCustomerData.setCustomerPhoto(c == null ? null : c.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(c.getPhoto()) : null);
         return subjectCustomerData;
     }
-    
+
     public SubjectCustomer crearInstancia() {
         SubjectCustomer _instance = new SubjectCustomer();
         _instance.setCreatedOn(Dates.now());
@@ -88,16 +89,16 @@ public class SubjectCustomerService {
         _instance.setUuid(UUID.randomUUID().toString());
         return _instance;
     }
-    
+
     public SubjectCustomer crearInstancia(Subject user) {
         SubjectCustomer _instance = crearInstancia();
         _instance.setAuthor(user); //Establecer al usuario actual
         _instance.setOwner(user); //Establecer al usuario actual
         return _instance;
     }
-    
+
     public SubjectCustomer guardar(SubjectCustomer subjectCustomer) {
         return this.getRepository().save(subjectCustomer);
     }
-    
+
 }
