@@ -84,7 +84,7 @@ public class ContactosController {
         if (subjectCustomersData.isEmpty()) {
             subjectCustomersData.addAll(buildResultListSubjectCustomerBaseCustomer(user.getId(), subjectService.encontrarPorKeyword(keyword.trim())));
         }
-        Api.imprimirGetLogAuditoria("contactos/activos/keyword" + keyword, user.getId());
+        Api.imprimirGetLogAuditoria("contactos/activos/keyword/" + keyword, user.getId());
         return ResponseEntity.ok(subjectCustomersData);
     }
 
@@ -158,33 +158,38 @@ public class ContactosController {
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
+        if (subjectOpt.isPresent() && subjectCustomerData.getCustomer() != null) {
 
-        if (subjectOpt.isPresent()) {
-            //Guardar el customer
-            customer = subjectService.crearInstancia(subjectOpt.get());
-            BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-            customer.setCode(subjectCustomerData.getCustomer().getCode());
-            if (customer.getCode() != null && customer.getCode().length() == 10) {
-                customer.setCodeType(CodeType.CEDULA);
-            } else if (customer.getCode() != null && customer.getCode().length() == 13) {
-                customer.setCodeType(CodeType.RUC);
+            if (net.tecnopro.util.Strings.validateTaxpayerDocument(subjectCustomerData.getCustomer().getCode())) {
+
+                //Guardar el customer
+                customer = subjectService.crearInstancia(subjectOpt.get());
+                BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                customer.setCode(subjectCustomerData.getCustomer().getCode());
+                if (customer.getCode() != null && customer.getCode().length() == 10) {
+                    customer.setCodeType(CodeType.CEDULA);
+                } else if (customer.getCode() != null && customer.getCode().length() == 13) {
+                    customer.setCodeType(CodeType.RUC);
+                } else {
+                    customer.setCodeType(CodeType.NONE);
+                }
+                customer.setUsername(customer.getCode());
+                customer.setPassword(Constantes.PASSWORD);
+                customer.setSubjectType(Subject.Type.NATURAL);
+                customer.setEmailSecret(Boolean.FALSE);
+                customer.setContactable(Boolean.FALSE);
+                subjectService.guardar(customer);
+                //Guardar el subjectCustomer
+                subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
+                BeanUtils.copyProperties(subjectCustomerData, subjectCustomer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                subjectCustomer.setSubjectId(user.getId());
+                subjectCustomer.setCustomerId(customer.getId());
+                subjectCustomerService.guardar(subjectCustomer);
+                //Devolver subjectCustomerData
+                subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customer);
             } else {
-                customer.setCodeType(CodeType.NONE);
+                throw new NotFoundException("Cédula/RUC inváĺido.");
             }
-            customer.setUsername(customer.getCode());
-            customer.setPassword(Constantes.PASSWORD);
-            customer.setSubjectType(Subject.Type.NATURAL);
-            customer.setEmailSecret(Boolean.TRUE);
-            customer.setContactable(Boolean.FALSE);
-            subjectService.guardar(customer);
-            //Guardar el subjectCustomer
-            subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
-            BeanUtils.copyProperties(subjectCustomerData, subjectCustomer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-            subjectCustomer.setSubjectId(user.getId());
-            subjectCustomer.setCustomerId(customer.getId());
-            subjectCustomerService.guardar(subjectCustomer);
-            //Devolver subjectCustomerData
-            subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customer);
         }
 
         Api.imprimirPostLogAuditoria("/contactos", user.getId());
@@ -211,25 +216,29 @@ public class ContactosController {
 
         if (subjectOpt.isPresent() && subjectCustomerData.getCustomer() != null && subjectCustomerData.getCustomer().getId() != null) {
 
-            //Guardar el customer
-            Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomerData.getCustomer().getId());
+            if (net.tecnopro.util.Strings.validateTaxpayerDocument(subjectCustomerData.getCustomer().getCode())) {
+                //Guardar el customer
+                Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomerData.getCustomer().getId());
 
-            if (customerOpt.isPresent()) {
-                customer = customerOpt.get();
-                BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-                customer.setCode(subjectCustomerData.getCustomer().getCode());
-                if (customer.getCode() != null && customer.getCode().length() == 10) {
-                    customer.setCodeType(CodeType.CEDULA);
-                } else if (customer.getCode() != null && customer.getCode().length() == 13) {
-                    customer.setCodeType(CodeType.RUC);
-                } else {
-                    customer.setCodeType(CodeType.NONE);
+                if (customerOpt.isPresent()) {
+                    customer = customerOpt.get();
+                    BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                    customer.setCode(subjectCustomerData.getCustomer().getCode());
+                    if (customer.getCode() != null && customer.getCode().length() == 10) {
+                        customer.setCodeType(CodeType.CEDULA);
+                    } else if (customer.getCode() != null && customer.getCode().length() == 13) {
+                        customer.setCodeType(CodeType.RUC);
+                    } else {
+                        customer.setCodeType(CodeType.NONE);
+                    }
+                    subjectService.guardar(customer);
                 }
-                subjectService.guardar(customer);
-            }
 
-            //Devolver subjectCustomerData, sólo hace falta agregar el customer modificado
-            subjectCustomerData.setCustomer(subjectService.buildSubjectData(customer));
+                //Devolver subjectCustomerData, sólo hace falta agregar el customer modificado
+                subjectCustomerData.setCustomer(subjectService.buildSubjectData(customer));
+            } else {
+                throw new NotFoundException("Cédula/RUC inváĺido.");
+            }
         }
 
         Api.imprimirUpdateLogAuditoria("/contactos", user.getId(), subjectCustomerData.getCustomer());

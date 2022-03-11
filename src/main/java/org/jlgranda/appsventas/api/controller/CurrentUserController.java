@@ -43,12 +43,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class CurrentUserController {
 
     private UserService userService;
-    
+
     private OrganizationService organizationService;
-   
+
     @Autowired
-    public CurrentUserController(UserService userService, 
-            OrganizationService organizationService){
+    public CurrentUserController(UserService userService,
+            OrganizationService organizationService) {
         this.userService = userService;
         this.organizationService = organizationService;
     }
@@ -72,14 +72,14 @@ public class CurrentUserController {
             userData.setEmail(user.getEmail());
             userData.setBio(user.getBio());
             userData.setImage(user.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(user.getPhoto()) : null);
-            
+
             //Datos de facturación, forzar creación de organización si tiene ruc.
             System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
             System.out.println("Obtener organización para: " + user.getRuc());
             System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-            if (Strings.validateTaxpayerDocument(user.getRuc())){
+            if (Strings.validateTaxpayerDocument(user.getRuc())) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-                if (organizacion != null){
+                if (organizacion != null) {
                     userData.setRuc(organizacion.getRuc());
                     userData.setNombre(organizacion.getName());
                     userData.setInitials(organizacion.getInitials());
@@ -92,7 +92,7 @@ public class CurrentUserController {
                 userData.setRuc(user.getRuc());
             }
         }
-        
+
         List<String> roles = userData.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
@@ -130,7 +130,7 @@ public class CurrentUserController {
 
         return ResponseEntity.ok(new UserWithToken(userData, token, roles));
     }
-    
+
     @PutMapping
     public ResponseEntity updateUser(@AuthenticationPrincipal UserData userAuth,
             @Valid @RequestBody UserData userData,
@@ -142,11 +142,11 @@ public class CurrentUserController {
             }
             BeanUtils.copyProperties(userData, user, io.jsonwebtoken.lang.Strings.tokenizeToStringArray("id, photo, uuid, authorities", ","));
             userService.getUserRepository().save(user); //Guarda los cambios
-            
+
             //Obtener/Crear la organización para el usuario
-            if (Strings.validateTaxpayerDocument(user.getRuc())){
+            if (Strings.validateTaxpayerDocument(user.getRuc())) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-                if (organizacion != null){
+                if (organizacion != null) {
                     userData.setRuc(organizacion.getRuc());
                     userData.setNombre(organizacion.getName());
                     userData.setInitials(organizacion.getInitials());
@@ -158,8 +158,8 @@ public class CurrentUserController {
                 userData.setInitials(Constantes.NO_RUC);
                 userData.setRuc(user.getRuc());
             }
-            
-
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
