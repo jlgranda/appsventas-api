@@ -25,7 +25,7 @@ public class OrganizationService {
 
     @Autowired
     private SubjectService subjectService;
-    
+
     @Autowired
     private OrganizationRepository repository;
 
@@ -43,6 +43,7 @@ public class OrganizationService {
     public List<Organization> encontrarPorOwner(Subject owner) {
         return this.getRepository().encontrarPorOwner(owner);
     }
+
     /**
      * Devolver las instancias <tt>Organization</tt> para el owner dado como
      * parámentro, discriminando el campo eliminado
@@ -53,7 +54,7 @@ public class OrganizationService {
     public List<Organization> encontrarPorOwnerId(Long ownerId) {
         return this.getRepository().encontrarPorOwnerId(ownerId);
     }
-    
+
     /**
      * Devolver las instancia <tt>Organization</tt> para el ruc dado como
      * parámentro, discriminando el campo eliminado
@@ -64,7 +65,7 @@ public class OrganizationService {
     public Optional<Organization> encontrarPorRuc(String ruc) {
         return this.getRepository().findByRuc(ruc);
     }
-    
+
     /**
      *
      * @param userId
@@ -77,22 +78,22 @@ public class OrganizationService {
             return organizations.get(0);
         } else { //Es posible que la organizacin tenga el mismo RUC que el usuario
             Optional<Subject> subjectOpt = subjectService.encontrarPorId(userId);
-            if ( subjectOpt.isPresent() ){
+            if (subjectOpt.isPresent()) {
                 Subject subject = subjectOpt.get();
-                if (Strings.isNullOrEmpty(subject.getRuc())){
+                if (Strings.isNullOrEmpty(subject.getRuc())) {
                     subject.setRuc(subject.getCode()); //Igualar el RUC con el código si es valido
                     actualizar = true;
                 }
-                
-                if (actualizar){
+
+                if (actualizar) {
                     subjectService.guardar(subject); //Enviar los cambios en subject
                 }
-                if (Strings.validateTaxpayerDocument(subject.getRuc())){
+                if (Strings.validateTaxpayerDocument(subject.getRuc())) {
                     Optional<Organization> organizationOpt = this.encontrarPorRuc(subject.getRuc());
-                    if ( organizationOpt.isPresent() ){
+                    if (organizationOpt.isPresent()) {
                         return organizationOpt.get();
                     } else {
-                
+
                         Organization organization = new Organization();
                         organization.setName(subject.getInitials());
                         organization.setRuc(subject.getRuc());
@@ -103,15 +104,18 @@ public class OrganizationService {
                         organization.setOwner(subject);
                         organization.setAuthor(subject);
                         organization.setLastUpdate(Dates.now());
-                        
+
                         this.getRepository().save(organization); //Crear organización
                         return organization;
                     }
                 }
-                
-                
+
             }
         }
         return null; //No existe organización alguna
+    }
+
+    public Organization guardar(Organization organization) {
+        return this.getRepository().save(organization);
     }
 }

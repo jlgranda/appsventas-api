@@ -17,7 +17,7 @@ import org.springframework.data.repository.CrudRepository;
  * @author usuario
  */
 public interface OrganizationRepository extends CrudRepository<Organization, Long> {
-    
+
     Optional<Organization> findByRuc(String ruc);
 
     /**
@@ -27,7 +27,7 @@ public interface OrganizationRepository extends CrudRepository<Organization, Lon
      */
     @Query("select p from Organization p where p.owner = :#{#owner}")
     public List<Organization> encontrarPorOwner(Subject owner);
-    
+
     /**
      *
      * @param ownerId

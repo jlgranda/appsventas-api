@@ -20,7 +20,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class UserWithToken extends UserData {
 
     private List<String> roles = new ArrayList<>();
@@ -39,11 +39,13 @@ public class UserWithToken extends UserData {
         this.image = userData.getImage();
         this.token = token;
         this.expire = userData.getExpire();
-        
+
         this.ruc = userData.getRuc();
         this.initials = userData.getInitials();
         this.direccion = userData.getDireccion();
-        
+
+        this.organization = userData.getOrganization();
+
         this.roles = roles;
     }
 

@@ -9,10 +9,12 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Table;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -42,6 +44,11 @@ public class Organization extends DeletableObject<Organization> implements Seria
     private String vistaVentas;
     @Column(name = "vista_venta")
     private String vistaVenta;
+    @Basic(fetch = FetchType.LAZY)
+    private byte[] photo;
+    @Column(name = "ambiente_sri")
+    private String ambienteSRI;
+    private Long numeroLocales = Long.valueOf(1);
 
     public enum Type {
         GOVERMENT,

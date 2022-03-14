@@ -26,6 +26,7 @@ import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserWithToken;
+import org.jlgranda.appsventas.dto.app.OrganizationData;
 import org.jlgranda.appsventas.exception.NoAuthorizationException;
 import org.jlgranda.appsventas.exception.ResourceNotFoundException;
 import org.jlgranda.appsventas.services.AuthorizationService;
@@ -34,6 +35,7 @@ import org.jlgranda.appsventas.services.auth.UserService;
 import org.jlgranda.appsventas.util.UserDataBuilder;
 import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,12 +47,17 @@ public class CurrentUserController {
     private UserService userService;
 
     private OrganizationService organizationService;
+    private final String ignoreProperties;
 
     @Autowired
-    public CurrentUserController(UserService userService,
-            OrganizationService organizationService) {
+    public CurrentUserController(
+            UserService userService,
+            OrganizationService organizationService,
+            @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
+    ) {
         this.userService = userService;
         this.organizationService = organizationService;
+        this.ignoreProperties = ignoreProperties;
     }
 
     @GetMapping
@@ -84,6 +91,13 @@ public class CurrentUserController {
                     userData.setNombre(organizacion.getName());
                     userData.setInitials(organizacion.getInitials());
                     userData.setDireccion(organizacion.getDireccion());
+
+                    OrganizationData organizationData = new OrganizationData();
+                    BeanUtils.copyProperties(organizacion, organizationData);
+                    organizationData.setImage(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
+
+                    userData.setOrganization(organizationData);
+
                 } else {
                     userData.setInitials(Constantes.NO_ORGANIZACION);
                 }
@@ -151,6 +165,10 @@ public class CurrentUserController {
                     userData.setNombre(organizacion.getName());
                     userData.setInitials(organizacion.getInitials());
                     userData.setDireccion(organizacion.getDireccion());
+
+                    OrganizationData organizationData = new OrganizationData();
+                    BeanUtils.copyProperties(organizacion, organizationData);
+                    userData.setOrganization(organizationData);
                 } else {
                     userData.setInitials(Constantes.NO_ORGANIZACION);
                 }
@@ -163,6 +181,21 @@ public class CurrentUserController {
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
+
+    @PutMapping("/organization")
+    public ResponseEntity updateOrganization(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody OrganizationData organizationData,
+            BindingResult bindingResult) {
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion != null) {
+            BeanUtils.copyProperties(organizationData, organizacion);
+            organizationService.guardar(organizacion);
+        }
+        Api.imprimirUpdateLogAuditoria("/user/organization", user.getId(), organizacion);
+        return ResponseEntity.ok(Api.response("organization", organizationData));
+    }
+
 }
 
 @Getter

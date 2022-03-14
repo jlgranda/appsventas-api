@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import lombok.Data;
 import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.dto.app.OrganizationData;
 import org.springframework.security.core.GrantedAuthority;
 
 @Data
@@ -35,11 +36,14 @@ public class UserData {
     protected Date expire;
     protected String token; // Algunos servicios internos precisan el token
     protected Boolean temporal;
-    
+
     //Datos de facturación
     protected String ruc;
     protected String initials;
     protected String direccion;
+
+    //Datos de organización
+    OrganizationData organization;
 
     protected Collection<? extends GrantedAuthority> authorities;
 
