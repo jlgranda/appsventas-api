@@ -16,6 +16,7 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -127,10 +128,6 @@ public class SRIComprobantesController {
 
     private String getVeronicaToken(UserData user) {
 
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-        System.out.println("Username: " + user.getUsername());
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-
         final String uri = this.veronicaAPI + Constantes.URI_API_AUTH;
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic " + "dmVyb25pY2E6dmVyb25pY2E=");
@@ -184,8 +181,8 @@ public class SRIComprobantesController {
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo);
 
         String token = this.getVeronicaToken(user);
-        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
-        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
 
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return Api.responseError("No se pudó obtener un token del API Verónica", null);
@@ -209,9 +206,9 @@ public class SRIComprobantesController {
                 return response;
             } else {
 
-                System.out.println(">>>>>>>>>>>>>>>>>>");
-                System.out.println("" + response.getStatusCode());
-                System.out.println(">>>>>>>>>>>>>>>>>>");
+//                System.out.println(">>>>>>>>>>>>>>>>>>");
+//                System.out.println("" + response.getStatusCode());
+//                System.out.println(">>>>>>>>>>>>>>>>>>");
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
@@ -238,8 +235,10 @@ public class SRIComprobantesController {
 
         //Invocar servicio veronica API
         String token = this.getVeronicaToken(user);
-//        String token = Constantes.VERONICA_NO_TOKEN;
-        VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, invoiceData, user);
+        String estab = "001";
+        String ptoEmi = "001";
+        String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
+        VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, secuencial, estab, ptoEmi, invoiceData, user);
 
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
         InternalInvoice invoice = null;
@@ -268,14 +267,17 @@ public class SRIComprobantesController {
             BeanUtils.copyProperties(invoiceData, invoice, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             invoice.setOrganizacionId(organizacion.getId());
             invoice.setDocumentType(DocumentType.INVOICE);
-            invoice.setSequencial(Constantes.INVOICE_SEQUENCIAL);
+            invoice.setSequencial(secuencial);
             invoice.setBoardNumber(Constantes.INVOICE_BOARD);
             invoice.setPax(Long.valueOf(Constantes.INVOICE_PAX));
             invoice.setPrintAlias(Boolean.FALSE);
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+            System.out.println("data: " + data);
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
             if (data.getResult() != null) {
                 invoice.setClaveAcceso(data.getResult().getClaveAcceso());
             } else {
-                invoice.setClaveAcceso("DEMO" + UUID.randomUUID().toString());
+                invoice.setClaveAcceso(Constantes.PROFORMA + Constantes.SEPARADOR + UUID.randomUUID().toString());
             }
             invoice.setOwner(customerOpt.get());
             invoiceService.guardar(invoice);
@@ -285,6 +287,7 @@ public class SRIComprobantesController {
             if (invoice.getId() != null && invoiceData.getProduct() != null) {
                 detail.setInvoiceId(invoice.getId());
                 detail.setProductId(invoiceData.getProduct().getId());
+                detail.setAmount(BigDecimal.ONE);
                 detail.setPrice(invoiceData.getSubTotal());
                 detail.setAmount(invoiceData.getAmount());
                 detail.setIva12(invoiceData.getIva12());
@@ -319,7 +322,7 @@ public class SRIComprobantesController {
      * @param tipo el tipo de comprobante
      * @return
      */
-    private VeronicaAPIData crearComprobante(String token, String tipo, InvoiceData invoiceData, UserData user) {
+    private VeronicaAPIData crearComprobante(String token, String tipo, String secuencial, String estab, String ptoEmi, InvoiceData invoiceData, UserData user) {
 
         VeronicaAPIData data = new VeronicaAPIData();
 
@@ -379,16 +382,14 @@ public class SRIComprobantesController {
         //Cargar generadores de serie para facturas
         Subject subject = subjectOpt.get();
         Subject customer = customerOpt.get();
-        String estab = "001";
-        String ptoEmi = "001";
-        String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
+
         Map<String, Object> values = new HashMap<>();
         values.put("ambiente", "" + "1");
         values.put("tipoEmision", "" + "1");
         values.put("razonSocial", "" + organizacion.getName());
         values.put("nombreComercial", "" + organizacion.getInitials());
         values.put("ruc", "" + organizacion.getRuc());
-        values.put("codDoc", "" + "01");
+        values.put("codDoc", "" + "01"); //Documento Factura
         values.put("estab", estab); //Por defecto un establecimiento
         values.put("ptoEmi", ptoEmi); ////Por defecto un punto de emision
         values.put("secuencial", Strings.extractLast(secuencial, "-"));
@@ -483,6 +484,9 @@ public class SRIComprobantesController {
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
                 data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
+            } else if (HttpStatus.CREATED.equals(response.getStatusCode()) && response.getBody() != null) {
+                data = response.getBody();
+                data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
@@ -541,6 +545,7 @@ public class SRIComprobantesController {
             response = restTemplate.exchange(uri, HttpMethod.PUT, request, VeronicaAPIData.class);
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
+                data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
             } else {
                 data = response.getBody();
                 data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
@@ -573,7 +578,7 @@ public class SRIComprobantesController {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
-        
+
         String token = this.getVeronicaAdminToken();
 
         return ResponseEntity.ok(enviarCertificadoDigital(token, user, certificadoDigitalData));
@@ -683,6 +688,54 @@ public class SRIComprobantesController {
         }
 
         return data;
+    }
+
+    @GetMapping(value = "/{tipo}/{claveAcceso}/archivos/pdf")
+    public ResponseEntity generateRIDE(@AuthenticationPrincipal UserData user,
+            @PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
+
+        final String path = this.veronicaAPI + Constantes.URI_API_V1;
+        final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/pdf";
+
+        String token = this.getVeronicaToken(user);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
+
+        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
+            return Api.responseError("No se pudó obtener un token del API Verónica", null);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + token);
+
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity response = null;
+        try {
+            response = restTemplate.exchange(uri, HttpMethod.GET, request, byte[].class);
+            if (HttpStatus.OK.equals(response.getStatusCode())
+                    && response.getBody() != null) {
+                //Convertir la respuesta 
+                return response;
+            } else {
+//
+//                System.out.println(">>>>>>>>>>>>>>>>>>");
+//                System.out.println("" + response.getStatusCode());
+//                System.out.println(">>>>>>>>>>>>>>>>>>");
+            }
+        } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
+
+            if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
+            } else {
+            }
+
+            httpClientOrServerExc.printStackTrace();
+        }
+        return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
     }
 
 }

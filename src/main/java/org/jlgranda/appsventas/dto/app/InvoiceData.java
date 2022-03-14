@@ -44,8 +44,14 @@ public class InvoiceData {
 
     private String customerFullName;
     private String subjectFullName;
+    private String resumen;
 
+    //SRI configuraciones
+    private String estab = "001";
+    private String ptoEmi="001";
+    private String secuencial;
     private Boolean enviarSRI = false;
     private String accionSRI = "enviar";
+    private String claveAcceso;
 
 }

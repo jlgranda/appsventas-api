@@ -5,7 +5,6 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +14,7 @@ import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.Organization;
+import org.jlgranda.appsventas.domain.app.view.InvoiceView;
 import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
@@ -84,12 +84,15 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent() && organizacion != null) {
-            invoicesData = buildResultListInvoice(user.getId(), invoiceService.encontrarPorAuthorYOrganizacionIdYDocumentType(subjectOpt.get(), organizacion.getId(), DocumentType.INVOICE));
-            invoicesData.forEach(invd -> {
-                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
-                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
-
-            });
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>< SQL");
+//            invoicesData = buildResultListInvoice(user.getId(), invoiceService.encontrarPorAuthorYOrganizacionIdYDocumentType(subjectOpt.get(), organizacion.getId(), DocumentType.INVOICE));
+//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>< //Fin SQL");
+//            invoicesData.forEach(invd -> {
+//                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
+//                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
+//
+//            });
+            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentType(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
@@ -108,13 +111,19 @@ public class FacturacionController {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
 
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+        
         if (subjectOpt.isPresent()) {
-            invoicesData = buildResultListInvoice(invoiceService.encontrarPorOwnerYDocumentType(subjectOpt.get(), DocumentType.INVOICE));
-            invoicesData.forEach(invd -> {
-                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
-                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
-
-            });
+//            invoicesData = buildResultListInvoice(invoiceService.encontrarPorOwnerYDocumentType(subjectOpt.get(), DocumentType.INVOICE));
+//            invoicesData.forEach(invd -> {
+//                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
+//                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
+//
+//            });
+            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorOwnerYOrganizacionIdYDocumentType(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/recibidas/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
@@ -137,6 +146,17 @@ public class FacturacionController {
         List<InvoiceData> invoicesData = new ArrayList<>();
         if (!invoices.isEmpty()) {
             invoices.forEach(inv -> {
+                invoicesData.add(invoiceService.buildInvoiceData(inv));
+            });
+        }
+        return invoicesData;
+
+    }
+    
+    private List<InvoiceData> buildResultListFromInvoiceView(List<InvoiceView> invoiceViews) {
+        List<InvoiceData> invoicesData = new ArrayList<>();
+        if (!invoiceViews.isEmpty()) {
+            invoiceViews.forEach(inv -> {
                 invoicesData.add(invoiceService.buildInvoiceData(inv));
             });
         }
