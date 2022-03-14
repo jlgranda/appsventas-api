@@ -17,6 +17,9 @@
 package org.jlgranda.appsventas.api.controller.app;
 
 import java.math.BigDecimal;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +27,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.validation.Valid;
 import net.tecnopro.util.Dates;
 import net.tecnopro.util.Strings;
@@ -51,6 +57,7 @@ import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.app.SubjectCustomerService;
 import org.jlgranda.appsventas.services.app.SubjectService;
 import org.jlgranda.appsventas.services.secuencias.SerialService;
+import org.jlgranda.util.AESUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,6 +67,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -606,7 +614,7 @@ public class SRIComprobantesController {
 
         //Datos de la Organización (infoTributaria)
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        //Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
 
         if (organizacion == null) {
             String message = "No se encontró una organización válida para el usuario autenticado.";
@@ -619,26 +627,35 @@ public class SRIComprobantesController {
             return data;
             ///throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
-        if (!subjectOpt.isPresent()) {
-            String message = "No se encontró una sujeto emisor válido para el usuario autenticado.";
-            ResultData errorData = new ResultData(false, message, new Error());
-            errorData.setSuccess(false);
-
-            data.setSuccess(false);
-            data.setErrors(errorData);
-
-            return data;
-            //throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
-        }
+//        if (!subjectOpt.isPresent()) {
+//            String message = "No se encontró una sujeto emisor válido para el usuario autenticado.";
+//            ResultData errorData = new ResultData(false, message, new Error());
+//            errorData.setSuccess(false);
+//
+//            data.setSuccess(false);
+//            data.setErrors(errorData);
+//
+//            return data;
+//            //throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
+//        }
 
         //Cargar generadores de serie para facturas
-        Subject subject = subjectOpt.get();
+        //Subject subject = subjectOpt.get();
 
         final String uri = this.veronicaAPI + Constantes.URI_OPERATIONS + "certificados-digitales/empresas/" + organizacion.getRuc();
+        
+        //La contraseña ya viene encriptada, desencriptar y comparar con Shiro password service
+        String plainText = "";
+        try {
+            plainText = AESUtil.decrypt("dXNyX2FwcGF0cGE6cHJ1ZWI0c19BVFBBXzIwMjA", certificadoDigitalData.getPassword());
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | InvalidAlgorithmParameterException | BadPaddingException ex) {
+            Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
+            throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
+        }
 
         Map<String, Object> values = new HashMap<>();
         values.put("certificado", "" + certificadoDigitalData.getCertificado());
-        values.put("password", "" + certificadoDigitalData.getPassword());
+        values.put("password", "" + plainText); //Se encrypta en verónica
 
         StringBuilder json = new StringBuilder("$");
 
