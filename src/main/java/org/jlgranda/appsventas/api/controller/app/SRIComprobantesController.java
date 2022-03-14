@@ -244,6 +244,9 @@ public class SRIComprobantesController {
         //Invocar servicio veronica API
         String token = this.getVeronicaToken(user);
         String estab = "001";
+        if (invoiceData.getEstab() != null) {
+            estab = invoiceData.getEstab();
+        }
         String ptoEmi = "001";
         String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
         VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, secuencial, estab, ptoEmi, invoiceData, user);
@@ -641,9 +644,8 @@ public class SRIComprobantesController {
 
         //Cargar generadores de serie para facturas
         //Subject subject = subjectOpt.get();
-
         final String uri = this.veronicaAPI + Constantes.URI_OPERATIONS + "certificados-digitales/empresas/" + organizacion.getRuc();
-        
+
         //La contraseña ya viene encriptada, desencriptar y comparar con Shiro password service
         String plainText = "";
         try {
