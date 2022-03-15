@@ -31,7 +31,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = false)
 public class OrganizationData {
 
-    protected String image;
+    private String image;
     private String ambienteSRI;
     private Long numeroLocales;
 

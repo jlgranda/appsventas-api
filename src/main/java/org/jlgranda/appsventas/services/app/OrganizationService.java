@@ -115,6 +115,11 @@ public class OrganizationService {
         return null; //No existe organización alguna
     }
 
+    /**
+     * Guarda la organización
+     * @param organization
+     * @return 
+     */
     public Organization guardar(Organization organization) {
         return this.getRepository().save(organization);
     }

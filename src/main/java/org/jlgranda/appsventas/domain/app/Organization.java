@@ -30,8 +30,6 @@ import org.jlgranda.appsventas.domain.DeletableObject;
 @Table(name = "Organization", schema = "public")
 @Getter
 @Setter
-@ToString
-@EqualsAndHashCode(callSuper = false)
 public class Organization extends DeletableObject<Organization> implements Serializable {
 
     private String ruc;

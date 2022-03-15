@@ -45,6 +45,7 @@ public class UserWithToken extends UserData {
         this.direccion = userData.getDireccion();
 
         this.organization = userData.getOrganization();
+        this.tieneCertificadoDigital = userData.getTieneCertificadoDigital();
 
         this.roles = roles;
     }

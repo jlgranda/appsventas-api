@@ -41,7 +41,10 @@ public class UserData {
     protected String ruc;
     protected String initials;
     protected String direccion;
-
+    
+    //Estado para ejecutar facturación electrónica
+    protected Boolean tieneCertificadoDigital; 
+    
     //Datos de organización
     OrganizationData organization;
 
