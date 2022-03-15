@@ -282,9 +282,6 @@ public class SRIComprobantesController {
             invoice.setBoardNumber(Constantes.INVOICE_BOARD);
             invoice.setPax(Long.valueOf(Constantes.INVOICE_PAX));
             invoice.setPrintAlias(Boolean.FALSE);
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-            System.out.println("data: " + data);
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
             if (data.getResult() != null) {
                 invoice.setClaveAcceso(data.getResult().getClaveAcceso());
             } else {

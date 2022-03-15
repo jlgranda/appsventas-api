@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import org.jlgranda.appsventas.Api;
-import org.jlgranda.appsventas.api.controller.app.SRIComprobantesController;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserModelData;

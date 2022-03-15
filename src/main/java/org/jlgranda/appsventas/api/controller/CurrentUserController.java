@@ -2,6 +2,8 @@ package org.jlgranda.appsventas.api.controller;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import javax.validation.constraints.Email;
@@ -30,6 +32,7 @@ import org.jlgranda.appsventas.dto.app.OrganizationData;
 import org.jlgranda.appsventas.exception.NoAuthorizationException;
 import org.jlgranda.appsventas.exception.ResourceNotFoundException;
 import org.jlgranda.appsventas.services.AuthorizationService;
+import org.jlgranda.appsventas.services.DataService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.auth.UserService;
 import org.jlgranda.appsventas.util.UserDataBuilder;
@@ -47,16 +50,21 @@ public class CurrentUserController {
     private UserService userService;
 
     private OrganizationService organizationService;
+    
+    private DataService dataService;
+            
     private final String ignoreProperties;
 
     @Autowired
     public CurrentUserController(
             UserService userService,
             OrganizationService organizationService,
+            DataService dataService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
         this.userService = userService;
         this.organizationService = organizationService;
+        this.dataService = dataService;
         this.ignoreProperties = ignoreProperties;
     }
 
@@ -81,9 +89,9 @@ public class CurrentUserController {
             userData.setImage(user.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(user.getPhoto()) : null);
 
             //Datos de facturación, forzar creación de organización si tiene ruc.
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-            System.out.println("Obtener organización para: " + user.getRuc());
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+            //No dispone de certificado digital
+            userData.setTieneCertificadoDigital(Boolean.FALSE);
+            String ruc = Strings.isNullOrEmpty(user.getRuc()) ? "" : user.getRuc().trim();
             if (Strings.validateTaxpayerDocument(user.getRuc())) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
                 if (organizacion != null) {
@@ -98,6 +106,10 @@ public class CurrentUserController {
 
                     userData.setOrganization(organizationData);
 
+                    String sql = "select count(*) from public.sri_digital_cert where owner = '" + ruc  + "' and active = true;";
+                    if ( BigInteger.ONE.equals(dataService.ejecutarCount(sql)) ){
+                        userData.setTieneCertificadoDigital(Boolean.TRUE);
+                    }
                 } else {
                     userData.setInitials(Constantes.NO_ORGANIZACION);
                 }
@@ -157,8 +169,12 @@ public class CurrentUserController {
             BeanUtils.copyProperties(userData, user, io.jsonwebtoken.lang.Strings.tokenizeToStringArray("id, photo, uuid, authorities", ","));
             userService.getUserRepository().save(user); //Guarda los cambios
 
+            //No dispone de certificado digital
+            userData.setTieneCertificadoDigital(Boolean.FALSE);
+            
             //Obtener/Crear la organización para el usuario
-            if (Strings.validateTaxpayerDocument(user.getRuc())) {
+            String ruc = Strings.isNullOrEmpty(user.getRuc()) ? "" : user.getRuc().trim();
+            if ( Strings.validateTaxpayerDocument(ruc) ) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
                 if (organizacion != null) {
                     userData.setRuc(organizacion.getRuc());
@@ -169,6 +185,11 @@ public class CurrentUserController {
                     OrganizationData organizationData = new OrganizationData();
                     BeanUtils.copyProperties(organizacion, organizationData);
                     userData.setOrganization(organizationData);
+                    
+                    String sql = "select count(*) from public.sri_digital_cert where owner = '" + ruc  + "' and active = true;";
+                    if ( BigInteger.ONE.equals(dataService.ejecutarCount(sql)) ){
+                        userData.setTieneCertificadoDigital(Boolean.TRUE);
+                    }
                 } else {
                     userData.setInitials(Constantes.NO_ORGANIZACION);
                 }
@@ -176,8 +197,6 @@ public class CurrentUserController {
                 userData.setInitials(Constantes.NO_RUC);
                 userData.setRuc(user.getRuc());
             }
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
