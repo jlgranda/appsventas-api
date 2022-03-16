@@ -58,6 +58,7 @@ public class Constantes {
 
     public static final String SERIE_PREFIJO = "FACTURA";
     public static final String ADMIN_USERNAME = "admin"; //El administrador
+    public static final String PUBLIC_USERNAME = "jlgranda81@gmail.com"; //El administrador
     public static final Long ADMIN_ID = 1L; //El administrador
 
     public static final String CAMPO_SIN_UNIDAD = "Sin unidad";

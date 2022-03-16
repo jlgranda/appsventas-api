@@ -133,6 +133,17 @@ public class SRIComprobantesController {
         user.setUsername(Constantes.ADMIN_USERNAME);
         return this.getVeronicaToken(user);
     }
+    
+    /**
+     * Obtiene el token para el usuario administrador para temas de operaciones
+     *
+     * @return
+     */
+    private String getPublicUserToken() {
+        UserData user = new UserData();
+        user.setUsername(Constantes.PUBLIC_USERNAME);
+        return this.getVeronicaToken(user);
+    }
 
     private String getVeronicaToken(UserData user) {
 
@@ -336,7 +347,7 @@ public class SRIComprobantesController {
 
         final String path = this.veronicaAPI + tipo;
         final String uri = path;
-//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
 
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
@@ -528,6 +539,8 @@ public class SRIComprobantesController {
         VeronicaAPIData data = new VeronicaAPIData();
 
         final String uri = this.veronicaAPI + tipo + "/" + claveAcceso + "/" + accion;
+        
+        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 
         if (Strings.isNullOrEmpty(claveAcceso)) {
             String message = "No se recibió una clave de acceso para enviar el comprobante";
@@ -707,13 +720,12 @@ public class SRIComprobantesController {
     }
 
     @GetMapping(value = "/{tipo}/{claveAcceso}/archivos/pdf")
-    public ResponseEntity generateRIDE(@AuthenticationPrincipal UserData user,
-            @PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
+    public ResponseEntity generateRIDE(@PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
 
         final String path = this.veronicaAPI + Constantes.URI_API_V1;
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/pdf";
 
-        String token = this.getVeronicaToken(user);
+        String token = this.getPublicUserToken(); //Token para descargar comprobantes
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
 
