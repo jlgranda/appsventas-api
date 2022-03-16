@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
@@ -160,6 +161,10 @@ public class InternalInvoiceService {
      */
     public List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
         return this.getRepository().listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
+    }
+    
+    public Optional<InvoiceView> encontrarPorClaveAcceso(String claveAcceso){
+        return this.getRepository().encontrarPorClaveAcceso(claveAcceso);
     }
 
 }

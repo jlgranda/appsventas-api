@@ -17,6 +17,7 @@
 package org.jlgranda.appsventas.repository.app;
 
 import java.util.List;
+import java.util.Optional;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.view.InvoiceView;
@@ -102,5 +103,27 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "and sriintsts.description = :#{#internalStatus} \n"
             + "and not inv_.sri_clave_acceso is null order by inv_.emissionOn DESC")
     List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(@Param("ownerId") Long ownerId, @Param("organizacionId") Long organizacionId, @Param("documentType") int documentType, @Param("internalStatus") String internalStatus);
+    
+    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
+            + "upper(cliente.firstname || ' ' || cliente.surname) as customerFullName, \n"
+            + "emisor.organization_name as subjectFullName, \n"
+            + "inv_.emissionOn as emissionOn, \n"
+            + "inv_.sri_clave_acceso as claveAcceso, \n"
+            + "inv_.pto_emi as ptoEmi, \n"
+            + "inv_.estab as estab, \n"
+            + "inv_.sequencial as secuencial,\n"
+            + "invtotal.resumen as resumen, \n"
+            + "invtotal.total as importeTotal, \n"
+            + "sriintsts.description as sriEstado \n"
+            + "from public.invoice inv_ \n"
+            + "inner join public.vista_subject_organization as emisor on emisor.subject_id = inv_.author\n"
+            + "inner join public.subject as cliente on cliente.id = inv_.owner \n"
+            + "inner join public.vista_invoice_total as invtotal on invtotal.invoice_id = inv_.id\n"
+            + "inner join public.sri_invoice as sriinv on sriinv.access_key = inv_.sri_clave_acceso \n"
+            + "inner join public.sri_internal_status as sriintsts on sriintsts.internal_status_id = sriinv.internal_status_id "
+            + "where inv_.deleted=false "
+            + "and inv_.sri_clave_acceso = :#{#sri_clave_acceso}")
+    Optional<InvoiceView> encontrarPorClaveAcceso(@Param("claveAcceso") String claveAcceso);
+
 
 }

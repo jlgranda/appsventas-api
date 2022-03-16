@@ -41,6 +41,7 @@ import org.jlgranda.appsventas.domain.app.Detail;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.domain.app.SubjectCustomer;
+import org.jlgranda.appsventas.domain.app.view.InvoiceView;
 import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.dto.ResultData;
 import org.jlgranda.appsventas.dto.UserData;
@@ -50,6 +51,7 @@ import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.TokenData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
+import org.jlgranda.appsventas.services.DataService;
 import org.jlgranda.appsventas.services.app.ComprobantesService;
 import org.jlgranda.appsventas.services.app.DetailService;
 import org.jlgranda.appsventas.services.app.InternalInvoiceService;
@@ -101,6 +103,7 @@ public class SRIComprobantesController {
     private InternalInvoiceService invoiceService;
     private DetailService detailService;
     private SubjectCustomerService subjectCustomerService;
+    private DataService dataService;
 
     @Autowired
     public SRIComprobantesController(
@@ -111,6 +114,7 @@ public class SRIComprobantesController {
             InternalInvoiceService invoiceService,
             DetailService detailService,
             SubjectCustomerService subjectCustomerService,
+            DataService dataService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
         this.veronicaAPI = veronicaAPI;
@@ -120,6 +124,7 @@ public class SRIComprobantesController {
         this.invoiceService = invoiceService;
         this.detailService = detailService;
         this.subjectCustomerService = subjectCustomerService;
+        this.dataService = dataService;
         this.ignoreProperties = ignoreProperties;
     }
 
@@ -575,9 +580,11 @@ public class SRIComprobantesController {
                 data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
             }
             
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
-            System.out.println("Veronica DATA: " + data);
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
+            //Actualizar estado del documento para manejo en el frontend
+            Optional<InvoiceView> invoiceViewOpt = invoiceService.encontrarPorClaveAcceso(data.getResult().getClaveAcceso());
+            if (invoiceViewOpt.isPresent()){
+                data.getResult().setEstado(invoiceViewOpt.get().getInternalStatus());
+            }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
             httpClientOrServerExc.printStackTrace();
