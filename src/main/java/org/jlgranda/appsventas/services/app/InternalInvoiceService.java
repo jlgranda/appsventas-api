@@ -45,7 +45,7 @@ public class InternalInvoiceService {
      * @param documentType
      * @return
      */
-    public List<InternalInvoice> encontrarPorAuthorYOrganizacionIdYDocumentType(Subject author, Long organizacionId, DocumentType documentType) {
+    public List<InternalInvoice> encontrarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(Subject author, Long organizacionId, DocumentType documentType) {
         return this.getRepository().encontrarPorAuthorYOrganizacionIdYDocumentType(author, organizacionId, documentType);
     }
 
@@ -56,6 +56,7 @@ public class InternalInvoiceService {
      * @param owner
      * @param organizacionId
      * @param documentType
+     * @param internalStatus
      * @return
      */
     public List<InternalInvoice> encontrarPorOwnerYOrganizacionIdYDocumentType(Subject owner, Long organizacionId, DocumentType documentType) {
@@ -139,10 +140,11 @@ public class InternalInvoiceService {
      * @param authorId
      * @param organizacionId
      * @param documentType
+     * @param internalStatus
      * @return
      */
-    public List<InvoiceView> listarPorAuthorYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType) {
-        return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentType(authorId, organizacionId, documentType.ordinal());
+    public List<InvoiceView> listarPorAuthorYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
+        return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal());
     }
     
     /**
@@ -153,10 +155,11 @@ public class InternalInvoiceService {
      * @param authorId
      * @param organizacionId
      * @param documentType
+     * @param internalStatus
      * @return
      */
-    public List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType) {
-        return this.getRepository().listarPorOwnerYOrganizacionIdYDocumentType(authorId, organizacionId, documentType.ordinal());
+    public List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
+        return this.getRepository().listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
     }
 
 }

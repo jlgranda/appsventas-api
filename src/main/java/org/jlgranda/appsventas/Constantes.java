@@ -208,4 +208,10 @@ public class Constantes {
             + "  \"password\": \"$password\"\n" +
 "}";
 
+    
+    public static final String SRI_STATUS_CREATED = "CREATED";
+    public static final String SRI_STATUS_POSTED = "POSTED";
+    public static final String SRI_STATUS_APPLIED = "APPLIED";
+    public static final String SRI_STATUS_REJECTED = "REJECTED";
+    public static final String SRI_STATUS_INVALID = "INVALID";
 }

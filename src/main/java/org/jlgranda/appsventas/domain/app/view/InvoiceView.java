@@ -60,5 +60,7 @@ public interface InvoiceView {
     public String getSecuencial();
 
     public String getClaveAcceso();
+    
+    public String getInternalStatus();
 
 }

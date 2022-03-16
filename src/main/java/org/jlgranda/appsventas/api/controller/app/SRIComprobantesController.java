@@ -306,9 +306,8 @@ public class SRIComprobantesController {
             if (invoice.getId() != null && invoiceData.getProduct() != null) {
                 detail.setInvoiceId(invoice.getId());
                 detail.setProductId(invoiceData.getProduct().getId());
-                detail.setAmount(BigDecimal.ONE);
+                detail.setAmount(BigDecimal.ONE); //Estas facturas son a 1 por defecto
                 detail.setPrice(invoiceData.getSubTotal());
-                detail.setAmount(invoiceData.getAmount());
                 detail.setIva12(invoiceData.getIva12());
                 detailService.guardar(detail);
             }
@@ -564,6 +563,10 @@ public class SRIComprobantesController {
         try {
 
             response = restTemplate.exchange(uri, HttpMethod.PUT, request, VeronicaAPIData.class);
+            
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
+            System.out.println("Veronica STATUS: " + response.getStatusCode());
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
                 data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
@@ -571,6 +574,10 @@ public class SRIComprobantesController {
                 data = response.getBody();
                 data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
             }
+            
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
+            System.out.println("Veronica DATA: " + data);
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
             httpClientOrServerExc.printStackTrace();
