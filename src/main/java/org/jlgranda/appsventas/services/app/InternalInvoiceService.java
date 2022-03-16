@@ -144,7 +144,7 @@ public class InternalInvoiceService {
      * @param internalStatus
      * @return
      */
-    public List<InvoiceView> listarPorAuthorYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
+    public List<InvoiceView> listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
         return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
     }
     
@@ -159,7 +159,7 @@ public class InternalInvoiceService {
      * @param internalStatus
      * @return
      */
-    public List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
+    public List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
         return this.getRepository().listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
     }
     

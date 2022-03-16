@@ -122,7 +122,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "inner join public.sri_invoice as sriinv on sriinv.access_key = inv_.sri_clave_acceso \n"
             + "inner join public.sri_internal_status as sriintsts on sriintsts.internal_status_id = sriinv.internal_status_id "
             + "where inv_.deleted=false "
-            + "and inv_.sri_clave_acceso = :#{#sri_clave_acceso}")
+            + "and inv_.sri_clave_acceso = :#{#claveAcceso}")
     Optional<InvoiceView> encontrarPorClaveAcceso(@Param("claveAcceso") String claveAcceso);
 
 
