@@ -61,4 +61,10 @@ public class InternalInvoice extends DeletableObject<InternalInvoice> implements
     @Column(name = "sri_clave_acceso", nullable = true)
     private String claveAcceso;
     
+    @Column(name = "estab", nullable = true)
+    private String estab;
+    
+    @Column(name = "pto_emi", nullable = true)
+    private String ptoEmi;
+
 }
