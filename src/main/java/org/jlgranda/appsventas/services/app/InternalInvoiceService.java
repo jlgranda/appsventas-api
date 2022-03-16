@@ -144,7 +144,7 @@ public class InternalInvoiceService {
      * @return
      */
     public List<InvoiceView> listarPorAuthorYOrganizacionIdYDocumentType(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
-        return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal());
+        return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
     }
     
     /**
