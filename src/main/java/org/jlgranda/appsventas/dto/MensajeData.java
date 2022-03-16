@@ -16,17 +16,28 @@
  */
 package org.jlgranda.appsventas.dto;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Data;
 
 /**
- *
+ *<comprobante>
+        <claveAcceso>1702201205176001321000110010030001000011234567816</claveAcceso>
+        <mensajes>
+            <mensaje>
+            <identificador>35</identificador>
+            <mensaje>DOCUMENTO INVÁLIDO</mensaje>
+            <informacionAdicional>Se encontró el siguiente error en la estructura del comprobante: cvc-
+            complex-type.2.4.a: Invalid content was found starting with element 'totalSinImpuestos'. One
+            of '{fechaEmisionDocSustento}' is expected.</informacionAdicional>
+            <tipo>ERROR</tipo>
+            </mensaje>
+        </mensajes>
+    </comprobante>
  * @author jlgranda
  */
 @Data
-public class SRIData {
-    private String estado;
-    private String claveAcceso;
-    private List<ComprobanteData> comprobantes = new ArrayList<>();
+public class MensajeData {
+    private String identificador;
+    private String mensaje;
+    private String informacionAdicional;
+    private String tipo;
 }
