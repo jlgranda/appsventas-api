@@ -115,7 +115,6 @@ public class FacturacionController {
         if (organizacion == null) {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
-
         if (subjectOpt.isPresent() && organizacion != null) {
 //            invoicesData = buildResultListInvoice(user.getId(), invoiceService.encontrarPorAuthorYOrganizacionIdYDocumentType(subjectOpt.get(), organizacion.getId(), DocumentType.INVOICE));
 //            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>< //Fin SQL");
@@ -124,6 +123,7 @@ public class FacturacionController {
 //                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
 //
 //            });
+
             invoicesData.addAll(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_INVALID)));
             invoicesData.addAll(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_REJECTED)));
         }

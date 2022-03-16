@@ -53,5 +53,6 @@ public class InvoiceData {
     private Boolean enviarSRI = false;
     private String accionSRI = "enviar";
     private String claveAcceso;
+    private String internalStatus;
 
 }
