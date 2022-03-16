@@ -124,6 +124,8 @@ public class Constantes {
     public static final String CREADO_POR = "CREADOR POR";
     public static final String FAZIL = "FAZIL";
     public static final String PROFORMA = "PROFORMA";
+    public static final String SIN_DIRECCION = "SIN DIRECCIÓN";
+    public static final String SIN_TELEFONO = "999999999";
 
     public static final String JSON_FACTURA_TEMPLATE = "{\n"
             + "   \"id\":\"comprobante\",\n"

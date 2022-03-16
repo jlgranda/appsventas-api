@@ -138,7 +138,7 @@ public class SRIComprobantesController {
         user.setUsername(Constantes.ADMIN_USERNAME);
         return this.getVeronicaToken(user);
     }
-    
+
     /**
      * Obtiene el token para el usuario administrador para temas de operaciones
      *
@@ -418,7 +418,7 @@ public class SRIComprobantesController {
         values.put("secuencial", Strings.extractLast(secuencial, "-"));
 
         values.put("dirMatriz", "" + subject.getDescription());
-        values.put("dirEstablecimiento", "" + subject.getDescription());
+        values.put("dirEstablecimiento", Strings.isNullOrEmpty(organizacion.getDireccion()) ? Constantes.SIN_DIRECCION : organizacion.getDireccion());
         values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "5368" : subject.getNumeroContribuyenteEspecial());
         values.put("obligadoContabilidad", "" + "NO");
 
@@ -431,7 +431,7 @@ public class SRIComprobantesController {
         values.put("tipoIdentificacionComprador", customer.getCode().length() == 13 ? "04" : "05");
         values.put("razonSocialComprador", "" + customer.getFullName());
         values.put("identificacionComprador", "" + customer.getCode());
-        values.put("direccionComprador", "" + customer.getDescription());
+        values.put("direccionComprador", Strings.isNullOrEmpty(customer.getDescription()) ? Constantes.SIN_DIRECCION : customer.getDescription());
 
         values.put("totalSinImpuestos", "" + invoiceData.getSubTotal());
         values.put("totalDescuento", "" + invoiceData.getDescuento());
@@ -543,7 +543,7 @@ public class SRIComprobantesController {
         VeronicaAPIData data = new VeronicaAPIData();
 
         final String uri = this.veronicaAPI + tipo + "/" + claveAcceso + "/" + accion;
-        
+
         System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 
         if (Strings.isNullOrEmpty(claveAcceso)) {
@@ -568,7 +568,7 @@ public class SRIComprobantesController {
         try {
 
             response = restTemplate.exchange(uri, HttpMethod.PUT, request, VeronicaAPIData.class);
-            
+
             System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
             System.out.println("Veronica STATUS: " + response.getStatusCode());
             System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
@@ -579,10 +579,10 @@ public class SRIComprobantesController {
                 data = response.getBody();
                 data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
             }
-            
+
             //Actualizar estado del documento para manejo en el frontend
             Optional<InvoiceView> invoiceViewOpt = invoiceService.encontrarPorClaveAcceso(data.getResult().getClaveAcceso());
-            if (invoiceViewOpt.isPresent()){
+            if (invoiceViewOpt.isPresent()) {
                 data.getResult().setEstado(invoiceViewOpt.get().getInternalStatus());
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
