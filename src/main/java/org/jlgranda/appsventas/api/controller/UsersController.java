@@ -75,16 +75,7 @@ public class UsersController {
         userService.getUserRepository().save(user);
 
         //Enviar notificación de cuenta creada y contraseña
-//        String titulo = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
-//        String cuerpoMensaje = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
-//        UserData destinatario = new UserData();
-//        BeanUtils.copyProperties(registerParam, destinatario);
-//        Map<String, Object> values = new HashMap<>();
-//        values.put("cedula", destinatario.getUsername());
-//        values.put("nombres", destinatario.getNombre());
-//        values.put("nombreUsuario", destinatario.getUsername());
-//        values.put("contrasenia", registerParam.getPassword());
-//        EmailUtil.getInstance().enviarCorreo(userData, destinatario, titulo, cuerpoMensaje, values, notificationService, messageService);
+        
         //Fin de enviar notificación de cuenta creada
 
         //Cargar datos de retorno al frontend

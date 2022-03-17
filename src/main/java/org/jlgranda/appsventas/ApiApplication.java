@@ -10,7 +10,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
 @ComponentScan({"org.jlgranda.appsventas, com.rolandopalermo.facturacion.ec"})
-@EntityScan(basePackages = {"org.jlgranda.appsventas.domain, com.rolandopalermo.facturacion.ec.domain"})
+@EntityScan(basePackages = {"org.jlgranda.appsventas.domain, com.rolandopalermo.facturacion.ec.domain, net.tecnopro.mailing"})
 public class ApiApplication  extends SpringBootServletInitializer {
 
 	public static void main(String[] args) {

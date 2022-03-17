@@ -21,6 +21,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -58,8 +59,11 @@ import org.jlgranda.appsventas.services.app.InternalInvoiceService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.app.SubjectCustomerService;
 import org.jlgranda.appsventas.services.app.SubjectService;
+import org.jlgranda.appsventas.services.mailing.MessageService;
+import org.jlgranda.appsventas.services.mailing.NotificationService;
 import org.jlgranda.appsventas.services.secuencias.SerialService;
 import org.jlgranda.util.AESUtil;
+import org.jlgranda.util.EmailUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,6 +75,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
@@ -104,6 +109,9 @@ public class SRIComprobantesController {
     private DetailService detailService;
     private SubjectCustomerService subjectCustomerService;
     private DataService dataService;
+    
+    private NotificationService notificationService;
+    private MessageService messageService;
 
     @Autowired
     public SRIComprobantesController(
@@ -115,6 +123,8 @@ public class SRIComprobantesController {
             DetailService detailService,
             SubjectCustomerService subjectCustomerService,
             DataService dataService,
+            NotificationService notificationService,
+            MessageService messageService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
         this.veronicaAPI = veronicaAPI;
@@ -125,6 +135,8 @@ public class SRIComprobantesController {
         this.detailService = detailService;
         this.subjectCustomerService = subjectCustomerService;
         this.dataService = dataService;
+        this.notificationService = notificationService;
+        this.messageService = messageService;
         this.ignoreProperties = ignoreProperties;
     }
 
@@ -147,6 +159,16 @@ public class SRIComprobantesController {
     private String getPublicUserToken() {
         UserData user = new UserData();
         user.setUsername(Constantes.PUBLIC_USERNAME);
+        return this.getVeronicaToken(user);
+    }
+    /**
+     * Obtiene el token para el usuario administrador para temas de operaciones
+     *
+     * @return
+     */
+    private String getUserToken(String username) {
+        UserData user = new UserData();
+        user.setUsername(username);
         return this.getVeronicaToken(user);
     }
 
@@ -265,6 +287,12 @@ public class SRIComprobantesController {
         }
         String ptoEmi = "001";
         String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
+        
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+        System.out.println("estab: " + estab);
+        System.out.println("ptoEmi: " + ptoEmi);
+        System.out.println("secuencial: " + secuencial);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
         VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, secuencial, estab, ptoEmi, invoiceData, user);
 
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
@@ -332,8 +360,38 @@ public class SRIComprobantesController {
             if (Constantes.ACCION_COMPROBANTE_ENVIAR.equalsIgnoreCase(accion)
                     || Constantes.ACCION_COMPROBANTE_AUTORIZAR.equalsIgnoreCase(accion)
                     || Constantes.ACCION_COMPROBANTE_EMITIR.equalsIgnoreCase(accion)) {
-                data = enviarComprobante(token, Constantes.URI_API_V1_INVOICE, data.getResult().getClaveAcceso(), accion);
+                
+                String claveAcceso = data.getResult().getClaveAcceso();
+                data = enviarComprobante(token, Constantes.URI_API_V1_INVOICE, claveAcceso, accion);
+                
                 //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+                System.out.println("Notificar via correo: APLLIED = " + data.getResult().getEstado());
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+                if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(data.getResult().getEstado())){
+                    //Notificar via correo
+                    String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
+                    String cuerpoMensaje = "<p>Estimada(o): <strong>$clienteNombreCompleto</strong></p>\n"
+                            + "<p><br />Le informamos que su Factura n&uacute;mero <strong>$facturaSecuencia</strong> ha sido remitida por <strong>$organizacionNombreCompleto</strong> de forma Electr&oacute;nica.</p>\n"
+                            + "<p>&nbsp;</p>\n"
+                            + "<p>Si Usted es cliente del $organizacionNombreCompleto mantenga siempre a la mano las facturas que emite y recibe a trav&eacute;s de nuestra aplicaci&oacute;n <a title=\"FAZil facturaci&oacute;n electr&oacute;nica en 2 clics\" href=\"$url\" target=\"_blank\" rel=\"noopener noreferrer\">FAZil</a><br /><br />Atentamente,<br /><strong>$organizacionNombreCompleto.</strong></p>";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
+                    UserData destinatario = new UserData();
+                    BeanUtils.copyProperties(customerOpt.get(), destinatario);
+                    destinatario.setNombre(customerOpt.get().getFullName());
+                    destinatario.setId(customerOpt.get().getId());
+
+                    Map<String, Object> values = new HashMap<>();
+                    values.put("facturaSecuencia", secuencial);
+                    values.put("clienteNombreCompleto", Strings.toUpperCase(destinatario.getNombre()));
+                    values.put("organizacionNombreCompleto", Strings.toUpperCase(organizacion.getName()));
+                    values.put("url", "http://jlgranda.com/entry/fazil-facturacion-electronica-para-profesionales");
+                    byte[] pdf = getPDF(Constantes.INVOICE, claveAcceso, user.getUsername());
+                    byte[] xml = getXML(Constantes.INVOICE, claveAcceso, user.getUsername());
+                    
+                    //La notificaciones siempre deben enviarse desde un mismo correo
+                    user.setEmail("AppsVentas Plataforma <notificacion@jlgranda.com>"); //TODO obtener desde propiedades del sistema
+                    EmailUtil.getInstance().enviarCorreo(user, destinatario, titulo, cuerpoMensaje, values, this.notificationService, this.messageService, claveAcceso, pdf, xml);
+                }
             }
         }
 
@@ -569,9 +627,6 @@ public class SRIComprobantesController {
 
             response = restTemplate.exchange(uri, HttpMethod.PUT, request, VeronicaAPIData.class);
 
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
-            System.out.println("Veronica STATUS: " + response.getStatusCode());
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<");
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
                 data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
@@ -581,10 +636,17 @@ public class SRIComprobantesController {
             }
 
             //Actualizar estado del documento para manejo en el frontend
+//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+//            System.out.println("data: " + data);
+//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
             Optional<InvoiceView> invoiceViewOpt = invoiceService.encontrarPorClaveAcceso(data.getResult().getClaveAcceso());
             if (invoiceViewOpt.isPresent()) {
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+//                System.out.println("invoiceViewOpt.get().getInternalStatus(): " + invoiceViewOpt.get().getInternalStatus());
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
                 data.getResult().setEstado(invoiceViewOpt.get().getInternalStatus());
             }
+            
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
 
             httpClientOrServerExc.printStackTrace();
@@ -733,8 +795,18 @@ public class SRIComprobantesController {
         return data;
     }
 
+    @GetMapping(value = "/{tipo}/{claveAcceso}/archivos/test")
+    public ResponseEntity testRIDE(@PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
+        
+        //this.getPDF(tipo, claveAcceso, "jlgranda81@gmail.com");
+        this.getXML(tipo, claveAcceso, "jlgranda81@gmail.com");
+        
+        return ResponseEntity.ok().body(claveAcceso);
+    }
+    
+    //https://www.javacodemonk.com/download-a-file-using-spring-resttemplate-75723d97
     @GetMapping(value = "/{tipo}/{claveAcceso}/archivos/pdf")
-    public ResponseEntity generateRIDE(@PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
+    public ResponseEntity<byte[]> generateRIDE(@PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
 
         final String path = this.veronicaAPI + Constantes.URI_API_V1;
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/pdf";
@@ -748,12 +820,11 @@ public class SRIComprobantesController {
         }
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_OCTET_STREAM));
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.set("Authorization", "Bearer " + token);
 
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+        HttpEntity<String> request = new HttpEntity<>(headers);
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity response = null;
@@ -778,6 +849,96 @@ public class SRIComprobantesController {
             httpClientOrServerExc.printStackTrace();
         }
         return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
+    }
+
+    //https://www.javacodemonk.com/download-a-file-using-spring-resttemplate-75723d97
+    private byte[] getPDF(String tipo, String claveAcceso, String username) {
+        final String path = this.veronicaAPI + Constantes.URI_API_V1;
+        final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/pdf";
+
+        String token = this.getUserToken(username); //Token para descargar comprobantes
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
+
+        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
+            return null;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_OCTET_STREAM));
+        //headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.set("Authorization", "Bearer " + token);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<byte[]>  response= null;
+        try {
+            response = restTemplate.exchange(uri, HttpMethod.GET, entity, byte[].class);
+            if (HttpStatus.OK.equals(response.getStatusCode())
+                    && response.getBody() != null) {
+                //Convertir la respuesta 
+                return response.getBody();
+            } 
+        } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
+
+            httpClientOrServerExc.printStackTrace();
+            
+            if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
+            } else {
+            }
+
+        }
+        
+        return null;
+    }
+
+    /**
+     * //https://www.javacodemonk.com/download-a-file-using-spring-resttemplate-75723d97
+     * @param tipo
+     * @param claveAcceso
+     * @param username
+     * @return 
+     */
+    private byte[] getXML(String tipo, String claveAcceso, String username) {
+        final String path = this.veronicaAPI + Constantes.URI_API_V1;
+        final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/xml";
+
+        String token = this.getUserToken(username); //Token para descargar comprobantes
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+
+        if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
+            return null;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_XML);
+        headers.set("Authorization", "Bearer " + token);
+
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+
+        HttpEntity<String> request = new HttpEntity<>(headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity response = null;
+        try {
+            response = restTemplate.exchange(uri, HttpMethod.GET, request, String.class);
+            if (HttpStatus.OK.equals(response.getStatusCode())
+                    && response.getBody() != null) {
+                //Convertir la respuesta 
+                String xml = (String) response.getBody();
+                return xml.getBytes(); //El arreglo de bytes para adjuntar en el email
+            } 
+        } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
+
+            if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
+            } else {
+            }
+
+            httpClientOrServerExc.printStackTrace();
+        }
+        
+        return null;
     }
 
 }
