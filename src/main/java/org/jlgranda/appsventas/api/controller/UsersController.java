@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserModelData;
@@ -41,15 +42,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 public class UsersController {
-    
+
     private UserService userService;
     private final String ignoreProperties;
     private String defaultImage;
     private EncryptService encryptService;
     private JwtService jwtService;
-    
+
     private static ObjectMapper mapper;
-    
+
     @Autowired
     public UsersController(
             UserService userService,
@@ -63,7 +64,7 @@ public class UsersController {
         //this.defaultImage = defaultImage;
         this.ignoreProperties = ignoreProperties;
     }
-    
+
     @RequestMapping(path = "/users", method = POST)
     public ResponseEntity createUser(
             @AuthenticationPrincipal UserData userData,
@@ -76,8 +77,18 @@ public class UsersController {
         BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
         user.setId(null);
         user.setCode(registerParam.getCode());
-        user.setFirstname(registerParam.getCodigoNombre());
+        user.setDescription(registerParam.getDireccion());
+        if (user.getCode() != null && user.getCode().length() == 10) {
+            user.setCodeType(CodeType.CEDULA);
+        } else if (user.getCode() != null && user.getCode().length() == 13) {
+            user.setCodeType(CodeType.RUC);
+        } else {
+            user.setCodeType(CodeType.NONE);
+        }
         user.setSubjectType(Subject.Type.NATURAL);
+        user.setEmailSecret(false);
+        user.setContactable(Boolean.FALSE);
+        user.setUsuarioAPP(Boolean.TRUE);
         userService.getUserRepository().save(user);
 
         //Enviar notificación de cuenta creada y contraseña
@@ -97,7 +108,7 @@ public class UsersController {
         //Api.imprimirPostLogAuditoria("users/", user.getPersonId());
         return ResponseEntity.ok(Api.response("user", userModelData));
     }
-    
+
     @RequestMapping(path = "/users", method = PUT)
     public ResponseEntity updateUser(@AuthenticationPrincipal UserData userDataAuth,
             @Valid @RequestBody UserModelData userModelData,
@@ -129,7 +140,7 @@ public class UsersController {
             return ResponseEntity.ok(Api.response("user", user));
         }).orElseThrow(ResourceNotFoundException::new);
     }
-    
+
     @RequestMapping(path = "/users/{uuid}", method = DELETE)
     public ResponseEntity deleteUser(@PathVariable("uuid") String uuid,
             @AuthenticationPrincipal UserData userDataAuth) {
@@ -142,7 +153,7 @@ public class UsersController {
             return ResponseEntity.ok(Api.response("user", userService.findById(user.getId()).get()));
         }).orElseThrow(ResourceNotFoundException::new);
     }
-    
+
     private void checkInput(@Valid @RequestBody RegisterParam registerParam, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
@@ -157,7 +168,7 @@ public class UsersController {
             throw new InvalidRequestException(bindingResult);
         }
     }
-    
+
     private void checkInput(@Valid @RequestBody UserModelData userData, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
@@ -175,7 +186,7 @@ public class UsersController {
             throw new InvalidRequestException(bindingResult);
         }
     }
-    
+
     @RequestMapping(path = "/users", method = GET)
     public ResponseEntity getUsers(@AuthenticationPrincipal UserData user, @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit) {
@@ -190,25 +201,25 @@ public class UsersController {
         }
         return ResponseEntity.ok(result);
     }
-    
+
     @RequestMapping(path = "/users/{uuid}", method = GET)
     public ResponseEntity getUserPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
         Api.imprimirGetLogAuditoria("users/", user.getId());
         return ResponseEntity.ok(userService.findByUUID(uuid));
     }
-    
+
     @RequestMapping(path = "/users/codigo/{codigo}", method = GET)
     public ResponseEntity getUserPorCodigo(@PathVariable("codigo") String codigo, @AuthenticationPrincipal UserData user) {
         Api.imprimirGetLogAuditoria("users/codigo", user.getId());
         return ResponseEntity.ok(userService.findByCodigo(codigo));
     }
-    
+
     @RequestMapping(path = "/users/usuario/{uuid}", method = GET)
     public ResponseEntity getUsuarioPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
         Api.imprimirGetLogAuditoria("users/", user.getId());
         return ResponseEntity.ok(userService.encontrarPorUUID(uuid));
     }
-    
+
 }
 
 @Getter
@@ -229,7 +240,7 @@ class LoginParam {
 @JsonRootName("user")
 @NoArgsConstructor
 class RegisterParam {
-    
+
     @NotBlank(message = "No puede ser vacio")
     @Email(message = "Debe ser un correo electrónico")
     private String email;

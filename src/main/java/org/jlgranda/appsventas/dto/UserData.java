@@ -37,14 +37,20 @@ public class UserData {
     protected String token; // Algunos servicios internos precisan el token
     protected Boolean temporal;
 
+    //Data User
+    protected String code;
+    protected String firstname;
+    protected String surname;
+    protected String mobileNumber;
+
     //Datos de facturación
     protected String ruc;
     protected String initials;
     protected String direccion;
-    
+
     //Estado para ejecutar facturación electrónica
-    protected Boolean tieneCertificadoDigital; 
-    
+    protected Boolean tieneCertificadoDigital;
+
     //Datos de organización
     OrganizationData organization;
 

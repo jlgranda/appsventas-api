@@ -16,148 +16,46 @@ package org.jlgranda.appsventas.dto;
 
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.jlgranda.appsventas.dto.app.OrganizationData;
 
 /**
  *
  * @author jlgranda
  */
+@Getter
+@Setter
+@ToString
 public class UserModelData extends BaseObjectData {
 
-    String email;
-    String username;
-    String password;
-    String bio;
-    String image;
-    String grado;
-    Long personId;
-    protected Long tipoDePersonalId;
+    private String email;
+    private String username;
+    private String password;
+    private String bio;
+    private String image;
+    private Long personId;
     protected Boolean temporal;
-    String urlVista;
-
-    protected List<Long> comandoOperacionalIds;
-
+    private String urlVista;
     private Boolean contraseniaModificada = false;
-
     private String codigoNombre;
 
-    private String description;
+    //Data User
+    private String firstname;
+    private String surname;
     private String mobileNumber;
 
-    public String getEmail() {
-        return email;
-    }
+    //Datos de facturación
+    protected String ruc;
+    protected String initials;
+    protected String direccion;
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    //Estado para ejecutar facturación electrónica
+    protected Boolean tieneCertificadoDigital;
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public Long getPersonId() {
-        return personId;
-    }
-
-    public void setPersonId(Long personId) {
-        this.personId = personId;
-    }
-
-    public Long getTipoDePersonalId() {
-        return tipoDePersonalId;
-    }
-
-    public void setTipoDePersonalId(Long tipoDePersonalId) {
-        this.tipoDePersonalId = tipoDePersonalId;
-    }
-
-    public Boolean getTemporal() {
-        return temporal;
-    }
-
-    public void setTemporal(Boolean temporal) {
-        this.temporal = temporal;
-    }
-
-    public String getUrlVista() {
-        return urlVista;
-    }
-
-    public void setUrlVista(String urlVista) {
-        this.urlVista = urlVista;
-    }
-
-    public List<Long> getComandoOperacionalIds() {
-        return comandoOperacionalIds;
-    }
-
-    public void setComandoOperacionalIds(List<Long> comandoOperacionalIds) {
-        this.comandoOperacionalIds = comandoOperacionalIds;
-    }
-
-    public String getGrado() {
-        return grado;
-    }
-
-    public void setGrado(String grado) {
-        this.grado = grado;
-    }
-
-    public boolean isContraseniaModificada() {
-        return contraseniaModificada;
-    }
-
-    public String getCodigoNombre() {
-        return codigoNombre;
-    }
-
-    public void setCodigoNombre(String codigoNombre) {
-        this.codigoNombre = codigoNombre;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getMobileNumber() {
-        return mobileNumber;
-    }
-
-    public void setMobileNumber(String mobileNumber) {
-        this.mobileNumber = mobileNumber;
-    }
+    //Datos de organización
+    OrganizationData organization;
 
     @Override
     public int hashCode() {

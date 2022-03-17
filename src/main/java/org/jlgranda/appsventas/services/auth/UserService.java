@@ -18,7 +18,9 @@ import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.dto.UserModelData;
 import org.jlgranda.appsventas.repository.UserRepository;
 import java.util.Optional;
+import java.util.UUID;
 import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.domain.StatusType;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UserService {
-    
+
     @Autowired
     private UserRepository userRepository;
 
@@ -40,7 +42,7 @@ public class UserService {
     public UserRepository getUserRepository() {
         return userRepository;
     }
-    
+
     public Optional<UserModelData> findByUsername(String username) {
         Optional<Subject> user = this.getUserRepository().findByUsername(username);
         UserModelData userData = new UserModelData();
@@ -53,7 +55,7 @@ public class UserService {
         }
         return Optional.empty();
     }
-    
+
     public Optional<UserModelData> findByCodigo(String codigo) {
         Optional<Subject> user = this.getUserRepository().findByCode(codigo);
         UserModelData userData = new UserModelData();
@@ -66,7 +68,7 @@ public class UserService {
         }
         return Optional.empty();
     }
-    
+
     public Optional<UserModelData> findById(Long id) {
         Optional<Subject> user = this.getUserRepository().findById(id);
         UserModelData userData = new UserModelData();
@@ -78,11 +80,11 @@ public class UserService {
         }
         return Optional.of(userData);
     }
-    
+
     public Optional<UserModelData> findByUUID(String uuid) {
-        
+
         Optional<Subject> user = this.getUserRepository().findByUUID(uuid);
-        
+
         Optional<UserModelData> result;
         if (user.isPresent()) {
             UserModelData userData = new UserModelData();
@@ -91,7 +93,7 @@ public class UserService {
             userData.setCode("" + user.get().getId());
             userData.setPersonId(user.get().getId());
             result = Optional.of(userData);
-            
+
         } else {
             result = Optional.empty();
         }
@@ -105,31 +107,36 @@ public class UserService {
      * @return
      */
     public Optional<UserModelData> encontrarPorUUID(String uuid) {
-        
+
         Optional<Subject> user = this.getUserRepository().findByUUID(uuid);
-        
+
         Optional<UserModelData> result;
         if (user.isPresent()) {
             UserModelData userData = new UserModelData();
             BeanUtils.copyProperties(user.get(), userData);
             userData.setCodigoNombre(userData.getCode() + " - " + userData.getName());
             result = Optional.of(userData);
-            
+
         } else {
             result = Optional.empty();
         }
         return result;
     }
-    
+
     public Iterable<Subject> encontrarActivos() {
         return this.getUserRepository().encontrarActivos();
     }
-    
+
     public Subject crearInstancia() {
-        Subject instancia = new Subject();
-        instancia.setActive(Boolean.TRUE);
-        instancia.setDeleted(Boolean.FALSE);
-        instancia.setLastUpdate(Dates.now());
-        return instancia;
+        Subject _instance = new Subject();
+        _instance.setActive(Boolean.TRUE);
+        _instance.setDeleted(Boolean.FALSE);
+        _instance.setLastUpdate(Dates.now());
+        _instance.setCreatedOn(Dates.now());
+        _instance.setStatus(StatusType.ACTIVE.toString());
+        _instance.setActivationTime(Dates.now());
+        _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        _instance.setUuid(UUID.randomUUID().toString());
+        return _instance;
     }
 }
