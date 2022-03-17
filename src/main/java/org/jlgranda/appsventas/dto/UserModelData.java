@@ -17,12 +17,12 @@ package org.jlgranda.appsventas.dto;
 import java.util.List;
 import java.util.Objects;
 
-
 /**
  *
  * @author jlgranda
  */
 public class UserModelData extends BaseObjectData {
+
     String email;
     String username;
     String password;
@@ -35,11 +35,14 @@ public class UserModelData extends BaseObjectData {
     String urlVista;
 
     protected List<Long> comandoOperacionalIds;
-    
+
     private Boolean contraseniaModificada = false;
-    
+
     private String codigoNombre;
-    
+
+    private String description;
+    private String mobileNumber;
+
     public String getEmail() {
         return email;
     }
@@ -95,15 +98,15 @@ public class UserModelData extends BaseObjectData {
     public void setTipoDePersonalId(Long tipoDePersonalId) {
         this.tipoDePersonalId = tipoDePersonalId;
     }
-    
-    public Boolean getTemporal(){
+
+    public Boolean getTemporal() {
         return temporal;
     }
-    
-    public void setTemporal(Boolean temporal){
+
+    public void setTemporal(Boolean temporal) {
         this.temporal = temporal;
     }
-    
+
     public String getUrlVista() {
         return urlVista;
     }
@@ -111,7 +114,7 @@ public class UserModelData extends BaseObjectData {
     public void setUrlVista(String urlVista) {
         this.urlVista = urlVista;
     }
-    
+
     public List<Long> getComandoOperacionalIds() {
         return comandoOperacionalIds;
     }
@@ -127,18 +130,33 @@ public class UserModelData extends BaseObjectData {
     public void setGrado(String grado) {
         this.grado = grado;
     }
-    
-    
-    public boolean isContraseniaModificada(){
+
+    public boolean isContraseniaModificada() {
         return contraseniaModificada;
     }
-    
-     public String getCodigoNombre() {
+
+    public String getCodigoNombre() {
         return codigoNombre;
     }
 
     public void setCodigoNombre(String codigoNombre) {
         this.codigoNombre = codigoNombre;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
+
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
     }
 
     @Override
@@ -171,5 +189,4 @@ public class UserModelData extends BaseObjectData {
         return Objects.equals(this.personId, other.personId);
     }
 
-    
 }

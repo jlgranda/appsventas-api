@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 public class UsersController {
-
+    
     private UserService userService;
     private final String ignoreProperties;
     private String defaultImage;
@@ -49,7 +49,7 @@ public class UsersController {
     private JwtService jwtService;
     
     private static ObjectMapper mapper;
-
+    
     @Autowired
     public UsersController(
             UserService userService,
@@ -59,19 +59,25 @@ public class UsersController {
         this.userService = userService;
         this.encryptService = encryptService;
         this.jwtService = jwtService;
-        
+
         //this.defaultImage = defaultImage;
         this.ignoreProperties = ignoreProperties;
     }
-
+    
     @RequestMapping(path = "/users", method = POST)
-    public ResponseEntity createUser(@AuthenticationPrincipal UserData userData, @Valid @RequestBody UserModelData registerParam, BindingResult bindingResult) {
-        registerParam.setUsername(registerParam.getCode());
+    public ResponseEntity createUser(
+            @AuthenticationPrincipal UserData userData,
+            @Valid @RequestBody UserModelData registerParam,
+            BindingResult bindingResult) {
+//        registerParam.setUsername(registerParam.getCode());
+        registerParam.setUsername(registerParam.getEmail());
         checkInput(registerParam, bindingResult);
         Subject user = userService.crearInstancia();
         BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
         user.setId(null);
         user.setCode(registerParam.getCode());
+        user.setFirstname(registerParam.getCodigoNombre());
+        user.setSubjectType(Subject.Type.NATURAL);
         userService.getUserRepository().save(user);
 
         //Enviar notificación de cuenta creada y contraseña
@@ -86,13 +92,12 @@ public class UsersController {
 //        values.put("contrasenia", registerParam.getPassword());
 //        EmailUtil.getInstance().enviarCorreo(userData, destinatario, titulo, cuerpoMensaje, values, notificationService, messageService);
         //Fin de enviar notificación de cuenta creada
-
         //Cargar datos de retorno al frontend
         UserModelData userModelData = userService.findById(user.getId()).get();
         //Api.imprimirPostLogAuditoria("users/", user.getPersonId());
         return ResponseEntity.ok(Api.response("user", userModelData));
     }
-
+    
     @RequestMapping(path = "/users", method = PUT)
     public ResponseEntity updateUser(@AuthenticationPrincipal UserData userDataAuth,
             @Valid @RequestBody UserModelData userModelData,
@@ -121,11 +126,10 @@ public class UsersController {
 //                EmailUtil.getInstance().enviarCorreo(remitente, destinatario, titulo, cuerpoMensaje, values, notificationService, messageService);
 //            }
             //Fin de enviar notificación de cuenta creada
-
             return ResponseEntity.ok(Api.response("user", user));
         }).orElseThrow(ResourceNotFoundException::new);
     }
-
+    
     @RequestMapping(path = "/users/{uuid}", method = DELETE)
     public ResponseEntity deleteUser(@PathVariable("uuid") String uuid,
             @AuthenticationPrincipal UserData userDataAuth) {
@@ -138,7 +142,7 @@ public class UsersController {
             return ResponseEntity.ok(Api.response("user", userService.findById(user.getId()).get()));
         }).orElseThrow(ResourceNotFoundException::new);
     }
-
+    
     private void checkInput(@Valid @RequestBody RegisterParam registerParam, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
@@ -153,7 +157,7 @@ public class UsersController {
             throw new InvalidRequestException(bindingResult);
         }
     }
-
+    
     private void checkInput(@Valid @RequestBody UserModelData userData, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
@@ -171,13 +175,13 @@ public class UsersController {
             throw new InvalidRequestException(bindingResult);
         }
     }
-
+    
     @RequestMapping(path = "/users", method = GET)
     public ResponseEntity getUsers(@AuthenticationPrincipal UserData user, @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit) {
         List<UserModelData> result = new ArrayList<>();
         UserModelData userModelData = null;
-        
+
         //Armar lista de usuarios agregando el grado
         for (Subject usr : userService.encontrarActivos()) {
             userModelData = new UserModelData();
@@ -186,25 +190,25 @@ public class UsersController {
         }
         return ResponseEntity.ok(result);
     }
-
+    
     @RequestMapping(path = "/users/{uuid}", method = GET)
     public ResponseEntity getUserPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
         Api.imprimirGetLogAuditoria("users/", user.getId());
         return ResponseEntity.ok(userService.findByUUID(uuid));
     }
-
+    
     @RequestMapping(path = "/users/codigo/{codigo}", method = GET)
     public ResponseEntity getUserPorCodigo(@PathVariable("codigo") String codigo, @AuthenticationPrincipal UserData user) {
         Api.imprimirGetLogAuditoria("users/codigo", user.getId());
         return ResponseEntity.ok(userService.findByCodigo(codigo));
     }
-
+    
     @RequestMapping(path = "/users/usuario/{uuid}", method = GET)
     public ResponseEntity getUsuarioPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
         Api.imprimirGetLogAuditoria("users/", user.getId());
         return ResponseEntity.ok(userService.encontrarPorUUID(uuid));
     }
-
+    
 }
 
 @Getter
@@ -225,7 +229,7 @@ class LoginParam {
 @JsonRootName("user")
 @NoArgsConstructor
 class RegisterParam {
-
+    
     @NotBlank(message = "No puede ser vacio")
     @Email(message = "Debe ser un correo electrónico")
     private String email;
