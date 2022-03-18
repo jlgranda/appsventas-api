@@ -8,6 +8,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
@@ -49,6 +50,7 @@ import org.jlgranda.util.AESUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -87,6 +89,30 @@ public class UsersController {
         this.ignoreProperties = ignoreProperties;
     }
 
+    @RequestMapping(path = "/users/code/{code}", method = GET)
+    public ResponseEntity getByCode(
+            @AuthenticationPrincipal UserData userData,
+            @PathVariable("code") String code
+    ) {
+        UserModelData userModelData = new UserModelData();
+        Optional<Subject> subjectOpt = userService.getUserRepository().findByCode(code);//Buscar por campo code
+        if (!subjectOpt.isPresent()) {
+            subjectOpt = userService.getUserRepository().findByRuc(code);//Buscar por campo ruc
+        }
+        if (subjectOpt.isPresent()) {
+
+            Subject subject = subjectOpt.get();
+            userModelData = new UserModelData();
+            userModelData.setUuid(subject.getUuid());
+            userModelData.setCode(subject.getCode());
+            userModelData.setFirstname(subject.getFirstname());
+            userModelData.setSurname(subject.getSurname());
+            userModelData.setDireccion(subject.getDescription());
+            userModelData.setEmail(subject.getEmail());
+        }
+        return ResponseEntity.ok(userModelData);
+    }
+
     @RequestMapping(path = "/users", method = POST)
     public ResponseEntity createUser(
             @AuthenticationPrincipal UserData userData,
@@ -101,6 +127,9 @@ public class UsersController {
         if (user.getCode() != null && user.getCode().length() == 10) {
             user.setCodeType(CodeType.CEDULA);
         } else if (user.getCode() != null && user.getCode().length() == 13) {
+            if (net.tecnopro.util.Strings.validateTaxpayerDocument(user.getCode())) {
+                user.setRuc(user.getRuc());
+            }
             user.setCodeType(CodeType.RUC);
         } else {
             user.setCodeType(CodeType.NONE);
@@ -134,42 +163,87 @@ public class UsersController {
         //Fin de enviar notificación de registro
         //Cargar datos de retorno al frontend
         UserModelData userModelData = userService.findById(user.getId()).get();
-        //Api.imprimirPostLogAuditoria("users/", user.getPersonId());
+        //Api.imprimirPostLogAuditoria("users/", user.getId());
         return ResponseEntity.ok(Api.response("user", userModelData));
     }
 
     @RequestMapping(path = "/users", method = PUT)
-    public ResponseEntity updateUser(@AuthenticationPrincipal UserData userDataAuth,
-            @Valid @RequestBody UserModelData userModelData,
+    public ResponseEntity updateUser(
+            @AuthenticationPrincipal UserData userData,
+            @Valid @RequestBody UserModelData registerParam,
             BindingResult bindingResult) {
-        //checkInput(userModelData, bindingResult);
-        return userService.getUserRepository().findByUUID(userModelData.getUuid()).map(user -> {
-            if (!AuthorizationService.canWrite(userDataAuth, user)) {
-                throw new NoAuthorizationException();
+
+        return userService.getUserRepository().findByUUID(registerParam.getUuid()).map(user -> {
+            BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+            user.setDescription(registerParam.getDireccion());
+            if (user.getCode() != null && user.getCode().length() == 10) {
+                user.setCodeType(CodeType.CEDULA);
+            } else if (user.getCode() != null && user.getCode().length() == 13) {
+                if (net.tecnopro.util.Strings.validateTaxpayerDocument(user.getCode())) {
+                    user.setRuc(user.getRuc());
+                }
+                user.setCodeType(CodeType.RUC);
+            } else {
+                user.setCodeType(CodeType.NONE);
             }
-            BeanUtils.copyProperties(userModelData, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+            user.setSubjectType(Subject.Type.NATURAL);
+            user.setEmailSecret(false);
+            user.setContactable(Boolean.FALSE);
+            user.setUsuarioAPP(Boolean.TRUE);
+            user.setInitials(user.getFullName() != null ? user.getFullName() : Constantes.NO_ORGANIZACION);
+
+            //La contraseña viene encriptada, desencriptar y encriptar para Shiro autenticación
+            String plainText = "";
+            try {
+                plainText = AESUtil.decrypt("dXNyX2FwcGF0cGE6cHJ1ZWI0c19BVFBBXzIwMjA", registerParam.getPassword());
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | InvalidAlgorithmParameterException | BadPaddingException ex) {
+                Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
+                throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
+            }
+
+            user.setPassword(svc.encryptPassword(plainText));
+
             userService.getUserRepository().save(user);
 
-            //Enviar notificación de cuenta creada y contraseña
-//            if (userModelData.isContraseniaModificada()) {
-//                String titulo = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
-//                String cuerpoMensaje = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
-//                UserData remitente = new UserData();
-//                BeanUtils.copyProperties(userModelData, remitente);
-//                UserData destinatario = new UserData();
-//                BeanUtils.copyProperties(userModelData, destinatario);
-//                Map<String, Object> values = new HashMap<>();
-//                values.put("cedula", destinatario.getUsername());
-//                values.put("nombres", destinatario.getNombre());
-//                values.put("nombreUsuario", destinatario.getUsername());
-//                values.put("contrasenia", userModelData.getPassword());
-//                EmailUtil.getInstance().enviarCorreo(remitente, destinatario, titulo, cuerpoMensaje, values, notificationService, messageService);
-//            }
-            //Fin de enviar notificación de cuenta creada
-            return ResponseEntity.ok(Api.response("user", user));
+            //Cargar datos de retorno al frontend
+            UserModelData userModelData = userService.findById(user.getId()).get();
+            //Api.imprimirUpdateLogAuditoria("users/", user.getId());
+            return ResponseEntity.ok(Api.response("user", userModelData));
         }).orElseThrow(ResourceNotFoundException::new);
+
     }
 
+//    @RequestMapping(path = "/users", method = PUT)
+//    public ResponseEntity updateUser(@AuthenticationPrincipal UserData userDataAuth,
+//            @Valid @RequestBody UserModelData userModelData,
+//            BindingResult bindingResult) {
+//        //checkInput(userModelData, bindingResult);
+//        return userService.getUserRepository().findByUUID(userModelData.getUuid()).map(user -> {
+//            if (!AuthorizationService.canWrite(userDataAuth, user)) {
+//                throw new NoAuthorizationException();
+//            }
+//            BeanUtils.copyProperties(userModelData, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+//            userService.getUserRepository().save(user);
+//
+//            //Enviar notificación de cuenta creada y contraseña
+////            if (userModelData.isContraseniaModificada()) {
+////                String titulo = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
+////                String cuerpoMensaje = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
+////                UserData remitente = new UserData();
+////                BeanUtils.copyProperties(userModelData, remitente);
+////                UserData destinatario = new UserData();
+////                BeanUtils.copyProperties(userModelData, destinatario);
+////                Map<String, Object> values = new HashMap<>();
+////                values.put("cedula", destinatario.getUsername());
+////                values.put("nombres", destinatario.getNombre());
+////                values.put("nombreUsuario", destinatario.getUsername());
+////                values.put("contrasenia", userModelData.getPassword());
+////                EmailUtil.getInstance().enviarCorreo(remitente, destinatario, titulo, cuerpoMensaje, values, notificationService, messageService);
+////            }
+//            //Fin de enviar notificación de cuenta creada
+//            return ResponseEntity.ok(Api.response("user", user));
+//        }).orElseThrow(ResourceNotFoundException::new);
+//    }
     @RequestMapping(path = "/users/{uuid}", method = DELETE)
     public ResponseEntity deleteUser(@PathVariable("uuid") String uuid,
             @AuthenticationPrincipal UserData userDataAuth) {

@@ -19,6 +19,8 @@ public interface UserRepository extends CrudRepository<Subject, Long> {
 
     Optional<Subject> findByCode(String code);
 
+    Optional<Subject> findByRuc(String ruc);
+
     @Query("select p from Subject p where p.deleted = false and p.uuid = :#{#uuid}")
     Optional<Subject> findByUUID(@Param("uuid") String uuid);
 

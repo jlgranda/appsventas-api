@@ -48,15 +48,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping(path = "/user")
 public class CurrentUserController {
-
+    
     private UserService userService;
-
+    
     private OrganizationService organizationService;
-
+    
     private DataService dataService;
-
+    
     private final String ignoreProperties;
-
+    
     @Autowired
     public CurrentUserController(
             UserService userService,
@@ -69,15 +69,16 @@ public class CurrentUserController {
         this.dataService = dataService;
         this.ignoreProperties = ignoreProperties;
     }
-
+    
     @GetMapping
-    public ResponseEntity currentUser(@AuthenticationPrincipal UserData currentUser,
+    public ResponseEntity currentUser(
+            @AuthenticationPrincipal UserData currentUser,
             @RequestHeader(value = "Authorization") String authorization) throws JsonProcessingException {
-
+        
         String token = authorization.split(" ")[1];
-
+        
         UserData userData = UserDataBuilder.append(token);
-
+        
         Optional<Subject> userOpt = userService.getUserRepository().findByUsername(userData.getUsername());
         Subject user = null; //El usuario local
         //Obtener desde la base de datos local para completar la información
@@ -93,13 +94,13 @@ public class CurrentUserController {
             userData.setMobileNumber(user.getMobileNumber());
             userData.setBio(user.getBio());
             userData.setImage(user.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(user.getPhoto()) : null);
-
+            
             userData.setCode(user.getCode());
 
             //Datos de facturación, forzar creación de organización si tiene ruc.
             //No dispone de certificado digital
             userData.setTieneCertificadoDigital(Boolean.FALSE);
-
+            
             String ruc = Strings.isNullOrEmpty(user.getRuc()) ? "" : user.getRuc().trim();
             if (Strings.isNullOrEmpty(ruc)) {
                 if (user.getCode() != null && user.getCode().length() == 10) {
@@ -117,13 +118,13 @@ public class CurrentUserController {
                     userData.setNombre(organizacion.getName());
                     userData.setInitials(organizacion.getInitials());
                     userData.setDireccion(organizacion.getDireccion());
-
+                    
                     OrganizationData organizationData = new OrganizationData();
                     BeanUtils.copyProperties(organizacion, organizationData);
                     organizationData.setImage(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
-
+                    
                     userData.setOrganization(organizationData);
-
+                    
                     String sql = "select count(*) from public.sri_digital_cert where owner = '" + ruc + "' and active = true;";
                     if (BigInteger.ONE.equals(dataService.ejecutarCount(sql))) {
                         userData.setTieneCertificadoDigital(Boolean.TRUE);
@@ -138,26 +139,26 @@ public class CurrentUserController {
                 userData.setRuc(user.getRuc());
             }
         }
-
+        
         List<String> roles = userData.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
-
+        
         Logger.getLogger(CurrentUserController.class.getName()).log(Level.INFO, "Current user uuid: {0}", userData.getUuid());
-
+        
         return ResponseEntity.ok(Api.response("user",
                 new UserWithToken(userData, token, roles)
         ));
     }
-
+    
     @GetMapping("/internal")
     public ResponseEntity currentUserInternal(@AuthenticationPrincipal UserData currentUser,
             @RequestHeader(value = "Authorization") String authorization) throws JsonProcessingException {
-
+        
         String token = authorization.split(" ")[1];
-
+        
         UserData userData = UserDataBuilder.append(token);
-
+        
         Optional<Subject> userOpt = userService.getUserRepository().findByUsername(userData.getUsername());
         Subject user = null; //El usuario local
         //Obtener desde la base de datos local para completar la información
@@ -171,12 +172,12 @@ public class CurrentUserController {
         List<String> roles = userData.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
-
+        
         Logger.getLogger(CurrentUserController.class.getName()).log(Level.INFO, "Current user uuid: {0}", userData.getUuid());
-
+        
         return ResponseEntity.ok(new UserWithToken(userData, token, roles));
     }
-
+    
     @PutMapping()
     public ResponseEntity updateUser(
             @AuthenticationPrincipal UserData userAuth,
@@ -186,14 +187,15 @@ public class CurrentUserController {
             if (!AuthorizationService.canWrite(userAuth, user)) {
                 throw new NoAuthorizationException();
             }
-
+            
             BeanUtils.copyProperties(userData, user, io.jsonwebtoken.lang.Strings.tokenizeToStringArray("id, uuid, code, email, username, password, authorities", ","));
-
+            
+            user.setUsuarioAPP(Boolean.TRUE);
             user.setDescription(userData.getDireccion());
             if (userData.getCode() != null) {
                 user.setCode(userData.getCode());
             }
-
+            
             if (!Strings.isNullOrEmpty(userData.getImage())) {
                 String base64ImageString = userData.getImage().replace("data:image/jpeg;base64,", "");
                 byte[] decodedImg = java.util.Base64.getDecoder()
@@ -202,14 +204,14 @@ public class CurrentUserController {
             } else {
                 user.setPhoto(null);
             }
-
+            
             userService.getUserRepository().save(user); //Guarda los cambios
 
             Api.imprimirUpdateLogAuditoria("/user", user.getId(), userData);
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
-
+    
     @PutMapping("/organization")
     public ResponseEntity updateOrganization(
             @AuthenticationPrincipal UserData user,
@@ -231,14 +233,14 @@ public class CurrentUserController {
         Api.imprimirUpdateLogAuditoria("/user/organization", user.getId(), organizacion);
         return ResponseEntity.ok(Api.response("organization", organizationData));
     }
-
+    
 }
 
 @Getter
 @JsonRootName("user")
 @NoArgsConstructor
 class UpdateUserParam {
-
+    
     @Email(message = "should be an email")
     private String email = "";
     private String password = "";
