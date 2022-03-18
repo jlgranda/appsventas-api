@@ -24,13 +24,12 @@ import java.util.List;
 import javax.persistence.*;
 import net.tecnopro.util.Strings;
 
-
 /**
- * Un sujeto que tiene acceso y usa el sistema. 
- * Puede ser una persona, organización y/o sistema
+ * Un sujeto que tiene acceso y usa el sistema. Puede ser una persona,
+ * organización y/o sistema
+ *
  * @author jlgranda
  */
-
 @Entity
 @Table(name = "Subject")
 public class Subject extends DeletableObject<Subject> implements Serializable {
@@ -65,43 +64,47 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     private String screenName;
     @Column
     private String bio;
-    
+
     @Column(nullable = true, length = 128, unique = true)
     private String fedeEmail;
     @Column(nullable = true, length = 128)
     private String fedeEmailPassword;
-    
+
     @Column(nullable = true, unique = true)
     private String ruc;
     private String initials;
     private String numeroContribuyenteEspecial;
-    
+
     //Se establece a objeto Boolean por compatibilidad con los datos existentes
     @Column(nullable = true)
     protected Boolean contactable;
-    
+
     @Column(nullable = true)
     protected Boolean nonnative;
-    
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = true)
     private Date date_birth;
+    @Column(name = "usuario_app", nullable = true)
+    private Boolean usuarioAPP = false;
 
     /**
      * Return for each BussinesEntity te canonical path ....
-     * @return 
+     *
+     * @return
      */
     @Transient
-    public String getCanonicalPath(){
+    public String getCanonicalPath() {
         return getName();
     }
-    
+
     public enum Type {
         NATURAL,
         GOVERMENT,
         PUBLIC,
         PRIVATE,
         SYSTEM;
+
         private Type() {
         }
     }
@@ -116,7 +119,7 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     public void setSubjectType(Type subjectType) {
         this.subjectType = subjectType;
     }
-    
+
     public String getFirstname() {
         return firstname;
     }
@@ -268,7 +271,7 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     public void setContactable(Boolean contactable) {
         this.contactable = contactable;
     }
-    
+
     public Boolean getContactable() {
         return this.contactable;
     }
@@ -288,7 +291,15 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     public void setDate_birth(Date date_birth) {
         this.date_birth = date_birth;
     }
-    
+
+    public Boolean getUsuarioAPP() {
+        return usuarioAPP;
+    }
+
+    public void setUsuarioAPP(Boolean usuarioAPP) {
+        this.usuarioAPP = usuarioAPP;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -334,29 +345,30 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     public void setBio(String bio) {
         this.bio = bio;
     }
-    
+
     @Transient
     public String getFullName() {
         StringBuilder builder = new StringBuilder();
-        if (!Strings.isNullOrEmpty(this.getFirstname()))
+        if (!Strings.isNullOrEmpty(this.getFirstname())) {
             builder.append(this.getFirstname());
-        
-        if (!Strings.isNullOrEmpty(this.getSurname())){
+        }
+
+        if (!Strings.isNullOrEmpty(this.getSurname())) {
             builder.append(" ");
             builder.append(this.getSurname());
         }
-        
-        if (!Strings.isNullOrEmpty(this.getEmail()) && builder.length() == 0){
+
+        if (!Strings.isNullOrEmpty(this.getEmail()) && builder.length() == 0) {
             builder.append(this.getEmail());
         }
-        
+
         String fullName = builder.toString();
         boolean flag = Strings.isNullOrEmpty(fullName);
         return flag ? getUsername() : fullName;
     }
-    
+
     @Transient
-    public String getEmailAddress(){
+    public String getEmailAddress() {
         return getFullName() + " <" + getEmail() + ">";
     }
 
@@ -364,7 +376,7 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     public String toString() {
         return String.valueOf(getId());
     }
-    
+
     public List<Subject.Type> getSubjectTypes() {
         return Arrays.asList(Subject.Type.values());
     }

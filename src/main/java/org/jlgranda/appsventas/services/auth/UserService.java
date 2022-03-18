@@ -18,6 +18,9 @@ import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.dto.UserModelData;
 import org.jlgranda.appsventas.repository.UserRepository;
 import java.util.Optional;
+import java.util.UUID;
+import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.domain.StatusType;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -125,9 +128,15 @@ public class UserService {
     }
 
     public Subject crearInstancia() {
-        Subject instancia = new Subject();
-        instancia.setActive(Boolean.TRUE);
-        instancia.setDeleted(Boolean.FALSE);
-        return instancia;
+        Subject _instance = new Subject();
+        _instance.setActive(Boolean.TRUE);
+        _instance.setDeleted(Boolean.FALSE);
+        _instance.setLastUpdate(Dates.now());
+        _instance.setCreatedOn(Dates.now());
+        _instance.setStatus(StatusType.ACTIVE.toString());
+        _instance.setActivationTime(Dates.now());
+        _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        _instance.setUuid(UUID.randomUUID().toString());
+        return _instance;
     }
 }

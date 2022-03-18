@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserModelData;
@@ -47,7 +48,7 @@ public class UsersController {
     private String defaultImage;
     private EncryptService encryptService;
     private JwtService jwtService;
-    
+
     private static ObjectMapper mapper;
 
     @Autowired
@@ -59,25 +60,40 @@ public class UsersController {
         this.userService = userService;
         this.encryptService = encryptService;
         this.jwtService = jwtService;
-        
+
         //this.defaultImage = defaultImage;
         this.ignoreProperties = ignoreProperties;
     }
 
     @RequestMapping(path = "/users", method = POST)
-    public ResponseEntity createUser(@AuthenticationPrincipal UserData userData, @Valid @RequestBody UserModelData registerParam, BindingResult bindingResult) {
-        registerParam.setUsername(registerParam.getCode());
+    public ResponseEntity createUser(
+            @AuthenticationPrincipal UserData userData,
+            @Valid @RequestBody UserModelData registerParam,
+            BindingResult bindingResult) {
+//        registerParam.setUsername(registerParam.getCode());
+        registerParam.setUsername(registerParam.getEmail());
         checkInput(registerParam, bindingResult);
         Subject user = userService.crearInstancia();
         BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
         user.setId(null);
         user.setCode(registerParam.getCode());
+        user.setDescription(registerParam.getDireccion());
+        if (user.getCode() != null && user.getCode().length() == 10) {
+            user.setCodeType(CodeType.CEDULA);
+        } else if (user.getCode() != null && user.getCode().length() == 13) {
+            user.setCodeType(CodeType.RUC);
+        } else {
+            user.setCodeType(CodeType.NONE);
+        }
+        user.setSubjectType(Subject.Type.NATURAL);
+        user.setEmailSecret(false);
+        user.setContactable(Boolean.FALSE);
+        user.setUsuarioAPP(Boolean.TRUE);
         userService.getUserRepository().save(user);
 
         //Enviar notificación de cuenta creada y contraseña
         
         //Fin de enviar notificación de cuenta creada
-
         //Cargar datos de retorno al frontend
         UserModelData userModelData = userService.findById(user.getId()).get();
         //Api.imprimirPostLogAuditoria("users/", user.getPersonId());
@@ -112,7 +128,6 @@ public class UsersController {
 //                EmailUtil.getInstance().enviarCorreo(remitente, destinatario, titulo, cuerpoMensaje, values, notificationService, messageService);
 //            }
             //Fin de enviar notificación de cuenta creada
-
             return ResponseEntity.ok(Api.response("user", user));
         }).orElseThrow(ResourceNotFoundException::new);
     }
@@ -168,7 +183,7 @@ public class UsersController {
             @RequestParam(value = "limit", defaultValue = "20") int limit) {
         List<UserModelData> result = new ArrayList<>();
         UserModelData userModelData = null;
-        
+
         //Armar lista de usuarios agregando el grado
         for (Subject usr : userService.encontrarActivos()) {
             userModelData = new UserModelData();

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import javax.validation.constraints.Email;
@@ -27,6 +28,7 @@ import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.dto.UserData;
+import org.jlgranda.appsventas.dto.UserModelData;
 import org.jlgranda.appsventas.dto.UserWithToken;
 import org.jlgranda.appsventas.dto.app.OrganizationData;
 import org.jlgranda.appsventas.exception.NoAuthorizationException;
@@ -50,9 +52,9 @@ public class CurrentUserController {
     private UserService userService;
 
     private OrganizationService organizationService;
-    
+
     private DataService dataService;
-            
+
     private final String ignoreProperties;
 
     @Autowired
@@ -84,15 +86,28 @@ public class CurrentUserController {
             userData.setId(user.getId());
             userData.setUuid(user.getUuid());
             userData.setNombre(user.getFullName());
+            userData.setFirstname(user.getFirstname());
+            userData.setSurname(user.getSurname());
             userData.setEmail(user.getEmail());
+            userData.setDireccion(user.getDescription());
+            userData.setMobileNumber(user.getMobileNumber());
             userData.setBio(user.getBio());
             userData.setImage(user.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(user.getPhoto()) : null);
+
+            userData.setCode(user.getCode());
 
             //Datos de facturación, forzar creación de organización si tiene ruc.
             //No dispone de certificado digital
             userData.setTieneCertificadoDigital(Boolean.FALSE);
+
             String ruc = Strings.isNullOrEmpty(user.getRuc()) ? "" : user.getRuc().trim();
-            if (Strings.validateTaxpayerDocument(user.getRuc())) {
+            if (Strings.isNullOrEmpty(ruc)) {
+                if (user.getCode() != null && user.getCode().length() == 10) {
+                    ruc = user.getCode().concat(Constantes.SRI_ESTAB_DEFAULT);
+                }
+            }
+            System.out.println("");
+            if (Strings.validateTaxpayerDocument(ruc)) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
                 if (organizacion != null) {
                     userData.setRuc(organizacion.getRuc());
@@ -106,12 +121,14 @@ public class CurrentUserController {
 
                     userData.setOrganization(organizationData);
 
-                    String sql = "select count(*) from public.sri_digital_cert where owner = '" + ruc  + "' and active = true;";
-                    if ( BigInteger.ONE.equals(dataService.ejecutarCount(sql)) ){
+                    String sql = "select count(*) from public.sri_digital_cert where owner = '" + ruc + "' and active = true;";
+                    if (BigInteger.ONE.equals(dataService.ejecutarCount(sql))) {
                         userData.setTieneCertificadoDigital(Boolean.TRUE);
                     }
                 } else {
-                    userData.setInitials(Constantes.NO_ORGANIZACION);
+//                    userData.setInitials(Constantes.NO_ORGANIZACION);
+                    userData.setInitials(Constantes.NO_RUC);
+                    userData.setRuc(user.getRuc());
                 }
             } else {
                 userData.setInitials(Constantes.NO_RUC);
@@ -157,46 +174,35 @@ public class CurrentUserController {
         return ResponseEntity.ok(new UserWithToken(userData, token, roles));
     }
 
-    @PutMapping
-    public ResponseEntity updateUser(@AuthenticationPrincipal UserData userAuth,
-            @Valid @RequestBody UserData userData,
+    @PutMapping()
+    public ResponseEntity updateUser(
+            @AuthenticationPrincipal UserData userAuth,
+            @Valid @RequestBody UserModelData userData,
             BindingResult bindingResult) {
-        //checkInput(userData, bindingResult);
-        return userService.getUserRepository().findById(userData.getId()).map(user -> {
+        return userService.getUserRepository().findByUUID(userData.getUuid()).map(user -> {
             if (!AuthorizationService.canWrite(userAuth, user)) {
                 throw new NoAuthorizationException();
             }
-            BeanUtils.copyProperties(userData, user, io.jsonwebtoken.lang.Strings.tokenizeToStringArray("id, photo, uuid, authorities", ","));
+
+            BeanUtils.copyProperties(userData, user, io.jsonwebtoken.lang.Strings.tokenizeToStringArray("id, uuid, code, email, username, password, authorities", ","));
+
+            user.setDescription(userData.getDireccion());
+            if (userData.getCode() != null) {
+                user.setCode(userData.getCode());
+            }
+
+            if (!Strings.isNullOrEmpty(userData.getImage())) {
+                String base64ImageString = userData.getImage().replace("data:image/jpeg;base64,", "");
+                byte[] decodedImg = java.util.Base64.getDecoder()
+                        .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
+                user.setPhoto(decodedImg);
+            } else {
+                user.setPhoto(null);
+            }
+
             userService.getUserRepository().save(user); //Guarda los cambios
 
-            //No dispone de certificado digital
-            userData.setTieneCertificadoDigital(Boolean.FALSE);
-            
-            //Obtener/Crear la organización para el usuario
-            String ruc = Strings.isNullOrEmpty(user.getRuc()) ? "" : user.getRuc().trim();
-            if ( Strings.validateTaxpayerDocument(ruc) ) {
-                Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-                if (organizacion != null) {
-                    userData.setRuc(organizacion.getRuc());
-                    userData.setNombre(organizacion.getName());
-                    userData.setInitials(organizacion.getInitials());
-                    userData.setDireccion(organizacion.getDireccion());
-
-                    OrganizationData organizationData = new OrganizationData();
-                    BeanUtils.copyProperties(organizacion, organizationData);
-                    userData.setOrganization(organizationData);
-                    
-                    String sql = "select count(*) from public.sri_digital_cert where owner = '" + ruc  + "' and active = true;";
-                    if ( BigInteger.ONE.equals(dataService.ejecutarCount(sql)) ){
-                        userData.setTieneCertificadoDigital(Boolean.TRUE);
-                    }
-                } else {
-                    userData.setInitials(Constantes.NO_ORGANIZACION);
-                }
-            } else {
-                userData.setInitials(Constantes.NO_RUC);
-                userData.setRuc(user.getRuc());
-            }
+            Api.imprimirUpdateLogAuditoria("/user", user.getId(), userData);
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
@@ -209,6 +215,14 @@ public class CurrentUserController {
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         if (organizacion != null) {
             BeanUtils.copyProperties(organizationData, organizacion);
+            if (!Strings.isNullOrEmpty(organizationData.getImage())) {
+                String base64ImageString = organizationData.getImage().replace("data:image/jpeg;base64,", "");
+                byte[] decodedImg = java.util.Base64.getDecoder()
+                        .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
+                organizacion.setPhoto(decodedImg);
+            } else {
+                organizacion.setPhoto(null);
+            }
             organizationService.guardar(organizacion);
         }
         Api.imprimirUpdateLogAuditoria("/user/organization", user.getId(), organizacion);

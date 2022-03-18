@@ -38,6 +38,7 @@ public class SubjectData {
 
     private String firstname;
     private String surname;
+    private String description;
     private byte[] photo;
     private String email;
     private String mobileNumber;

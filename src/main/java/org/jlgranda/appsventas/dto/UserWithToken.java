@@ -40,12 +40,18 @@ public class UserWithToken extends UserData {
         this.token = token;
         this.expire = userData.getExpire();
 
+        this.code = userData.getCode();
+        this.mobileNumber = userData.getMobileNumber();
+        this.firstname = userData.getFirstname();
+        this.surname = userData.getSurname();
+
         this.ruc = userData.getRuc();
         this.initials = userData.getInitials();
         this.direccion = userData.getDireccion();
 
-        this.organization = userData.getOrganization();
         this.tieneCertificadoDigital = userData.getTieneCertificadoDigital();
+
+        this.organization = userData.getOrganization();
 
         this.roles = roles;
     }

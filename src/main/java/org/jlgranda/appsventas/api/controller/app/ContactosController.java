@@ -173,10 +173,10 @@ public class ContactosController {
                 } else {
                     customer.setCodeType(CodeType.NONE);
                 }
-                customer.setUsername(customer.getCode());
+                customer.setUsername(customer.getEmail());
                 customer.setPassword(Constantes.PASSWORD);
                 customer.setSubjectType(Subject.Type.NATURAL);
-                customer.setEmailSecret(Boolean.FALSE);
+                customer.setEmailSecret(false);
                 customer.setContactable(Boolean.FALSE);
                 subjectService.guardar(customer);
                 //Guardar el subjectCustomer

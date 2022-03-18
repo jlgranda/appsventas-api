@@ -119,7 +119,7 @@ public class Constantes {
     public static final String INVOICE_UNIT = "u";
     
     
-    public static final String NO_ORGANIZACION = "NO ORGANIZACION DEFINIDA";
+    public static final String NO_ORGANIZACION = "ORGANIZACION NO DEFINIDA";
     public static final String NO_RUC = "RUC NO VALIDO";
     public static final String CREADO_POR = "CREADOR POR";
     public static final String FAZIL = "FAZIL";
@@ -216,4 +216,5 @@ public class Constantes {
     public static final String SRI_STATUS_APPLIED = "APPLIED";
     public static final String SRI_STATUS_REJECTED = "REJECTED";
     public static final String SRI_STATUS_INVALID = "INVALID";
+    public static final String SRI_ESTAB_DEFAULT = "001";
 }
