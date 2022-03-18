@@ -2,6 +2,8 @@ package org.jlgranda.appsventas.api.controller;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jlgranda.shiro.UsersRoles;
+import com.jlgranda.shiro.UsersRolesPK;
 import io.jsonwebtoken.lang.Strings;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -32,6 +34,8 @@ import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.api.controller.app.SRIComprobantesController;
 import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
+import org.jlgranda.appsventas.domain.UsersRoles;
+import org.jlgranda.appsventas.domain.UsersRolesPK;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserModelData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
@@ -63,7 +67,7 @@ public class UsersController {
     private JwtService jwtService;
 
     private static ObjectMapper mapper;
-    
+
     PasswordService svc = new DefaultPasswordService();
 
     @Autowired
@@ -102,9 +106,8 @@ public class UsersController {
         user.setEmailSecret(false);
         user.setContactable(Boolean.FALSE);
         user.setUsuarioAPP(Boolean.TRUE);
-        
-        
-        //La contraseña ya viene encriptada, desencriptar y comparar con Shiro password service
+
+        //La contraseña viene encriptada, desencriptar y encriptar para Shiro autenticación
         String plainText = "";
         try {
             plainText = AESUtil.decrypt("dXNyX2FwcGF0cGE6cHJ1ZWI0c19BVFBBXzIwMjA", registerParam.getPassword());
@@ -112,12 +115,19 @@ public class UsersController {
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
             throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
         }
-        
-        user.setPassword( svc.encryptPassword(plainText) );
-        
+
+        user.setPassword(svc.encryptPassword(plainText));
+
         userService.getUserRepository().save(user);
 
-        //Fin de enviar notificación de cuenta creada
+        //Agregar rol usuario
+        //Asignar roles
+        UsersRoles shiroUsersRoles = new UsersRoles();
+        UsersRolesPK usersRolesPK = new UsersRolesPK(user.getUsername(), "USER");
+        shiroUsersRoles.setUsersRolesPK(usersRolesPK);
+        usersRolesService.guardar(shiroUsersRoles);
+        //Inicia notificación de registro
+        //Fin de enviar notificación de registro
         //Cargar datos de retorno al frontend
         UserModelData userModelData = userService.findById(user.getId()).get();
         //Api.imprimirPostLogAuditoria("users/", user.getPersonId());

@@ -80,7 +80,7 @@ public class UsersRoles implements Serializable {
 
     @Override
     public String toString() {
-        return "com.jlgranda.shiro.UsersRoles[ usersRolesPK=" + usersRolesPK + " ]";
+        return "org.jlgranda.appsventas.domain[ usersRolesPK=" + usersRolesPK + " ]";
     }
     
 }
