@@ -281,11 +281,10 @@ public class SRIComprobantesController {
 
         //Invocar servicio veronica API
         String token = this.getVeronicaToken(user);
-        String estab = "001";
-        if (invoiceData.getEstab() != null) {
-            estab = invoiceData.getEstab();
-        }
-        String ptoEmi = "001";
+        String estab = Strings.isNullOrEmpty( invoiceData.getEstab() ) ? Constantes.SRI_ESTAB_DEFAULT : Strings.toUpperCase(invoiceData.getEstab() );
+
+        String ptoEmi = Constantes.SRI_PTO_EMISION_FACTURAS_ELECTRONICAS;
+        
         String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
         
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
