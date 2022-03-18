@@ -126,10 +126,10 @@ public class UsersController {
 
         //Agregar rol usuario
         //Asignar roles
-        UsersRoles shiroUsersRoles = new UsersRoles();
-        UsersRolesPK usersRolesPK = new UsersRolesPK(user.getUsername(), "USER");
-        shiroUsersRoles.setUsersRolesPK(usersRolesPK);
-        usersRolesService.guardar(shiroUsersRoles);
+//        UsersRoles shiroUsersRoles = new UsersRoles();
+//        UsersRolesPK usersRolesPK = new UsersRolesPK(user.getUsername(), "USER");
+//        shiroUsersRoles.setUsersRolesPK(usersRolesPK);
+//        usersRolesService.guardar(shiroUsersRoles);
         //Inicia notificación de registro
         //Fin de enviar notificación de registro
         //Cargar datos de retorno al frontend
