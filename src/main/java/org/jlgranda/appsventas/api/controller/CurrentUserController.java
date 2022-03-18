@@ -110,7 +110,6 @@ public class CurrentUserController {
                     }
                 }
             }
-
             if (Strings.validateTaxpayerDocument(ruc)) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
                 if (organizacion != null) {
