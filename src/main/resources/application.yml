@@ -1,5 +1,5 @@
 server.port: 9966
-spring.profiles: default
+#spring.profiles: default
 appsventas.security.jwt:
   tokenExpirationTime: 15 # Number of minutes
   refreshTokenExpTime: 60 # Minutes

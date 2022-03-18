@@ -3,8 +3,16 @@ package org.jlgranda.appsventas.api.controller;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.lang.Strings;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import javax.validation.constraints.Email;
@@ -18,7 +26,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import org.apache.shiro.authc.credential.DefaultPasswordService;
+import org.apache.shiro.authc.credential.PasswordService;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.api.controller.app.SRIComprobantesController;
 import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.dto.UserData;
@@ -30,7 +41,9 @@ import org.jlgranda.appsventas.services.AuthorizationService;
 import org.jlgranda.appsventas.services.EncryptService;
 import org.jlgranda.appsventas.services.JwtService;
 import org.jlgranda.appsventas.services.auth.UserService;
+import org.jlgranda.util.AESUtil;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -50,6 +63,8 @@ public class UsersController {
     private JwtService jwtService;
 
     private static ObjectMapper mapper;
+    
+    PasswordService svc = new DefaultPasswordService();
 
     @Autowired
     public UsersController(
@@ -70,8 +85,6 @@ public class UsersController {
             @AuthenticationPrincipal UserData userData,
             @Valid @RequestBody UserModelData registerParam,
             BindingResult bindingResult) {
-//        registerParam.setUsername(registerParam.getCode());
-        registerParam.setUsername(registerParam.getEmail());
         checkInput(registerParam, bindingResult);
         Subject user = userService.crearInstancia();
         BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
@@ -89,11 +102,21 @@ public class UsersController {
         user.setEmailSecret(false);
         user.setContactable(Boolean.FALSE);
         user.setUsuarioAPP(Boolean.TRUE);
-       
+        
+        
+        //La contraseña ya viene encriptada, desencriptar y comparar con Shiro password service
+        String plainText = "";
+        try {
+            plainText = AESUtil.decrypt("dXNyX2FwcGF0cGE6cHJ1ZWI0c19BVFBBXzIwMjA", registerParam.getPassword());
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | InvalidAlgorithmParameterException | BadPaddingException ex) {
+            Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
+            throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
+        }
+        
+        user.setPassword( svc.encryptPassword(plainText) );
+        
         userService.getUserRepository().save(user);
 
-        //Enviar notificación de cuenta creada y contraseña
-        
         //Fin de enviar notificación de cuenta creada
         //Cargar datos de retorno al frontend
         UserModelData userModelData = userService.findById(user.getId()).get();
