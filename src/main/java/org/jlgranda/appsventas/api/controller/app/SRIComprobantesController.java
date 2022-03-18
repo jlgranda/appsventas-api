@@ -299,12 +299,12 @@ public class SRIComprobantesController {
         
         String secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.INVOICE, estab, ptoEmi).next();
         
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
-        System.out.println("ruc: " + organizacion.getRuc());
-        System.out.println("estab: " + estab);
-        System.out.println("ptoEmi: " + ptoEmi);
-        System.out.println("secuencial: " + secuencial);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+//        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+//        System.out.println("ruc: " + organizacion.getRuc());
+//        System.out.println("estab: " + estab);
+//        System.out.println("ptoEmi: " + ptoEmi);
+//        System.out.println("secuencial: " + secuencial);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
         VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, secuencial, estab, ptoEmi, invoiceData, user);
 
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
@@ -366,9 +366,9 @@ public class SRIComprobantesController {
                 data = enviarComprobante(token, Constantes.URI_API_V1_INVOICE, claveAcceso, accion);
                 
                 //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-                System.out.println("Notificar via correo: APLLIED = " + data.getResult().getEstado());
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+//                System.out.println("Notificar via correo: APLLIED = " + data.getResult().getEstado());
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
                 if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(data.getResult().getEstado())){
                     //Notificar via correo
                     String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
@@ -466,7 +466,8 @@ public class SRIComprobantesController {
         Subject customer = customerOpt.get();
 
         Map<String, Object> values = new HashMap<>();
-        values.put("ambiente", "" + "1");
+//        values.put("ambiente", "" + "1"); //PRUEBAS
+        values.put("ambiente", "" + "2"); //PRODUCCION
         values.put("tipoEmision", "" + "1");
         values.put("razonSocial", "" + organizacion.getName());
         values.put("nombreComercial", "" + organizacion.getInitials());
