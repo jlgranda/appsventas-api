@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
+import org.apache.shiro.authc.credential.DefaultPasswordService;
+import org.apache.shiro.authc.credential.PasswordService;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.CodeType;
@@ -174,7 +176,8 @@ public class ContactosController {
                     customer.setCodeType(CodeType.NONE);
                 }
                 customer.setUsername(customer.getEmail());
-                customer.setPassword(Constantes.PASSWORD);
+                PasswordService svc = new DefaultPasswordService();
+                customer.setPassword(svc.encryptPassword("EL_PASSWORD_DEL_FRONT"));
                 customer.setSubjectType(Subject.Type.NATURAL);
                 customer.setEmailSecret(false);
                 customer.setContactable(Boolean.FALSE);

@@ -104,9 +104,13 @@ public class CurrentUserController {
             if (Strings.isNullOrEmpty(ruc)) {
                 if (user.getCode() != null && user.getCode().length() == 10) {
                     ruc = user.getCode().concat(Constantes.SRI_ESTAB_DEFAULT);
+                    if (Strings.validateTaxpayerDocument(ruc)) {
+                        user.setRuc(ruc);
+                        userService.getUserRepository().save(user);//Guardar el ruc generado
+                    }
                 }
             }
-            System.out.println("");
+
             if (Strings.validateTaxpayerDocument(ruc)) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
                 if (organizacion != null) {

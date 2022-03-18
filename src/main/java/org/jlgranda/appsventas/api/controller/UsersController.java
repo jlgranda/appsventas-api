@@ -89,6 +89,7 @@ public class UsersController {
         user.setEmailSecret(false);
         user.setContactable(Boolean.FALSE);
         user.setUsuarioAPP(Boolean.TRUE);
+       
         userService.getUserRepository().save(user);
 
         //Enviar notificación de cuenta creada y contraseña
