@@ -218,6 +218,9 @@ public class CurrentUserController {
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         if (organizacion != null) {
             BeanUtils.copyProperties(organizationData, organizacion);
+            System.out.println("\n\n\n");
+            System.out.println("organizationData.getImage():::::: "+organizationData.getImage());
+            System.out.println("\n\n\n");
             if (!Strings.isNullOrEmpty(organizationData.getImage())) {
                 String base64ImageString = organizationData.getImage().replace("data:image/jpeg;base64,", "");
                 byte[] decodedImg = java.util.Base64.getDecoder()
