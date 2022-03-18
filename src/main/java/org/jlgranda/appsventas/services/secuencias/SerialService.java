@@ -75,7 +75,7 @@ public class SerialService {
             secuencia.setEstab(estab);
             secuencia.setPtoEmi(ptoEmi);
             secuencia.setDigitos(9L);
-            secuencia.setValorActual(0L);
+            secuencia.setValorActual(1L);
             secuencia.setAgregarAnio(false);
             this.guardar(secuencia);
             secuenciaOpt = Optional.of(secuencia);
