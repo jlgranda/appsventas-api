@@ -42,6 +42,12 @@ public class Secuencia extends DeletableObject<Secuencia> implements Serializabl
     /**
      * Tipo de comprobante o entidad de datos
      */
+    @Column(name = "ruc")
+    String ruc;
+    
+    /**
+     * Tipo de comprobante o entidad de datos
+     */
     @Column(name = "entidad")
     String entidad;
     

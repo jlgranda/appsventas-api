@@ -281,13 +281,26 @@ public class SRIComprobantesController {
 
         //Invocar servicio veronica API
         String token = this.getVeronicaToken(user);
+        
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+        
         String estab = Strings.isNullOrEmpty( invoiceData.getEstab() ) ? Constantes.SRI_ESTAB_DEFAULT : Strings.toUpperCase(invoiceData.getEstab() );
 
         String ptoEmi = Constantes.SRI_PTO_EMISION_FACTURAS_ELECTRONICAS;
         
-        String secuencial = serialService.getSecuencialGenerator(Constantes.INVOICE, estab, ptoEmi).next();
+        String secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.INVOICE, estab, ptoEmi).next();
         
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+        System.out.println("ruc: " + organizacion.getRuc());
         System.out.println("estab: " + estab);
         System.out.println("ptoEmi: " + ptoEmi);
         System.out.println("secuencial: " + secuencial);
@@ -298,20 +311,9 @@ public class SRIComprobantesController {
         InternalInvoice invoice = null;
         Detail detail = null;
 
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-
-        if (!subjectOpt.isPresent()) {
-            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
-        }
-
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
         if (!customerOpt.isPresent()) {
             throw new NotFoundException("No se encontró un cliente válido para el usuario autenticado.");
-        }
-
-        if (organizacion == null) {
-            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
 
         if (subjectOpt.isPresent() && customerOpt.isPresent() && organizacion != null) {

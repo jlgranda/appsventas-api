@@ -65,11 +65,12 @@ public class SerialService {
         return this.getRepository().save(secuencia);
     }
 
-    private Optional<Secuencia> encontrarPorEntidadEstabPtoEmi(String entidad, String estab, String ptoEmi) {
+    private Optional<Secuencia> encontrarPorEntidadEstabPtoEmi(String ruc, String entidad, String estab, String ptoEmi) {
         Optional<Secuencia> secuenciaOpt =  this.getRepository().encontrarPorEntidadEstabPtoEmi(entidad, estab, ptoEmi);
         if (!secuenciaOpt.isPresent()){
             //Crear el secuencial
             Secuencia secuencia = this.crearInstancia();
+            secuencia.setRuc(ruc);
             secuencia.setEntidad(entidad);
             secuencia.setName(entidad);
             secuencia.setEstab(estab);
@@ -93,8 +94,8 @@ public class SerialService {
         return secuenciaOpt;
     }
     
-    public Generator getSecuencialGenerator(String entidad, String estab, String ptoEmi) {
-        Optional<Secuencia> secuenciaOpt = this.encontrarPorEntidadEstabPtoEmi(entidad, estab, ptoEmi);
+    public Generator getSecuencialGenerator(String ruc, String entidad, String estab, String ptoEmi) {
+        Optional<Secuencia> secuenciaOpt = this.encontrarPorEntidadEstabPtoEmi(ruc, entidad, estab, ptoEmi);
         SecuencialInvoiceGenerator secuencialInvoiceGenerator = new SecuencialInvoiceGenerator();
         BeanUtils.copyProperties(secuenciaOpt.get(), secuencialInvoiceGenerator);
         secuencialInvoiceGenerator.setAddYear(secuenciaOpt.get().isAgregarAnio());
