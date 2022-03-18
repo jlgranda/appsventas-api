@@ -16,6 +16,9 @@
  */
 package org.jlgranda.appsventas.services.auth;
 
+import org.jlgranda.appsventas.domain.UsersRoles;
+import org.jlgranda.appsventas.repository.auth.usersRolesRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -24,5 +27,16 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UsersRolesService {
-    
+
+    @Autowired
+    private usersRolesRepository repository;
+
+    public usersRolesRepository getRepository() {
+        return repository;
+    }
+
+    public UsersRoles guardar(UsersRoles usersRoles) {
+        return this.getRepository().save(usersRoles);
+    }
+
 }

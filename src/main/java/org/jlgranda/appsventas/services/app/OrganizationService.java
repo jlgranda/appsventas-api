@@ -72,6 +72,7 @@ public class OrganizationService {
      * @return
      */
     public Organization encontrarPorSubjectId(Long userId) {
+
         boolean actualizar = false;
         List<Organization> organizations = this.encontrarPorOwnerId(userId);
         if (!organizations.isEmpty()) {
@@ -95,7 +96,8 @@ public class OrganizationService {
                     } else {
 
                         Organization organization = new Organization();
-                        organization.setName(subject.getInitials());
+                        organization.setName(subject.getInitials() != null ? subject.getInitials()
+                                : subject.getFullName() != null ? subject.getFullName() : Constantes.NO_ORGANIZACION);
                         organization.setRuc(subject.getRuc());
                         organization.setInitials(organization.getName().toUpperCase());
                         organization.setDireccion(subject.getDescription());
@@ -117,8 +119,9 @@ public class OrganizationService {
 
     /**
      * Guarda la organización
+     *
      * @param organization
-     * @return 
+     * @return
      */
     public Organization guardar(Organization organization) {
         return this.getRepository().save(organization);

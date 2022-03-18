@@ -2,8 +2,6 @@ package org.jlgranda.appsventas.api.controller;
 
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jlgranda.shiro.UsersRoles;
-import com.jlgranda.shiro.UsersRolesPK;
 import io.jsonwebtoken.lang.Strings;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -31,6 +29,7 @@ import javax.validation.Valid;
 import org.apache.shiro.authc.credential.DefaultPasswordService;
 import org.apache.shiro.authc.credential.PasswordService;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.api.controller.app.SRIComprobantesController;
 import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
@@ -45,6 +44,7 @@ import org.jlgranda.appsventas.services.AuthorizationService;
 import org.jlgranda.appsventas.services.EncryptService;
 import org.jlgranda.appsventas.services.JwtService;
 import org.jlgranda.appsventas.services.auth.UserService;
+import org.jlgranda.appsventas.services.auth.UsersRolesService;
 import org.jlgranda.util.AESUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -61,6 +61,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class UsersController {
 
     private UserService userService;
+    private UsersRolesService usersRolesService;
     private final String ignoreProperties;
     private String defaultImage;
     private EncryptService encryptService;
@@ -73,10 +74,12 @@ public class UsersController {
     @Autowired
     public UsersController(
             UserService userService,
+            UsersRolesService usersRolesService,
             EncryptService encryptService,
             JwtService jwtService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties) {
         this.userService = userService;
+        this.usersRolesService = usersRolesService;
         this.encryptService = encryptService;
         this.jwtService = jwtService;
 
@@ -106,6 +109,7 @@ public class UsersController {
         user.setEmailSecret(false);
         user.setContactable(Boolean.FALSE);
         user.setUsuarioAPP(Boolean.TRUE);
+        user.setInitials(user.getFullName() != null ? user.getFullName() : Constantes.NO_ORGANIZACION);
 
         //La contraseña viene encriptada, desencriptar y encriptar para Shiro autenticación
         String plainText = "";
