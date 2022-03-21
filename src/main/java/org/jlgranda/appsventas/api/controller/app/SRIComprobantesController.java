@@ -403,9 +403,19 @@ public class SRIComprobantesController {
     @PutMapping(path = "/facturas/{claveAcceso}/notificar")
     public ResponseEntity notificarFactura(
             @AuthenticationPrincipal UserData user,
-            @PathVariable("claveAcceso") String claveAcceso
+            @PathVariable("claveAcceso") String claveAcceso,
+            @Valid @RequestBody InvoiceData submitInvoiceData,
+            BindingResult bindingResult
     ) {
 
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+        
+        if (!claveAcceso.equalsIgnoreCase(submitInvoiceData.getClaveAcceso())){
+            throw new NotFoundException("La clave de acceso no coincide con la solucitud al servidor.");
+        }
         //Invocar servicio veronica API
         String token = this.getVeronicaToken(user);
         
@@ -427,10 +437,6 @@ public class SRIComprobantesController {
             throw new NotFoundException("No se encontró un cliente válido para la factura. customerId: " + invoiceData.getCustomerId());
         }
 
-        //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
-//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-//                System.out.println("Notificar via correo: APLLIED = " + data.getResult().getEstado());
-//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
         if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(invoiceData.getInternalStatus())){
             //Notificar via correo
             String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");

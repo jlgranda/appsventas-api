@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- *
+ * Estructura para lectura de datos Invoice
  * @author jlgranda
  */
 public interface InvoiceView {
@@ -49,7 +49,7 @@ public interface InvoiceView {
 
     public BigDecimal getImporteTotal();
 
-    public String getCustomerId();
+    public Long getCustomerId();
     
     public String getCustomerFullName();
 
