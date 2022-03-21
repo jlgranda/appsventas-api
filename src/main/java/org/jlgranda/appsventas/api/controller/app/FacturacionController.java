@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -97,7 +98,33 @@ public class FacturacionController {
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
     }
-    
+
+    @GetMapping("/facturas/emitidas/estado/{estado}/activos")
+    public ResponseEntity encontrarPorOrganizacionIdYDocumentTypeInternalStatus(
+            @PathVariable("estado") String internalStatus,
+            @AuthenticationPrincipal UserData user,
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "20") int limit
+    ) {
+        List<InvoiceData> invoicesData = new ArrayList<>();
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        if (subjectOpt.isPresent() && organizacion != null) {
+            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, internalStatus));
+        }
+        Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/estado/{estado}/activos", user.getId());
+        return ResponseEntity.ok(invoicesData);
+    }
+
     @GetMapping("/facturas/emitidas/rechazados")
     public ResponseEntity encontrarPorOrganizacionIdYDocumentTypeInternalStatus(
             @AuthenticationPrincipal UserData user,
@@ -148,7 +175,7 @@ public class FacturacionController {
         if (organizacion == null) {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
-        
+
         if (subjectOpt.isPresent()) {
 //            invoicesData = buildResultListInvoice(invoiceService.encontrarPorOwnerYDocumentType(subjectOpt.get(), DocumentType.INVOICE));
 //            invoicesData.forEach(invd -> {
@@ -185,7 +212,7 @@ public class FacturacionController {
         return invoicesData;
 
     }
-    
+
     private List<InvoiceData> buildResultListFromInvoiceView(List<InvoiceView> invoiceViews) {
         List<InvoiceData> invoicesData = new ArrayList<>();
         if (!invoiceViews.isEmpty()) {
