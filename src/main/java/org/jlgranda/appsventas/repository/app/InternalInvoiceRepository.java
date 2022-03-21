@@ -56,7 +56,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
      */
     @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
             + "cliente.id as customerId, \n"
-            + "upper(cliente.firstname || ' ' || cliente.surname) as customerFullName, \n"
+            + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"
             + "inv_.emissionOn as emissionOn, \n"
             + "inv_.sri_clave_acceso as claveAcceso, \n"
@@ -82,7 +82,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
     
     @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
             + "cliente.id as customerId, \n"
-            + "upper(cliente.firstname || ' ' || cliente.surname) as customerFullName, \n"
+            + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"
             + "inv_.emissionOn as emissionOn, \n"
             + "inv_.sri_clave_acceso as claveAcceso, \n"
@@ -109,7 +109,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
     
     @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
             + "cliente.id as customerId, \n"
-            + "upper(cliente.firstname || ' ' || cliente.surname) as customerFullName, \n"
+            + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"
             + "inv_.emissionOn as emissionOn, \n"
             + "inv_.sri_clave_acceso as claveAcceso, \n"
