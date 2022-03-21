@@ -42,6 +42,7 @@ public class InvoiceData {
     private List<DetailData> details;
     private List<PaymentData> payments;
 
+    private Long customerId;
     private String customerFullName;
     private String subjectFullName;
     private String resumen;

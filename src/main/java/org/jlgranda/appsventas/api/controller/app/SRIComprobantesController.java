@@ -82,6 +82,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -397,6 +398,65 @@ public class SRIComprobantesController {
         }
 
         return ResponseEntity.ok(data);
+    }
+    
+    @PutMapping(path = "/factura/{claveAcceso}/notificar")
+    public ResponseEntity notificarFactura(
+            @AuthenticationPrincipal UserData user,
+            @PathVariable("claveAcceso") String claveAcceso
+    ) {
+
+        //Invocar servicio veronica API
+        String token = this.getVeronicaToken(user);
+        
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+        
+        InvoiceData invoiceData = invoiceService.buildInvoiceData(invoiceService.encontrarPorClaveAcceso(claveAcceso).get());
+
+        Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getCustomerId());
+        if (!customerOpt.isPresent()) {
+            throw new NotFoundException("No se encontró un cliente válido para el usuario autenticado.");
+        }
+
+        //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+//                System.out.println("Notificar via correo: APLLIED = " + data.getResult().getEstado());
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+        if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(invoiceData.getInternalStatus())){
+            //Notificar via correo
+            String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
+            String cuerpoMensaje = "<p>Estimada(o): <strong>$clienteNombreCompleto</strong></p>\n"
+                    + "<p><br />Le informamos que su Factura n&uacute;mero <strong>$facturaSecuencia</strong> ha sido remitida por <strong>$organizacionNombreCompleto</strong> de forma Electr&oacute;nica.</p>\n"
+                    + "<p>&nbsp;</p>\n"
+                    + "<p>Si Usted es cliente del $organizacionNombreCompleto mantenga siempre a la mano las facturas que emite y recibe a trav&eacute;s de nuestra aplicaci&oacute;n <a title=\"FAZil facturaci&oacute;n electr&oacute;nica en 2 clics\" href=\"$url\" target=\"_blank\" rel=\"noopener noreferrer\">FAZil</a><br /><br />Atentamente,<br /><strong>$organizacionNombreCompleto.</strong></p>";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
+            UserData destinatario = new UserData();
+            BeanUtils.copyProperties(customerOpt.get(), destinatario);
+            destinatario.setNombre(customerOpt.get().getFullName());
+            destinatario.setId(customerOpt.get().getId());
+
+            Map<String, Object> values = new HashMap<>();
+            values.put("facturaSecuencia", invoiceData.getSecuencial());
+            values.put("clienteNombreCompleto", Strings.toUpperCase(destinatario.getNombre()));
+            values.put("organizacionNombreCompleto", Strings.toUpperCase(organizacion.getName()));
+            values.put("url", "http://jlgranda.com/entry/fazil-facturacion-electronica-para-profesionales");
+            byte[] pdf = getPDF(Constantes.INVOICE, claveAcceso, user.getUsername());
+            byte[] xml = getXML(Constantes.INVOICE, claveAcceso, user.getUsername());
+
+            //La notificaciones siempre deben enviarse desde un mismo correo
+            user.setEmail("AppsVentas Plataforma <notificacion@jlgranda.com>"); //TODO obtener desde propiedades del sistema
+            EmailUtil.getInstance().enviarCorreo(user, destinatario, titulo, cuerpoMensaje, values, this.notificationService, this.messageService, claveAcceso, pdf, xml);
+        }
+
+        return ResponseEntity.ok(claveAcceso);
     }
 
     /**

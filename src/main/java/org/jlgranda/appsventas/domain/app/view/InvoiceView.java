@@ -49,6 +49,8 @@ public interface InvoiceView {
 
     public BigDecimal getImporteTotal();
 
+    public String getCustomerId();
+    
     public String getCustomerFullName();
 
     public String getSubjectFullName();
