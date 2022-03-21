@@ -400,7 +400,7 @@ public class SRIComprobantesController {
         return ResponseEntity.ok(data);
     }
     
-    @PutMapping(path = "/factura/{claveAcceso}/notificar")
+    @PutMapping(path = "/facturas/{claveAcceso}/notificar")
     public ResponseEntity notificarFactura(
             @AuthenticationPrincipal UserData user,
             @PathVariable("claveAcceso") String claveAcceso
@@ -424,7 +424,7 @@ public class SRIComprobantesController {
 
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getCustomerId());
         if (!customerOpt.isPresent()) {
-            throw new NotFoundException("No se encontró un cliente válido para el usuario autenticado.");
+            throw new NotFoundException("No se encontró un cliente válido para la factura. customerId: " + invoiceData.getCustomerId());
         }
 
         //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado

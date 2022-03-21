@@ -107,6 +107,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
     List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(@Param("ownerId") Long ownerId, @Param("organizacionId") Long organizacionId, @Param("documentType") int documentType, @Param("internalStatus") String internalStatus);
     
     @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
+            + "cliente.id as customerId, \n"
             + "upper(cliente.firstname || ' ' || cliente.surname) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"
             + "inv_.emissionOn as emissionOn, \n"
