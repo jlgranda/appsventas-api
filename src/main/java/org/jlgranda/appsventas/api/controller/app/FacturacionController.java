@@ -15,16 +15,20 @@ import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.Organization;
+import org.jlgranda.appsventas.domain.app.view.InvoiceCountView;
 import org.jlgranda.appsventas.domain.app.view.InvoiceView;
 import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.dto.UserData;
+import org.jlgranda.appsventas.dto.app.InvoiceCountData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
+import org.jlgranda.appsventas.dto.app.InvoiceGlobalData;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.DetailService;
 import org.jlgranda.appsventas.services.app.InternalInvoiceService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.app.PaymentService;
 import org.jlgranda.appsventas.services.app.SubjectService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -73,7 +77,7 @@ public class FacturacionController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        List<InvoiceData> invoicesData = new ArrayList<>();
+        InvoiceGlobalData invoiceGlobal = new InvoiceGlobalData();
 
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         if (!subjectOpt.isPresent()) {
@@ -86,17 +90,11 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent() && organizacion != null) {
-//            invoicesData = buildResultListInvoice(user.getId(), invoiceService.encontrarPorAuthorYOrganizacionIdYDocumentType(subjectOpt.get(), organizacion.getId(), DocumentType.INVOICE));
-//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>< //Fin SQL");
-//            invoicesData.forEach(invd -> {
-//                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
-//                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
-//
-//            });
-            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
+            invoiceGlobal.setInvoicesData(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+            invoiceGlobal.setInvoicesCountData(buildResultListFromInvoiceCountView(invoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
-        return ResponseEntity.ok(invoicesData);
+        return ResponseEntity.ok(invoiceGlobal);
     }
 
     @GetMapping("/facturas/emitidas/estado/{estado}/activos")
@@ -221,6 +219,24 @@ public class FacturacionController {
             });
         }
         return invoicesData;
+
+    }
+
+    private List<InvoiceCountData> buildResultListFromInvoiceCountView(List<InvoiceCountView> invoiceCountViews) {
+        List<InvoiceCountData> invoicesCountData = new ArrayList<>();
+        if (!invoiceCountViews.isEmpty()) {
+            invoiceCountViews.forEach(inv -> {
+                InvoiceCountData invoiceCount = new InvoiceCountData();
+                BeanUtils.copyProperties(inv, invoiceCount);
+                String internalStatus = "CREATED".equals(invoiceCount.getInternalStatus()) ? "success"
+                        : "POSTED".equals(invoiceCount.getInternalStatus()) ? "secondary"
+                        : "REJECTED".equals(invoiceCount.getInternalStatus()) ? "tertiary"
+                        : "INVALID".equals(invoiceCount.getInternalStatus()) ? "danger" : "";
+                invoiceCount.setColor(internalStatus);
+                invoicesCountData.add(invoiceCount);
+            });
+        }
+        return invoicesCountData;
 
     }
 

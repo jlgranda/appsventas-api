@@ -13,6 +13,7 @@ import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
+import org.jlgranda.appsventas.domain.app.view.InvoiceCountView;
 import org.jlgranda.appsventas.domain.app.view.InvoiceView;
 import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.domain.util.EmissionType;
@@ -95,6 +96,7 @@ public class InternalInvoiceService {
         invoiceData.setSubjectFullName(inv.getAuthor() == null ? "No definido" : inv.getAuthor().getFullName());
         return invoiceData;
     }
+
     public InvoiceData buildInvoiceData(InvoiceView inv) {
         InvoiceData invoiceData = new InvoiceData();
         BeanUtils.copyProperties(inv, invoiceData);
@@ -133,7 +135,21 @@ public class InternalInvoiceService {
     public InternalInvoice guardar(InternalInvoice invoice) {
         return this.getRepository().save(invoice);
     }
-    
+
+    /**
+     * Devolver las instancias <tt>InvoiceCountView</tt> para el author, la
+     * organizacionId y documentType dados como parámentros, discriminando el
+     * campo eliminado
+     *
+     * @param authorId
+     * @param organizacionId
+     * @param documentType
+     * @return
+     */
+    public List<InvoiceCountView> countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(Long authorId, Long organizacionId, DocumentType documentType) {
+            return this.getRepository().countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal());
+    }
+
     /**
      * Devolver las instancias <tt>InvoiceView</tt> para el author, la
      * organizacionId y documentType dados como parámentros, discriminando el
@@ -152,7 +168,7 @@ public class InternalInvoiceService {
             return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
         }
     }
-    
+
     /**
      * Devolver las instancias <tt>InvoiceView</tt> para el owner, la
      * organizacionId y documentType dados como parámentros, discriminando el
@@ -167,8 +183,8 @@ public class InternalInvoiceService {
     public List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
         return this.getRepository().listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
     }
-    
-    public Optional<InvoiceView> encontrarPorClaveAcceso(String claveAcceso){
+
+    public Optional<InvoiceView> encontrarPorClaveAcceso(String claveAcceso) {
         return this.getRepository().encontrarPorClaveAcceso(claveAcceso);
     }
 
