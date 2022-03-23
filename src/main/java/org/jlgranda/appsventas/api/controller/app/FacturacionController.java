@@ -228,11 +228,16 @@ public class FacturacionController {
             invoiceCountViews.forEach(inv -> {
                 InvoiceCountData invoiceCount = new InvoiceCountData();
                 BeanUtils.copyProperties(inv, invoiceCount);
-                String internalStatus = "CREATED".equals(invoiceCount.getInternalStatus()) ? "success"
-                        : "POSTED".equals(invoiceCount.getInternalStatus()) ? "secondary"
-                        : "REJECTED".equals(invoiceCount.getInternalStatus()) ? "tertiary"
-                        : "INVALID".equals(invoiceCount.getInternalStatus()) ? "danger" : "";
-                invoiceCount.setColor(internalStatus);
+                String colorStatus = Constantes.SRI_STATUS_CREATED.equals(invoiceCount.getInternalStatus()) ? "secondary"
+                        : Constantes.SRI_STATUS_POSTED.equals(invoiceCount.getInternalStatus()) ? "warning"
+                        : Constantes.SRI_STATUS_REJECTED.equals(invoiceCount.getInternalStatus()) ? "tertiary"
+                        : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "danger" : "medium";
+                invoiceCount.setColor(colorStatus);
+                String nameStatus = Constantes.SRI_STATUS_CREATED.equals(invoiceCount.getInternalStatus()) ? "CREADAS"
+                        : Constantes.SRI_STATUS_POSTED.equals(invoiceCount.getInternalStatus()) ? "PUBLICADAS"
+                        : Constantes.SRI_STATUS_REJECTED.equals(invoiceCount.getInternalStatus()) ? "RECHAZADAS"
+                        : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "INVÁLIDAS" : "NO APLICADAS";
+                invoiceCount.setStatus(nameStatus);
                 invoicesCountData.add(invoiceCount);
             });
         }
