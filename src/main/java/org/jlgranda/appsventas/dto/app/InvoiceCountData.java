@@ -33,6 +33,7 @@ import lombok.ToString;
 public class InvoiceCountData {
 
     private String internalStatus;
+    private String status;
     private BigDecimal count;
     private String color;
 
