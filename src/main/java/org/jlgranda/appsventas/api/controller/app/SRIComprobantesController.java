@@ -584,7 +584,7 @@ public class SRIComprobantesController {
         //detalle
         values.put("codigoPrincipal", "" + invoiceData.getProduct().getId());
         values.put("codigoAuxiliar", "" + invoiceData.getProduct().getId());
-        values.put("descripcion", "" + invoiceData.getProduct().getName());
+        values.put("descripcion", "" + (Strings.isNullOrEmpty(invoiceData.getProduct().getName()) ? invoiceData.getDescripcion() : invoiceData.getProduct().getName().concat(" [").concat(invoiceData.getDescripcion())) + "]");
         values.put("cantidad", "" + 1.00);
         values.put("precioUnitario", "" + invoiceData.getSubTotal());
         values.put("descuento", "" + 0.00);

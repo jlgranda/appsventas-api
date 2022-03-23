@@ -35,6 +35,7 @@ public class InvoiceData {
     private Boolean iva12;
     private BigDecimal propina;
     private BigDecimal importeTotal;
+    private String descripcion;
 
     private SubjectCustomerData subjectCustomer;
     private ProductData product;
