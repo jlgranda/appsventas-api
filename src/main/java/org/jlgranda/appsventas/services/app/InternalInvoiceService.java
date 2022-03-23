@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
@@ -145,7 +146,11 @@ public class InternalInvoiceService {
      * @return
      */
     public List<InvoiceView> listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(Long authorId, Long organizacionId, DocumentType documentType, String internalStatus) {
-        return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
+        if (Constantes.SRI_STATUS_NO_APPLIED.equalsIgnoreCase(internalStatus)) {
+            return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeNoApplied(authorId, organizacionId, documentType.ordinal());
+        } else {
+            return this.getRepository().listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal(), internalStatus);
+        }
     }
     
     /**
