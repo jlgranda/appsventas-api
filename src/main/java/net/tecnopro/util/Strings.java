@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -939,5 +941,12 @@ public final class Strings {
 //            System.out.println(">>>> lastName " + lastName);
 //            System.out.println(">>>> firstName " + firstName);
 //        }
+
+BigDecimal total = new BigDecimal(23.421);
+        System.out.println("23.421" + total != null ? total.setScale(2, RoundingMode.HALF_UP) : "0.00");
+        total = new BigDecimal(23.06);
+        System.out.println("23.06" + total != null ? total.setScale(2, RoundingMode.HALF_UP) : "0.00");
+        total = new BigDecimal(23.068);
+        System.out.println("23.068" + total != null ? total.setScale(2, RoundingMode.HALF_UP) : "0.00");
     }
 }

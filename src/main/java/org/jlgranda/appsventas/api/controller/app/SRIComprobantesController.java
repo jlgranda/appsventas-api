@@ -17,6 +17,7 @@
 package org.jlgranda.appsventas.api.controller.app;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -565,16 +566,16 @@ public class SRIComprobantesController {
         values.put("totalImpuestoCodigo", "" + "2");
         values.put("totalImpuestoCodigoPorcentaje", "" + "2");
         values.put("descuentoAdicional", "" + 0.00);
-        values.put("totalImpuestoBaseImponible", invoiceData.getSubTotal());
-        values.put("totalImpuestoValor", invoiceData.getIva12Total());
+        values.put("totalImpuestoBaseImponible", invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
+        values.put("totalImpuestoValor", invoiceData.getIva12Total() != null ? invoiceData.getIva12Total().setScale(2, RoundingMode.HALF_UP) : "0.00");
 
         values.put("propina", "" + invoiceData.getPropina());
-        values.put("importeTotal", "" + invoiceData.getImporteTotal());
+        values.put("importeTotal", "" + invoiceData.getImporteTotal() != null ? invoiceData.getImporteTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
         values.put("moneda", "" + "DOLAR");
 
         //Falta el array de pagos
         values.put("formaPago", "" + "01");
-        values.put("total", "" + "" + invoiceData.getImporteTotal());
+        values.put("total", "" + "" + invoiceData.getImporteTotal() != null ? invoiceData.getImporteTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
         values.put("plazo", "" + "30");
         values.put("unidadTiempo", "dias");
 
@@ -586,18 +587,18 @@ public class SRIComprobantesController {
         values.put("codigoAuxiliar", "" + invoiceData.getProduct().getId());
         values.put("descripcion", "" + (Strings.isNullOrEmpty(invoiceData.getProduct().getName()) ? invoiceData.getDescripcion() : invoiceData.getProduct().getName().concat(" [").concat(invoiceData.getDescripcion())) + "]");
         values.put("cantidad", "" + 1.00);
-        values.put("precioUnitario", "" + invoiceData.getSubTotal());
+        values.put("precioUnitario", "" + invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
         values.put("descuento", "" + 0.00);
-        values.put("precioTotalSinImpuesto", invoiceData.getSubTotal());
+        values.put("precioTotalSinImpuesto", invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
 
         values.put("detAdicionalNombre1", "" + invoiceData.getProduct().getName());
-        values.put("detAdicionalValor1", "" + invoiceData.getSubTotal());
+        values.put("detAdicionalValor1", "" + invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
 
         values.put("impuestoCodigo", "2");
         values.put("impuestoCodigoPorcentaje", "2");
         values.put("tarifa", "12");
-        values.put("impuestoBaseImponible", invoiceData.getSubTotal());
-        values.put("impuestoValor", "" + invoiceData.getImporteTotal());
+        values.put("impuestoBaseImponible", invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
+        values.put("impuestoValor", "" + invoiceData.getImporteTotal() != null ? invoiceData.getImporteTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
 
         //Falta el array de campoAdicional
         values.put("campoAdicional", "" + "campoAdicional");
