@@ -54,12 +54,13 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     private String workPhoneNumber;
     @Column
     private boolean confirmed;
+
     @Transient
     private boolean loggedIn;
-    @Transient
 
     @Column
     private boolean emailSecret = true;
+
     @Column(length = 50)
     private String screenName;
     @Column
