@@ -23,10 +23,10 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SubjectService {
-
+    
     @Autowired
     private SubjectRepository repository;
-
+    
     public SubjectRepository getRepository() {
         return repository;
     }
@@ -84,13 +84,13 @@ public class SubjectService {
     public List<String> encontrarInitialsPorKeyword(String keyword) {
         return this.getRepository().encontrarInitialsPorKeyword(keyword);
     }
-
+    
     public SubjectData buildSubjectData(Subject s) {
         SubjectData subjectData = new SubjectData();
         BeanUtils.copyProperties(s, subjectData);
         return subjectData;
     }
-
+    
     public Subject crearInstancia() {
         Subject _instance = new Subject();
         _instance.setCreatedOn(Dates.now());
@@ -99,18 +99,21 @@ public class SubjectService {
         _instance.setActivationTime(Dates.now());
         _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
         _instance.setUuid(UUID.randomUUID().toString());
+        _instance.setEmailSecret(Boolean.TRUE);
+        _instance.setSubjectType(Subject.Type.NATURAL);
+        _instance.setContactable(Boolean.FALSE);
         return _instance;
     }
-
+    
     public Subject crearInstancia(Subject user) {
         Subject _instance = crearInstancia();
         _instance.setAuthor(user); //Establecer al usuario actual
         _instance.setOwner(user); //Establecer al usuario actual
         return _instance;
     }
-
+    
     public Subject guardar(Subject subject) {
         return this.getRepository().save(subject);
     }
-
+    
 }

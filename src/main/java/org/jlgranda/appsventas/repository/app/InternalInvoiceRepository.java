@@ -65,7 +65,10 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "inv_.sequencial as secuencial,\n"
             + "invtotal.resumen as resumen, \n"
             + "invtotal.total as importeTotal, \n"
-            + "sriintsts.description as internalStatus \n"
+            + "sriintsts.description as internalStatus, \n"
+            + "(case \n"
+            + "when (select count(pay) from public.payment pay where pay.invoice_id = inv_.id and pay.deleted = false and pay.datepaymentcancel is not null) > 0 \n"
+            + "then true else false end) as isPayment \n"
             + "from public.invoice inv_ \n"
             + "inner join public.vista_subject_organization as emisor on emisor.subject_id = inv_.author\n"
             + "inner join public.subject as cliente on cliente.id = inv_.owner \n"
@@ -104,24 +107,6 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "where sis.description != 'APPLIED' group by sis.description")
     List<InvoiceCountView> countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(@Param("authorId") Long authorId, @Param("organizacionId") Long organizacionId, @Param("documentType") int documentType);
 
-///**
-//     *
-//     * @param authorId
-//     * @param organizacionId
-//     * @param documentType
-//     * @return
-//     */
-//    @Query(nativeQuery = true, value = "select sriintsts.description as internalStatus, count(*) as \"count\" \n"
-//            + "from public.invoice inv_ \n"
-//            + "inner join public.sri_invoice as sriinv on sriinv.access_key = inv_.sri_clave_acceso \n"
-//            + "inner join public.sri_internal_status as sriintsts on sriintsts.internal_status_id = sriinv.internal_status_id "
-//            + "where inv_.deleted=false "
-//            + "and inv_.author = :#{#authorId} \n"
-//            + "and inv_.organization_id = :#{#organizacionId} \n"
-//            + "and inv_.documenttype = :#{#documentType} \n"
-//            + "and sriinv.internal_status_id != 3 \n"
-//            + "and not inv_.sri_clave_acceso is null group by sriintsts.description")
-//    List<InvoiceCountView> countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(@Param("authorId") Long authorId, @Param("organizacionId") Long organizacionId, @Param("documentType") int documentType);
     /**
      *
      * @param authorId
@@ -141,7 +126,10 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "inv_.sequencial as secuencial,\n"
             + "invtotal.resumen as resumen, \n"
             + "invtotal.total as importeTotal, \n"
-            + "sriintsts.description as internalStatus \n"
+            + "sriintsts.description as internalStatus, \n"
+            + "(case \n"
+            + "when (select count(pay) from public.payment pay where pay.invoice_id = inv_.id and pay.deleted = false and pay.datepaymentcancel is not null) > 0 \n"
+            + "then true else false end) as isPayment \n"
             + "from public.invoice inv_ \n"
             + "inner join public.vista_subject_organization as emisor on emisor.subject_id = inv_.author\n"
             + "inner join public.subject as cliente on cliente.id = inv_.owner \n"
@@ -167,7 +155,10 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "inv_.sequencial as secuencial,\n"
             + "invtotal.resumen as resumen, \n"
             + "invtotal.total as importeTotal, \n"
-            + "sriintsts.description as internalStatus \n"
+            + "sriintsts.description as internalStatus, \n"
+            + "(case \n"
+            + "when (select count(pay) from public.payment pay where pay.invoice_id = inv_.id and pay.deleted = false and pay.datepaymentcancel is not null) > 0 \n"
+            + "then true else false end) as isPayment \n"
             + "from public.invoice inv_ \n"
             + "inner join public.vista_subject_organization as emisor on emisor.subject_id = inv_.author\n"
             + "inner join public.subject as cliente on cliente.id = inv_.owner \n"
@@ -193,7 +184,10 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "inv_.sequencial as secuencial,\n"
             + "invtotal.resumen as resumen, \n"
             + "invtotal.total as importeTotal, \n"
-            + "sriintsts.description as internalStatus \n"
+            + "sriintsts.description as internalStatus, \n"
+            + "(case \n"
+            + "when (select count(pay) from public.payment pay where pay.invoice_id = inv_.id and pay.deleted = false and pay.datepaymentcancel is not null) > 0 \n"
+            + "then true else false end) as isPayment \n"
             + "from public.invoice inv_ \n"
             + "inner join public.vista_subject_organization as emisor on emisor.subject_id = inv_.author\n"
             + "inner join public.subject as cliente on cliente.id = inv_.owner \n"

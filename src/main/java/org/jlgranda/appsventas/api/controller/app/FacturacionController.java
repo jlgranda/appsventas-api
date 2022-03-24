@@ -99,7 +99,10 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent() && organizacion != null) {
+            System.out.println("\n\n\n");
+            System.out.println(subjectOpt.get().getId() + "" + organizacion.getId() + "" + DocumentType.INVOICE + "" + Constantes.SRI_STATUS_APPLIED);
             invoiceGlobal.setInvoicesData(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+            System.out.println("\n\n\n");
             invoiceGlobal.setInvoicesCountData(buildResultListFromInvoiceCountView(invoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
@@ -220,7 +223,7 @@ public class FacturacionController {
             payment.setDatePaymentCancel(Dates.now());
             paymentService.guardar(payment);
 
-            //Devolver paymentData
+            //Cargar datos de retorno al frontend
             paymentData = new PaymentData();
             BeanUtils.copyProperties(payment, paymentData);
         } else {

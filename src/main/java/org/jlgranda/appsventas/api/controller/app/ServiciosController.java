@@ -151,7 +151,7 @@ public class ServiciosController {
             product.setPriceC(product.getPrice());
             productService.guardar(product);
 
-            //Devolver productData
+             //Cargar datos de retorno al frontend
             productData = productService.buildProductData(product);
 
         }
@@ -188,7 +188,7 @@ public class ServiciosController {
                 productService.guardar(product);
             }
 
-            //Devolver productData
+             //Cargar datos de retorno al frontend
             productData = productService.buildProductData(product);
 
         }

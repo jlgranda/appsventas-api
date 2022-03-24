@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.validation.Valid;
 import org.apache.shiro.authc.credential.DefaultPasswordService;
@@ -37,6 +38,7 @@ import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.SubjectCustomerService;
 import org.jlgranda.appsventas.services.app.SubjectService;
+import org.jlgranda.appsventas.services.auth.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,16 +64,19 @@ public class ContactosController {
 
     private SubjectCustomerService subjectCustomerService;
     private SubjectService subjectService;
+    private UserService userService;
     private final String ignoreProperties;
 
     @Autowired
     public ContactosController(
             SubjectCustomerService subjectCustomerService,
             SubjectService subjectService,
+            UserService userService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
         this.subjectCustomerService = subjectCustomerService;
         this.subjectService = subjectService;
+        this.userService = userService;
         this.ignoreProperties = ignoreProperties;
     }
 
@@ -120,6 +125,32 @@ public class ContactosController {
         return ResponseEntity.ok(buildResultListSubjectCustomer(user.getId(), subjectCustomerService.encontrarPorSubjectId(user.getId())));
     }
 
+    @GetMapping("usuario/activos/code/{code}")
+    public ResponseEntity getByCode(
+            @AuthenticationPrincipal UserData user,
+            @PathVariable("code") String code
+    ) {
+        SubjectData customerData = null;
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        if (subjectOpt.isPresent()) {
+            Optional<Subject> customerOpt = userService.getUserRepository().findByCode(code);//Buscar por campo code
+            if (!customerOpt.isPresent()) {
+                customerOpt = userService.getUserRepository().findByRuc(code);//Buscar por campo ruc
+            }
+            if (customerOpt.isPresent()) {
+                customerData = subjectService.buildSubjectData(customerOpt.get());
+            }
+        }
+        Api.imprimirGetLogAuditoria("contactos/usuario/activos/code/", user.getId());
+        return ResponseEntity.ok(customerData);
+    }
+
     @GetMapping("usuario/activos/keyword/{keyword}")
     public ResponseEntity encontrarPorSubjectIdYKeyword(
             @AuthenticationPrincipal UserData user,
@@ -142,8 +173,8 @@ public class ContactosController {
         return ResponseEntity.ok(subjectService.encontrarInitialsPorKeyword(keyword.trim()));
     }
 
-    @PostMapping()
-    public ResponseEntity crearSubjectCustomer(
+    @PutMapping()
+    public ResponseEntity modificarSubjectCustomer(
             @AuthenticationPrincipal UserData user,
             @Valid @RequestBody SubjectCustomerData subjectCustomerData,
             BindingResult bindingResult
@@ -152,99 +183,75 @@ public class ContactosController {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
-        SubjectCustomer subjectCustomer = null;
-        Subject customer = null;
 
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
+        if (subjectCustomerData.getCustomer() == null) {
+            throw new NotFoundException("No se encontró una entidad Subject válidad para el contacto a registrar.");
+        }
+
+        SubjectCustomer subjectCustomer = null;
+        Subject newCustomer = new Subject();
+
         if (subjectOpt.isPresent() && subjectCustomerData.getCustomer() != null) {
 
-            if (net.tecnopro.util.Strings.validateTaxpayerDocument(subjectCustomerData.getCustomer().getCode())) {
+            SubjectData newCustomerData = subjectCustomerData.getCustomer();
+            Boolean isCI = net.tecnopro.util.Strings.validateNationalIdentityDocument(newCustomerData.getCode());
+            Boolean isRUC = net.tecnopro.util.Strings.validateTaxpayerDocument(newCustomerData.getCode());
 
-                //Guardar el customer
-                customer = subjectService.crearInstancia(subjectOpt.get());
-                BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-                customer.setCode(subjectCustomerData.getCustomer().getCode());
-                if (customer.getCode() != null && customer.getCode().length() == 10) {
-                    customer.setCodeType(CodeType.CEDULA);
-                } else if (customer.getCode() != null && customer.getCode().length() == 13) {
-                    customer.setCodeType(CodeType.RUC);
-                } else {
-                    customer.setCodeType(CodeType.NONE);
-                }
-                customer.setUsername(customer.getEmail());
-                PasswordService svc = new DefaultPasswordService();
-                customer.setPassword(svc.encryptPassword("EL_PASSWORD_DEL_FRONT"));
-                customer.setSubjectType(Subject.Type.NATURAL);
-                customer.setEmailSecret(false);
-                customer.setContactable(Boolean.FALSE);
-                subjectService.guardar(customer);
-                //Guardar el subjectCustomer
-                subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
-                BeanUtils.copyProperties(subjectCustomerData, subjectCustomer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-                subjectCustomer.setSubjectId(user.getId());
-                subjectCustomer.setCustomerId(customer.getId());
-                subjectCustomerService.guardar(subjectCustomer);
-                //Devolver subjectCustomerData
-                subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customer);
-            } else {
-                throw new NotFoundException("Cédula/RUC inváĺido.");
+            if (Objects.equals(isCI, Boolean.FALSE) && Objects.equals(isRUC, Boolean.FALSE)) {
+                throw new NotFoundException("C.I/RUC no es válido.");
             }
-        }
-
-        Api.imprimirPostLogAuditoria("/contactos", user.getId());
-        return ResponseEntity.ok(Api.response("subjectCustomer", subjectCustomerData));
-    }
-
-    @PutMapping()
-    public ResponseEntity editarSubjectCustomer(
-            @AuthenticationPrincipal UserData user,
-            @Valid @RequestBody SubjectCustomerData subjectCustomerData,
-            BindingResult bindingResult
-    ) {
-        //Verificar binding
-        if (bindingResult.hasErrors()) {
-            throw new InvalidRequestException(bindingResult);
-        }
-
-        Subject customer = null;
-
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        if (!subjectOpt.isPresent()) {
-            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
-        }
-
-        if (subjectOpt.isPresent() && subjectCustomerData.getCustomer() != null && subjectCustomerData.getCustomer().getId() != null) {
-
-            if (net.tecnopro.util.Strings.validateTaxpayerDocument(subjectCustomerData.getCustomer().getCode())) {
-                //Guardar el customer
-                Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomerData.getCustomer().getId());
-
-                if (customerOpt.isPresent()) {
-                    customer = customerOpt.get();
-                    BeanUtils.copyProperties(subjectCustomerData.getCustomer(), customer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-                    customer.setCode(subjectCustomerData.getCustomer().getCode());
-                    if (customer.getCode() != null && customer.getCode().length() == 10) {
-                        customer.setCodeType(CodeType.CEDULA);
-                    } else if (customer.getCode() != null && customer.getCode().length() == 13) {
-                        customer.setCodeType(CodeType.RUC);
-                    } else {
-                        customer.setCodeType(CodeType.NONE);
+            if (newCustomerData.getId() != null) {
+                //Verificar si el newCustomer existe.
+                Optional<Subject> newCustomerOpt = subjectService.encontrarPorId(newCustomerData.getId());
+                if (newCustomerOpt.isPresent()) {
+                    newCustomer = newCustomerOpt.get();
+                    if (!Objects.equals(newCustomer.getUsuarioAPP(), Boolean.TRUE)) {
+                        //Verificar si el newCustomer no es usuario del APP para que sus datos pueden ser modificados parcialmente
+                        newCustomer.setDescription(newCustomerData.getDescription());
+                        if (!net.tecnopro.util.Strings.isNullOrEmpty(newCustomerData.getMobileNumber())) {
+                            newCustomer.setMobileNumber(newCustomerData.getMobileNumber());
+                        }
+                        if (!net.tecnopro.util.Strings.isNullOrEmpty(newCustomerData.getWorkPhoneNumber())) {
+                            newCustomer.setWorkPhoneNumber(newCustomerData.getWorkPhoneNumber());
+                        }
+                        subjectService.guardar(newCustomer);
                     }
-                    subjectService.guardar(customer);
                 }
-
-                //Devolver subjectCustomerData, sólo hace falta agregar el customer modificado
-                subjectCustomerData.setCustomer(subjectService.buildSubjectData(customer));
             } else {
-                throw new NotFoundException("Cédula/RUC inváĺido.");
+                //Crear una nueva instancia de subject para el newCustomer
+                newCustomer = subjectService.crearInstancia(subjectOpt.get());
+                BeanUtils.copyProperties(newCustomerData, newCustomer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                newCustomer.setCode(newCustomerData.getCode());
+                newCustomer.setCodeType(isCI ? CodeType.CEDULA : isRUC ? CodeType.RUC : CodeType.NONE);
+                user.setRuc(isRUC ? newCustomer.getCode() : "");
+                newCustomer.setDescription(newCustomerData.getDescription());
+                newCustomer.setUsername(newCustomer.getEmail());
+                newCustomer.setInitials(newCustomer.getFullName() != null ? newCustomer.getFullName() : Constantes.NO_ORGANIZACION);
+                PasswordService svc = new DefaultPasswordService();
+                newCustomer.setPassword(svc.encryptPassword("EL_PASSWORD_DEL_FRONT"));
+                subjectService.guardar(newCustomer);
+            }
+            if (newCustomer.getId() != null) {
+                //Guardar el subjectCustomer
+                Optional<SubjectCustomer> subjectCustomerOpt = subjectCustomerService.encontrarPorSubjectIdCustomerId(user.getId(), newCustomer.getId());
+                if (!subjectCustomerOpt.isPresent()) {
+                    subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
+                    BeanUtils.copyProperties(subjectCustomerData, subjectCustomer, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                    subjectCustomer.setSubjectId(user.getId());
+                    subjectCustomer.setCustomerId(newCustomer.getId());
+                    subjectCustomerService.guardar(subjectCustomer);
+
+                    //Cargar datos de retorno al frontend
+                    subjectCustomerData = subjectCustomerService.buildSubjectCustomerData(subjectCustomer, newCustomer);
+                }
             }
         }
 
-        Api.imprimirUpdateLogAuditoria("/contactos", user.getId(), subjectCustomerData.getCustomer());
+        Api.imprimirUpdateLogAuditoria("/contactos", user.getId(), subjectCustomerData);
         return ResponseEntity.ok(Api.response("subjectCustomer", subjectCustomerData));
     }
 

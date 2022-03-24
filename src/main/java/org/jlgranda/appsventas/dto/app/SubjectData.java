@@ -46,5 +46,6 @@ public class SubjectData {
     private String bio;
     private String initials;
     private Date date_birth;
+    private Boolean usuarioAPP;
 
 }

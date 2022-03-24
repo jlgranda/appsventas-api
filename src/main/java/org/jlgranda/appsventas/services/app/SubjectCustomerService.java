@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
@@ -41,6 +42,28 @@ public class SubjectCustomerService {
      */
     public List<SubjectCustomer> encontrarPorSubjectId(Long subjectId) {
         return this.getRepository().encontrarPorSubjectId(subjectId);
+    }
+    
+    /**
+     * Devolver la instancia <tt>SubjectCustomer</tt> para el customerId dado
+     * como parámentro, discriminando el campo eliminado
+     *
+     * @param customerId
+     * @return
+     */
+    public List<SubjectCustomer> encontrarPorCustomerId(Long customerId) {
+        return this.getRepository().encontrarPorCustomerId(customerId);
+    }
+
+/**
+     * Devolver las instancias <tt>SubjectCustomer</tt> para el subjectId dado
+     * como parámentro, discriminando el campo eliminado
+     *
+     * @param customerId
+     * @return
+     */
+    public Optional<SubjectCustomer> encontrarPorSubjectIdCustomerId(Long subjectId, Long customerId) {
+        return this.getRepository().encontrarPorSubjectIdCustomerId(subjectId, customerId);
     }
 
     /**
