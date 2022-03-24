@@ -5,16 +5,20 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
+import io.jsonwebtoken.lang.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.validation.Valid;
+import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.Organization;
+import org.jlgranda.appsventas.domain.app.Payment;
 import org.jlgranda.appsventas.domain.app.view.InvoiceCountView;
 import org.jlgranda.appsventas.domain.app.view.InvoiceView;
 import org.jlgranda.appsventas.domain.util.DocumentType;
@@ -22,6 +26,8 @@ import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.InvoiceCountData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
 import org.jlgranda.appsventas.dto.app.InvoiceGlobalData;
+import org.jlgranda.appsventas.dto.app.PaymentData;
+import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.services.app.DetailService;
 import org.jlgranda.appsventas.services.app.InternalInvoiceService;
@@ -33,8 +39,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -141,14 +150,6 @@ public class FacturacionController {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
         if (subjectOpt.isPresent() && organizacion != null) {
-//            invoicesData = buildResultListInvoice(user.getId(), invoiceService.encontrarPorAuthorYOrganizacionIdYDocumentType(subjectOpt.get(), organizacion.getId(), DocumentType.INVOICE));
-//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>< //Fin SQL");
-//            invoicesData.forEach(invd -> {
-//                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
-//                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
-//
-//            });
-
             invoicesData.addAll(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_INVALID)));
             invoicesData.addAll(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_REJECTED)));
         }
@@ -175,16 +176,58 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent()) {
-//            invoicesData = buildResultListInvoice(invoiceService.encontrarPorOwnerYDocumentType(subjectOpt.get(), DocumentType.INVOICE));
-//            invoicesData.forEach(invd -> {
-//                Optional<BigDecimal> importeTotal = detailService.encontrarTotalPorInvoiceId(invd.getId());
-//                invd.setImporteTotal(importeTotal.isPresent() ? importeTotal.get() : BigDecimal.ZERO);
-//
-//            });
             invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/recibidas/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
+    }
+
+    @PutMapping("/facturas/pago")
+    public ResponseEntity editarProduct(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody InvoiceData invoiceData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Payment payment = null;
+        PaymentData paymentData = null;
+//
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+//
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+//
+        if (subjectOpt.isPresent() && invoiceData.getId() != null && invoiceData.getImporteTotal() != null) {
+            List<Payment> payments = paymentService.encontrarPorInvoiceId(invoiceData.getId());
+            if (!payments.isEmpty()) {
+                for (Payment p : payments) {
+                    p.setDeleted(Boolean.TRUE);
+                    p.setDeletedOn(Dates.now());
+                }
+                paymentService.guardarLista(payments);
+            }
+
+            //Registrar el pago
+            payment = paymentService.crearInstancia(subjectOpt.get());
+            payment.setInvoiceId(invoiceData.getId());
+            payment.setAmount(invoiceData.getImporteTotal());
+            payment.setCash(payment.getAmount());
+            payment.setDatePaymentCancel(Dates.now());
+            paymentService.guardar(payment);
+
+            //Devolver paymentData
+            paymentData = new PaymentData();
+            BeanUtils.copyProperties(payment, paymentData);
+        } else {
+            throw new NotFoundException("Los datos del pago están incompletos.");
+        }
+        Api.imprimirUpdateLogAuditoria("/facturacion/facturas/pago", user.getId(), payment);
+        return ResponseEntity.ok(Api.response("payment", paymentData));
     }
 
     private List<InvoiceData> buildResultListInvoice(Long subjectId, List<InternalInvoice> invoices) {
