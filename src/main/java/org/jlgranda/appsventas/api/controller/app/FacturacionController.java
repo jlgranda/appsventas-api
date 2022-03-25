@@ -232,7 +232,7 @@ public class FacturacionController {
                         : Constantes.SRI_STATUS_POSTED.equals(invoiceCount.getInternalStatus()) ? "warning"
                         : Constantes.SRI_STATUS_REJECTED.equals(invoiceCount.getInternalStatus()) ? "tertiary"
                         : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "danger"
-                        : Constantes.SRI_STATUS_CANCELLED.equals(invoiceCount.getInternalStatus()) ? "ligth" : "medium";
+                        : Constantes.SRI_STATUS_CANCELLED.equals(invoiceCount.getInternalStatus()) ? "medium" : "ligth";
                 invoiceCount.setColor(colorStatus);
                 String nameStatus = Constantes.SRI_STATUS_CREATED.equals(invoiceCount.getInternalStatus()) ? "Por enviar al SRI"
                         : Constantes.SRI_STATUS_POSTED.equals(invoiceCount.getInternalStatus()) ? "Enviadas al SRI sin autorizar"
