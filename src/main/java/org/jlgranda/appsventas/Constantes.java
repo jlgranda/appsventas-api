@@ -217,6 +217,7 @@ public class Constantes {
     public static final String SRI_STATUS_REJECTED = "REJECTED";
     public static final String SRI_STATUS_INVALID = "INVALID";
     public static final String SRI_STATUS_NO_APPLIED = "NO_APPLIED";
+    public static final String SRI_STATUS_CANCELLED = "NO_APPLIED";
     public static final String SRI_ESTAB_DEFAULT = "001";
     public static final String SRI_PTO_EMISION_FACTURAS_ELECTRONICAS = "002";
 }

@@ -233,10 +233,11 @@ public class FacturacionController {
                         : Constantes.SRI_STATUS_REJECTED.equals(invoiceCount.getInternalStatus()) ? "tertiary"
                         : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "danger" : "medium";
                 invoiceCount.setColor(colorStatus);
-                String nameStatus = Constantes.SRI_STATUS_CREATED.equals(invoiceCount.getInternalStatus()) ? "CREADAS"
-                        : Constantes.SRI_STATUS_POSTED.equals(invoiceCount.getInternalStatus()) ? "PUBLICADAS"
-                        : Constantes.SRI_STATUS_REJECTED.equals(invoiceCount.getInternalStatus()) ? "RECHAZADAS"
-                        : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "INVÁLIDAS" : "NO APLICADAS";
+                String nameStatus = Constantes.SRI_STATUS_CREATED.equals(invoiceCount.getInternalStatus()) ? "Por enviar al SRI"
+                        : Constantes.SRI_STATUS_POSTED.equals(invoiceCount.getInternalStatus()) ? "Enviadas al SRI sin autorizar"
+                        : Constantes.SRI_STATUS_REJECTED.equals(invoiceCount.getInternalStatus()) ? "Rechazadas"
+                        : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "Inválidas"  
+                        : Constantes.SRI_STATUS_CANCELLED.equals(invoiceCount.getInternalStatus()) ? "Anuladas" : "Otras";
                 invoiceCount.setStatus(nameStatus);
                 invoicesCountData.add(invoiceCount);
             });
