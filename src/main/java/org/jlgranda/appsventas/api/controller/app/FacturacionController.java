@@ -268,6 +268,11 @@ public class FacturacionController {
 
     }
 
+    /**
+     * Contruye la lista de entidades para respuesta en el frontend
+     * @param invoiceCountViews
+     * @return 
+     */
     private List<InvoiceCountData> buildResultListFromInvoiceCountView(List<InvoiceCountView> invoiceCountViews) {
         List<InvoiceCountData> invoicesCountData = new ArrayList<>();
         if (!invoiceCountViews.isEmpty()) {
