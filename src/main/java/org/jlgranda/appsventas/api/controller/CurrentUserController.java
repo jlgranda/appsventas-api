@@ -110,7 +110,7 @@ public class CurrentUserController {
         if (userOpt.isPresent()) {
             Organization organizacion = organizationService.encontrarPorSubjectId(userOpt.get().getId());
             if (organizacion != null) {
-                    userImageData.setImageOrganization(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
+                userImageData.setImageOrganization(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
             }
         }
 
@@ -249,9 +249,10 @@ public class CurrentUserController {
                 byte[] decodedImg = java.util.Base64.getDecoder()
                         .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
                 user.setPhoto(decodedImg);
-            } else {
-                user.setPhoto(null);
             }
+//            } else {
+//                user.setPhoto(null);
+//            }
 
             userService.getUserRepository().save(user); //Guarda los cambios
 
@@ -273,9 +274,10 @@ public class CurrentUserController {
                 byte[] decodedImg = java.util.Base64.getDecoder()
                         .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
                 organizacion.setPhoto(decodedImg);
-            } else {
-                organizacion.setPhoto(null);
             }
+//else {
+//                organizacion.setPhoto(null);
+//            }
             organizationService.guardar(organizacion);
         }
         Api.imprimirUpdateLogAuditoria("/user/organization", user.getId(), organizacion);
