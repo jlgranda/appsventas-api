@@ -97,10 +97,10 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 @RequestMapping(path = "/comprobantes")
 public class SRIComprobantesController {
-
+    
     private String veronicaAPI;
     private final String ignoreProperties;
-
+    
     @Autowired
     private ComprobantesService comprobantesService;
     private SubjectService subjectService;
@@ -113,7 +113,7 @@ public class SRIComprobantesController {
     
     private NotificationService notificationService;
     private MessageService messageService;
-
+    
     @Autowired
     public SRIComprobantesController(
             @Value("${appsventas.veronica.api.url}") String veronicaAPI,
@@ -162,6 +162,7 @@ public class SRIComprobantesController {
         user.setUsername(Constantes.PUBLIC_USERNAME);
         return this.getVeronicaToken(user);
     }
+
     /**
      * Obtiene el token para el usuario administrador para temas de operaciones
      *
@@ -172,61 +173,61 @@ public class SRIComprobantesController {
         user.setUsername(username);
         return this.getVeronicaToken(user);
     }
-
+    
     private String getVeronicaToken(UserData user) {
-
+        
         final String uri = this.veronicaAPI + Constantes.URI_API_AUTH;
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic " + "dmVyb25pY2E6dmVyb25pY2E=");
-
+        
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
+        
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("username", user.getUsername());
         requestBody.add("password", "veronica");
         requestBody.add("grant_type", "password");
-
+        
         HttpEntity request = new HttpEntity<>(requestBody, headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<TokenData> response = null;
-
+        
         TokenData token = null;
         try {
             response = restTemplate.exchange(uri, HttpMethod.POST, request, TokenData.class);
             if (HttpStatus.OK.equals(response.getStatusCode())
                     && response.getBody() != null) {
-
+                
                 token = response.getBody();
             }
             /*else {
 
             }*/
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
             } else {
             }
             httpClientOrServerExc.printStackTrace();
         }
-
+        
         return token != null ? token.getAccess_token() : Constantes.VERONICA_NO_TOKEN;
     }
-
+    
     @GetMapping("/{tipo}")
     public ResponseEntity getComprobantesPorTipo(@AuthenticationPrincipal UserData user,
             @PathVariable("tipo") String tipo) {
-
+        
         return ResponseEntity.ok(comprobantesService.findAllBySupplierId(tipo));
     }
-
+    
     @GetMapping("/{tipo}/{claveAcceso}")
     public ResponseEntity getComprobante(@AuthenticationPrincipal UserData user,
             @PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
-
+        
         final String path = this.veronicaAPI + Constantes.URI_API_V1;
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo);
-
+        
         String token = this.getVeronicaToken(user);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
@@ -234,15 +235,15 @@ public class SRIComprobantesController {
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return Api.responseError("No se pudó obtener un token del API Verónica", null);
         }
-
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + token);
-
+        
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-
+        
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity response = null;
         try {
@@ -258,16 +259,16 @@ public class SRIComprobantesController {
 //                System.out.println(">>>>>>>>>>>>>>>>>>");
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
             } else {
             }
-
+            
             httpClientOrServerExc.printStackTrace();
         }
         return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
     }
-
+    
     @PostMapping(path = "/factura")
     public ResponseEntity crearEnviarFactura(
             @AuthenticationPrincipal UserData user,
@@ -284,7 +285,7 @@ public class SRIComprobantesController {
         String token = this.getVeronicaToken(user);
         
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-
+        
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
@@ -294,12 +295,12 @@ public class SRIComprobantesController {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
         
-        String estab = Strings.isNullOrEmpty( invoiceData.getEstab() ) ? Constantes.SRI_ESTAB_DEFAULT : Strings.toUpperCase(invoiceData.getEstab() );
-
+        String estab = Strings.isNullOrEmpty(invoiceData.getEstab()) ? Constantes.SRI_ESTAB_DEFAULT : Strings.toUpperCase(invoiceData.getEstab());
+        
         String ptoEmi = Constantes.SRI_PTO_EMISION_FACTURAS_ELECTRONICAS;
         
         String secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.INVOICE, estab, ptoEmi).next();
-        
+
 //        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
 //        System.out.println("ruc: " + organizacion.getRuc());
 //        System.out.println("estab: " + estab);
@@ -311,12 +312,12 @@ public class SRIComprobantesController {
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
         InternalInvoice invoice = null;
         Detail detail = null;
-
+        
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
         if (!customerOpt.isPresent()) {
             throw new NotFoundException("No se encontró un cliente válido para el usuario autenticado.");
         }
-
+        
         if (subjectOpt.isPresent() && customerOpt.isPresent() && organizacion != null) {
 
             //Guardar el invoice
@@ -356,7 +357,7 @@ public class SRIComprobantesController {
                 subjectCustomerService.guardar(subjectCustomer);
             }
         }
-
+        
         if (invoiceData.getEnviarSRI()) {
             String accion = invoiceData.getAccionSRI();
             if (Constantes.ACCION_COMPROBANTE_ENVIAR.equalsIgnoreCase(accion)
@@ -365,12 +366,12 @@ public class SRIComprobantesController {
                 
                 String claveAcceso = data.getResult().getClaveAcceso();
                 data = enviarComprobante(token, Constantes.URI_API_V1_INVOICE, claveAcceso, accion);
-                
+
                 //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
 //                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
 //                System.out.println("Notificar via correo: APLLIED = " + data.getResult().getEstado());
 //                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
-                if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(data.getResult().getEstado())){
+                if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(data.getResult().getEstado())) {
                     //Notificar via correo
                     String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
                     String cuerpoMensaje = "<p>Estimada(o): <strong>$clienteNombreCompleto</strong></p>\n"
@@ -381,7 +382,7 @@ public class SRIComprobantesController {
                     BeanUtils.copyProperties(customerOpt.get(), destinatario);
                     destinatario.setNombre(customerOpt.get().getFullName());
                     destinatario.setId(customerOpt.get().getId());
-
+                    
                     Map<String, Object> values = new HashMap<>();
                     values.put("facturaSecuencia", secuencial);
                     values.put("clienteNombreCompleto", Strings.toUpperCase(destinatario.getNombre()));
@@ -389,14 +390,14 @@ public class SRIComprobantesController {
                     values.put("url", "http://jlgranda.com/entry/fazil-facturacion-electronica-para-profesionales");
                     byte[] pdf = getPDF(Constantes.INVOICE, claveAcceso, user.getUsername());
                     byte[] xml = getXML(Constantes.INVOICE, claveAcceso, user.getUsername());
-                    
+
                     //La notificaciones siempre deben enviarse desde un mismo correo
                     user.setEmail("AppsVentas Plataforma <notificacion@jlgranda.com>"); //TODO obtener desde propiedades del sistema
                     EmailUtil.getInstance().enviarCorreo(user, destinatario, titulo, cuerpoMensaje, values, this.notificationService, this.messageService, claveAcceso, pdf, xml);
                 }
             }
         }
-
+        
         return ResponseEntity.ok(data);
     }
     
@@ -413,14 +414,14 @@ public class SRIComprobantesController {
             throw new InvalidRequestException(bindingResult);
         }
         
-        if (!claveAcceso.equalsIgnoreCase(submitInvoiceData.getClaveAcceso())){
+        if (!claveAcceso.equalsIgnoreCase(submitInvoiceData.getClaveAcceso())) {
             throw new NotFoundException("La clave de acceso no coincide con la solucitud al servidor.");
         }
         //Invocar servicio veronica API
         String token = this.getVeronicaToken(user);
         
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-
+        
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
@@ -431,13 +432,13 @@ public class SRIComprobantesController {
         }
         
         InvoiceData invoiceData = invoiceService.buildInvoiceData(invoiceService.encontrarPorClaveAcceso(claveAcceso).get());
-
+        
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getCustomerId());
         if (!customerOpt.isPresent()) {
             throw new NotFoundException("No se encontró un cliente válido para la factura. customerId: " + invoiceData.getCustomerId());
         }
-
-        if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(invoiceData.getInternalStatus())){
+        
+        if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(invoiceData.getInternalStatus())) {
             //Notificar via correo
             String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
             String cuerpoMensaje = "<p>Estimada(o): <strong>$clienteNombreCompleto</strong></p>\n"
@@ -448,7 +449,7 @@ public class SRIComprobantesController {
             BeanUtils.copyProperties(customerOpt.get(), destinatario);
             destinatario.setNombre(customerOpt.get().getFullName());
             destinatario.setId(customerOpt.get().getId());
-
+            
             Map<String, Object> values = new HashMap<>();
             values.put("facturaSecuencia", invoiceData.getSecuencial());
             values.put("clienteNombreCompleto", Strings.toUpperCase(destinatario.getNombre()));
@@ -461,7 +462,7 @@ public class SRIComprobantesController {
             user.setEmail("AppsVentas Plataforma <notificacion@jlgranda.com>"); //TODO obtener desde propiedades del sistema
             EmailUtil.getInstance().enviarCorreo(user, destinatario, titulo, cuerpoMensaje, values, this.notificationService, this.messageService, claveAcceso, pdf, xml);
         }
-
+        
         return ResponseEntity.ok(claveAcceso);
     }
 
@@ -471,9 +472,9 @@ public class SRIComprobantesController {
      * @return
      */
     private VeronicaAPIData crearComprobante(String token, String tipo, String secuencial, String estab, String ptoEmi, InvoiceData invoiceData, UserData user) {
-
+        
         VeronicaAPIData data = new VeronicaAPIData();
-
+        
         final String path = this.veronicaAPI + tipo;
         final String uri = path;
         System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
@@ -483,7 +484,7 @@ public class SRIComprobantesController {
             String message = "No se consiguió el token desde Veronica API";
             ResultData errorData = new ResultData(false, message, new Error());
             errorData.setType("error");
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
             return data;
@@ -493,15 +494,15 @@ public class SRIComprobantesController {
         Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
-
+        
         if (organizacion == null) {
             String message = "No se encontró una organización válida para el usuario autenticado.";
             ResultData errorData = new ResultData(false, message, new Error());
             errorData.setSuccess(false);
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
-
+            
             return data;
             ///throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
@@ -509,10 +510,10 @@ public class SRIComprobantesController {
             String message = "No se encontró una sujeto emisor válido para el usuario autenticado.";
             ResultData errorData = new ResultData(false, message, new Error());
             errorData.setSuccess(false);
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
-
+            
             return data;
             //throw new NotFoundException("No se encontró una sujeto emisor válido para el usuario autenticado.");
         }
@@ -520,7 +521,7 @@ public class SRIComprobantesController {
             String message = "No se encontró una sujeto destinatario válido para el usuario autenticado.";
             ResultData errorData = new ResultData(false, message, new Error());
             errorData.setSuccess(false);
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
             return data;
@@ -530,7 +531,7 @@ public class SRIComprobantesController {
         //Cargar generadores de serie para facturas
         Subject subject = subjectOpt.get();
         Subject customer = customerOpt.get();
-
+        
         Map<String, Object> values = new HashMap<>();
 //        values.put("ambiente", "" + "1"); //PRUEBAS
         values.put("ambiente", "" + "2"); //PRODUCCION
@@ -542,7 +543,7 @@ public class SRIComprobantesController {
         values.put("estab", estab); //Por defecto un establecimiento
         values.put("ptoEmi", ptoEmi); ////Por defecto un punto de emision
         values.put("secuencial", Strings.extractLast(secuencial, "-"));
-
+        
         values.put("dirMatriz", "" + subject.getDescription());
         values.put("dirEstablecimiento", Strings.isNullOrEmpty(organizacion.getDireccion()) ? Constantes.SIN_DIRECCION : organizacion.getDireccion());
         values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "5368" : subject.getNumeroContribuyenteEspecial());
@@ -558,7 +559,7 @@ public class SRIComprobantesController {
         values.put("razonSocialComprador", "" + customer.getFullName());
         values.put("identificacionComprador", "" + customer.getCode());
         values.put("direccionComprador", Strings.isNullOrEmpty(customer.getDescription()) ? Constantes.SIN_DIRECCION : customer.getDescription());
-
+        
         values.put("totalSinImpuestos", "" + invoiceData.getSubTotal());
         values.put("totalDescuento", "" + invoiceData.getDescuento());
 
@@ -568,7 +569,7 @@ public class SRIComprobantesController {
         values.put("descuentoAdicional", "" + 0.00);
         values.put("totalImpuestoBaseImponible", invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
         values.put("totalImpuestoValor", invoiceData.getIva12Total() != null ? invoiceData.getIva12Total().setScale(2, RoundingMode.HALF_UP) : "0.00");
-
+        
         values.put("propina", "" + invoiceData.getPropina());
         values.put("importeTotal", "" + invoiceData.getImporteTotal() != null ? invoiceData.getImporteTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
         values.put("moneda", "" + "DOLAR");
@@ -578,22 +579,22 @@ public class SRIComprobantesController {
         values.put("total", "" + "" + invoiceData.getImporteTotal() != null ? invoiceData.getImporteTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
         values.put("plazo", "" + "30");
         values.put("unidadTiempo", "dias");
-
+        
         values.put("valorRetIva", "" + 0.00);
         values.put("valorRetRenta", "" + 0.00);
 
         //detalle
         values.put("codigoPrincipal", "" + invoiceData.getProduct().getId());
         values.put("codigoAuxiliar", "" + invoiceData.getProduct().getId());
-        values.put("descripcion", "" + (Strings.isNullOrEmpty(invoiceData.getProduct().getName()) ? invoiceData.getDescripcion() : invoiceData.getProduct().getName().concat(" [").concat(invoiceData.getDescripcion())) + "]");
+        values.put("descripcion", "" + (Strings.isNullOrEmpty(invoiceData.getProduct().getName()) ? invoiceData.getDescription(): invoiceData.getProduct().getName().concat(" [").concat(invoiceData.getDescription())) + "]");
         values.put("cantidad", "" + 1.00);
         values.put("precioUnitario", "" + invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
         values.put("descuento", "" + 0.00);
         values.put("precioTotalSinImpuesto", invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
-
+        
         values.put("detAdicionalNombre1", "" + invoiceData.getProduct().getName());
         values.put("detAdicionalValor1", "" + invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
-
+        
         values.put("impuestoCodigo", "2");
         values.put("impuestoCodigoPorcentaje", "2");
         values.put("tarifa", "12");
@@ -602,18 +603,18 @@ public class SRIComprobantesController {
 
         //Falta el array de campoAdicional
         values.put("campoAdicional", "" + "campoAdicional");
-
+        
         StringBuilder json = new StringBuilder("$");
-
+        
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
         } catch (Exception ex) {
-
+            
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
             String message = ex.getLocalizedMessage();
             ResultData errorData = new ResultData(false, message, ex);
             errorData.setSuccess(false);
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
             return data;
@@ -622,13 +623,13 @@ public class SRIComprobantesController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + token);
-
+        
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<VeronicaAPIData> response = null;
         try {
-
+            
             response = restTemplate.exchange(uri, HttpMethod.POST, request, VeronicaAPIData.class);
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
@@ -638,20 +639,20 @@ public class SRIComprobantesController {
                 data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             httpClientOrServerExc.printStackTrace();
             if (null != httpClientOrServerExc.getStatusCode()) {
                 String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
                 ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
                 errorData.setSuccess(false);
-
+                
                 data.setSuccess(false);
                 data.setErrors(errorData);
                 return data;
             }
-
+            
         }
-
+        
         return data;
     }
 
@@ -665,36 +666,36 @@ public class SRIComprobantesController {
      * @return
      */
     private VeronicaAPIData enviarComprobante(String token, String tipo, String claveAcceso, String accion) {
-
+        
         VeronicaAPIData data = new VeronicaAPIData();
-
+        
         final String uri = this.veronicaAPI + tipo + "/" + claveAcceso + "/" + accion;
-
+        
         System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
-
+        
         if (Strings.isNullOrEmpty(claveAcceso)) {
             String message = "No se recibió una clave de acceso para enviar el comprobante";
             ResultData errorData = new ResultData(false, message, new Error());
             errorData.setType("error");
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
             return data;
         }
-
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + token);
-
+        
         HttpEntity<String> request = new HttpEntity<>(null, headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<VeronicaAPIData> response = null;
         try {
-
+            
             response = restTemplate.exchange(uri, HttpMethod.PUT, request, VeronicaAPIData.class);
-
+            
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
                 data.getResult().setClaveAcceso(claveAcceso); //Por si se necesita en el cliente
@@ -716,23 +717,23 @@ public class SRIComprobantesController {
             }
             
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             httpClientOrServerExc.printStackTrace();
             if (null != httpClientOrServerExc.getStatusCode()) {
                 String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
                 ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
                 errorData.setSuccess(false);
-
+                
                 data.setSuccess(false);
                 data.setErrors(errorData);
                 return data;
             }
-
+            
         }
-
+        
         return data;
     }
-
+    
     @PostMapping(path = "/firmaelectronica")
     public ResponseEntity registrarCertificadoDigital(
             @AuthenticationPrincipal UserData user,
@@ -743,11 +744,11 @@ public class SRIComprobantesController {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
-
+        
         String token = this.getVeronicaAdminToken();
-
+        
         return ResponseEntity.ok(enviarCertificadoDigital(token, user, certificadoDigitalData));
-
+        
     }
 
     /**
@@ -756,14 +757,14 @@ public class SRIComprobantesController {
      * @return
      */
     private VeronicaAPIData enviarCertificadoDigital(String token, UserData user, CertificadoDigitalData certificadoDigitalData) {
-
+        
         VeronicaAPIData data = new VeronicaAPIData();
-
+        
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             String message = "No se consiguió el token desde Veronica API";
             ResultData errorData = new ResultData(false, message, new Error());
             errorData.setType("error");
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
             return data;
@@ -777,10 +778,10 @@ public class SRIComprobantesController {
             String message = "No se encontró una organización válida para el usuario autenticado.";
             ResultData errorData = new ResultData(false, message, new Error());
             errorData.setSuccess(false);
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
-
+            
             return data;
             ///throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
@@ -808,77 +809,77 @@ public class SRIComprobantesController {
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
             throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
         }
-
+        
         Map<String, Object> values = new HashMap<>();
         values.put("certificado", "" + certificadoDigitalData.getCertificado());
         values.put("password", "" + plainText); //Se encrypta en verónica
 
         StringBuilder json = new StringBuilder("$");
-
+        
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_CERTIFICADO_DIGITAL, values));
         } catch (Exception ex) {
-
+            
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
             String message = ex.getLocalizedMessage();
             ResultData errorData = new ResultData(false, message, ex);
             errorData.setSuccess(false);
-
+            
             data.setSuccess(false);
             data.setErrors(errorData);
             return data;
         }
-
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + token);
-
+        
         HttpEntity<String> request = new HttpEntity<>(json.toString(), headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<VeronicaAPIData> response = null;
         try {
-
+            
             response = restTemplate.exchange(uri, HttpMethod.POST, request, VeronicaAPIData.class);
             if (HttpStatus.OK.equals(response.getStatusCode()) && response.getBody() != null) {
                 data = response.getBody();
                 data.getResult().setEstado(Constantes.ESTADO_COMPROBANTE_CREADA); //Marcar un estado en la respuesta
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             httpClientOrServerExc.printStackTrace();
             if (null != httpClientOrServerExc.getStatusCode()) {
                 String message = "VERONICA API: " + httpClientOrServerExc.getMessage();
                 ResultData errorData = new ResultData(false, message, httpClientOrServerExc.getCause());
                 errorData.setSuccess(false);
-
+                
                 data.setSuccess(false);
                 data.setErrors(errorData);
                 return data;
             }
-
+            
         }
-
+        
         return data;
     }
-
+    
     @GetMapping(value = "/{tipo}/{claveAcceso}/archivos/test")
     public ResponseEntity testRIDE(@PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
-        
+
         //this.getPDF(tipo, claveAcceso, "jlgranda81@gmail.com");
         this.getXML(tipo, claveAcceso, "jlgranda81@gmail.com");
         
         return ResponseEntity.ok().body(claveAcceso);
     }
-    
+
     //https://www.javacodemonk.com/download-a-file-using-spring-resttemplate-75723d97
     @GetMapping(value = "/{tipo}/{claveAcceso}/archivos/pdf")
     public ResponseEntity<byte[]> generateRIDE(@PathVariable("tipo") String tipo, @PathVariable("claveAcceso") String claveAcceso) {
-
+        
         final String path = this.veronicaAPI + Constantes.URI_API_V1;
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/pdf";
-
+        
         String token = this.getPublicUserToken(); //Token para descargar comprobantes
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
@@ -886,14 +887,14 @@ public class SRIComprobantesController {
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return Api.responseError("No se pudó obtener un token del API Verónica", null);
         }
-
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_OCTET_STREAM));
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.set("Authorization", "Bearer " + token);
-
+        
         HttpEntity<String> request = new HttpEntity<>(headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity response = null;
         try {
@@ -909,11 +910,11 @@ public class SRIComprobantesController {
 //                System.out.println(">>>>>>>>>>>>>>>>>>");
             }
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
             } else {
             }
-
+            
             httpClientOrServerExc.printStackTrace();
         }
         return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
@@ -923,7 +924,7 @@ public class SRIComprobantesController {
     private byte[] getPDF(String tipo, String claveAcceso, String username) {
         final String path = this.veronicaAPI + Constantes.URI_API_V1;
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/pdf";
-
+        
         String token = this.getUserToken(username); //Token para descargar comprobantes
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
@@ -931,31 +932,31 @@ public class SRIComprobantesController {
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return null;
         }
-
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_OCTET_STREAM));
         //headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.set("Authorization", "Bearer " + token);
-
+        
         HttpEntity<String> entity = new HttpEntity<>(headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<byte[]>  response= null;
+        ResponseEntity<byte[]> response = null;
         try {
             response = restTemplate.exchange(uri, HttpMethod.GET, entity, byte[].class);
             if (HttpStatus.OK.equals(response.getStatusCode())
                     && response.getBody() != null) {
                 //Convertir la respuesta 
                 return response.getBody();
-            } 
+            }            
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             httpClientOrServerExc.printStackTrace();
             
             if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
             } else {
             }
-
+            
         }
         
         return null;
@@ -963,30 +964,31 @@ public class SRIComprobantesController {
 
     /**
      * //https://www.javacodemonk.com/download-a-file-using-spring-resttemplate-75723d97
+     *
      * @param tipo
      * @param claveAcceso
      * @param username
-     * @return 
+     * @return
      */
     private byte[] getXML(String tipo, String claveAcceso, String username) {
         final String path = this.veronicaAPI + Constantes.URI_API_V1;
         final String uri = !path.endsWith("/") ? (path + "/" + tipo) : (path + tipo) + "/" + claveAcceso + "/archivos/xml";
-
+        
         String token = this.getUserToken(username); //Token para descargar comprobantes
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
             return null;
         }
-
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
         headers.set("Authorization", "Bearer " + token);
-
+        
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-
+        
         HttpEntity<String> request = new HttpEntity<>(headers);
-
+        
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity response = null;
         try {
@@ -996,17 +998,17 @@ public class SRIComprobantesController {
                 //Convertir la respuesta 
                 String xml = (String) response.getBody();
                 return xml.getBytes(); //El arreglo de bytes para adjuntar en el email
-            } 
+            }            
         } catch (HttpClientErrorException | HttpServerErrorException httpClientOrServerExc) {
-
+            
             if (HttpStatus.NOT_FOUND.equals(httpClientOrServerExc.getStatusCode())) {
             } else {
             }
-
+            
             httpClientOrServerExc.printStackTrace();
         }
         
         return null;
     }
-
+    
 }

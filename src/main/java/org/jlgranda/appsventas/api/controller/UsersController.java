@@ -8,6 +8,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +41,7 @@ import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserModelData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NoAuthorizationException;
+import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.exception.ResourceNotFoundException;
 import org.jlgranda.appsventas.services.AuthorizationService;
 import org.jlgranda.appsventas.services.EncryptService;
@@ -100,7 +102,6 @@ public class UsersController {
             subjectOpt = userService.getUserRepository().findByRuc(code);//Buscar por campo ruc
         }
         if (subjectOpt.isPresent()) {
-
             Subject subject = subjectOpt.get();
             userModelData = new UserModelData();
             userModelData.setUuid(subject.getUuid());
@@ -119,27 +120,25 @@ public class UsersController {
             @Valid @RequestBody UserModelData registerParam,
             BindingResult bindingResult) {
         checkInput(registerParam, bindingResult);
+
+        Boolean isCI = net.tecnopro.util.Strings.validateNationalIdentityDocument(registerParam.getCode());
+        Boolean isRUC = net.tecnopro.util.Strings.validateTaxpayerDocument(registerParam.getCode());
+
+        if (Objects.equals(isCI, Boolean.FALSE) && Objects.equals(isRUC, Boolean.FALSE)) {
+            throw new NotFoundException("C.I/RUC no es válido.");
+        }
+
+        //Crear una nueva instancia de subject
         Subject user = userService.crearInstancia();
         BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
         user.setId(null);
         user.setCode(registerParam.getCode());
+        user.setRuc(isRUC ? user.getCode() : "");
+        user.setCodeType(isCI ? CodeType.CEDULA : isRUC ? CodeType.RUC : CodeType.NONE);
         user.setDescription(registerParam.getDireccion());
-        if (user.getCode() != null && user.getCode().length() == 10) {
-            user.setCodeType(CodeType.CEDULA);
-        } else if (user.getCode() != null && user.getCode().length() == 13) {
-            if (net.tecnopro.util.Strings.validateTaxpayerDocument(user.getCode())) {
-                user.setRuc(user.getRuc());
-            }
-            user.setCodeType(CodeType.RUC);
-        } else {
-            user.setCodeType(CodeType.NONE);
-        }
-        user.setSubjectType(Subject.Type.NATURAL);
-        user.setEmailSecret(false);
-        user.setContactable(Boolean.FALSE);
+        user.setUsername(user.getEmail());
         user.setUsuarioAPP(Boolean.TRUE);
         user.setInitials(user.getFullName() != null ? user.getFullName() : Constantes.NO_ORGANIZACION);
-
         //La contraseña viene encriptada, desencriptar y encriptar para Shiro autenticación
         String plainText = "";
         try {
@@ -148,21 +147,12 @@ public class UsersController {
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
             throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
         }
-
         user.setPassword(svc.encryptPassword(plainText));
-
         userService.getUserRepository().save(user);
 
-        //Agregar rol usuario
-        //Asignar roles
-//        UsersRoles shiroUsersRoles = new UsersRoles();
-//        UsersRolesPK usersRolesPK = new UsersRolesPK(user.getUsername(), "USER");
-//        shiroUsersRoles.setUsersRolesPK(usersRolesPK);
-//        usersRolesService.guardar(shiroUsersRoles);
-        //Inicia notificación de registro
-        //Fin de enviar notificación de registro
         //Cargar datos de retorno al frontend
         UserModelData userModelData = userService.findById(user.getId()).get();
+
         //Api.imprimirPostLogAuditoria("users/", user.getId());
         return ResponseEntity.ok(Api.response("user", userModelData));
     }
@@ -174,24 +164,20 @@ public class UsersController {
             BindingResult bindingResult) {
 
         return userService.getUserRepository().findByUUID(registerParam.getUuid()).map(user -> {
-            BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-            user.setDescription(registerParam.getDireccion());
-            if (user.getCode() != null && user.getCode().length() == 10) {
-                user.setCodeType(CodeType.CEDULA);
-            } else if (user.getCode() != null && user.getCode().length() == 13) {
-                if (net.tecnopro.util.Strings.validateTaxpayerDocument(user.getCode())) {
-                    user.setRuc(user.getRuc());
-                }
-                user.setCodeType(CodeType.RUC);
-            } else {
-                user.setCodeType(CodeType.NONE);
+
+            Boolean isCI = net.tecnopro.util.Strings.validateNationalIdentityDocument(registerParam.getCode());
+            Boolean isRUC = net.tecnopro.util.Strings.validateTaxpayerDocument(registerParam.getCode());
+
+            if (Objects.equals(isCI, Boolean.FALSE) && Objects.equals(isRUC, Boolean.FALSE)) {
+                throw new NotFoundException("C.I/RUC no es válido.");
             }
-            user.setSubjectType(Subject.Type.NATURAL);
-            user.setEmailSecret(false);
-            user.setContactable(Boolean.FALSE);
+
+            BeanUtils.copyProperties(registerParam, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+            user.setRuc(isRUC ? user.getCode() : "");
+            user.setCodeType(isCI ? CodeType.CEDULA : isRUC ? CodeType.RUC : CodeType.NONE);
+            user.setDescription(registerParam.getDireccion());
             user.setUsuarioAPP(Boolean.TRUE);
             user.setInitials(user.getFullName() != null ? user.getFullName() : Constantes.NO_ORGANIZACION);
-
             //La contraseña viene encriptada, desencriptar y encriptar para Shiro autenticación
             String plainText = "";
             try {
@@ -200,13 +186,12 @@ public class UsersController {
                 Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
                 throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
             }
-
             user.setPassword(svc.encryptPassword(plainText));
-
             userService.getUserRepository().save(user);
 
             //Cargar datos de retorno al frontend
             UserModelData userModelData = userService.findById(user.getId()).get();
+
             //Api.imprimirUpdateLogAuditoria("users/", user.getId());
             return ResponseEntity.ok(Api.response("user", userModelData));
         }).orElseThrow(ResourceNotFoundException::new);

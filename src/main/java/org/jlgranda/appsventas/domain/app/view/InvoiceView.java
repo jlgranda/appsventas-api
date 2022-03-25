@@ -21,16 +21,17 @@ import java.util.Date;
 
 /**
  * Estructura para lectura de datos Invoice
+ *
  * @author jlgranda
  */
 public interface InvoiceView {
-    
+
     public Long getId();
 
     public String getUuid();
 
     public Date getEmissionOn();
-    
+
     public String getResumen();
 
     public BigDecimal getAmount();
@@ -50,7 +51,7 @@ public interface InvoiceView {
     public BigDecimal getImporteTotal();
 
     public Long getCustomerId();
-    
+
     public String getCustomerFullName();
 
     public String getSubjectFullName();
@@ -62,7 +63,9 @@ public interface InvoiceView {
     public String getSecuencial();
 
     public String getClaveAcceso();
-    
+
     public String getInternalStatus();
+
+    public Boolean getIsPayment();
 
 }

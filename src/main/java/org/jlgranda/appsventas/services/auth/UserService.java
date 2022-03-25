@@ -131,12 +131,15 @@ public class UserService {
         Subject _instance = new Subject();
         _instance.setActive(Boolean.TRUE);
         _instance.setDeleted(Boolean.FALSE);
-        _instance.setLastUpdate(Dates.now());
         _instance.setCreatedOn(Dates.now());
+        _instance.setLastUpdate(Dates.now());
         _instance.setStatus(StatusType.ACTIVE.toString());
         _instance.setActivationTime(Dates.now());
         _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
         _instance.setUuid(UUID.randomUUID().toString());
+        _instance.setEmailSecret(Boolean.TRUE);
+        _instance.setSubjectType(Subject.Type.NATURAL);
+        _instance.setContactable(Boolean.FALSE);
         return _instance;
     }
 }
