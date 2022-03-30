@@ -94,30 +94,6 @@ public class CurrentUserController {
         return ResponseEntity.ok(userImageData);
     }
 
-    @GetMapping("organization/image")
-    public ResponseEntity currentUserOrganizationImage(
-            @AuthenticationPrincipal UserData userData,
-            @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "20") int limit
-    ) {
-
-        UserImageData userImageData = new UserImageData();
-
-        Optional<Subject> userOpt = userService.getUserRepository().findByUsername(userData.getUsername());
-        if (!userOpt.isPresent()) {
-            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
-        }
-        if (userOpt.isPresent()) {
-            Organization organizacion = organizationService.encontrarPorSubjectId(userOpt.get().getId());
-            if (organizacion != null) {
-                userImageData.setImageOrganization(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
-            }
-        }
-
-        Api.imprimirGetLogAuditoria("user/organization/image", userData.getId());
-        return ResponseEntity.ok(userImageData);
-    }
-
     @GetMapping
     public ResponseEntity currentUser(
             @AuthenticationPrincipal UserData currentUser,
@@ -259,29 +235,6 @@ public class CurrentUserController {
             Api.imprimirUpdateLogAuditoria("/user", user.getId(), userData);
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
-    }
-
-    @PutMapping("/organization")
-    public ResponseEntity updateOrganization(
-            @AuthenticationPrincipal UserData user,
-            @Valid @RequestBody OrganizationData organizationData,
-            BindingResult bindingResult) {
-        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-        if (organizacion != null) {
-            BeanUtils.copyProperties(organizationData, organizacion);
-            if (!Strings.isNullOrEmpty(organizationData.getImage())) {
-                String base64ImageString = organizationData.getImage().replace("data:image/jpeg;base64,", "");
-                byte[] decodedImg = java.util.Base64.getDecoder()
-                        .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
-                organizacion.setPhoto(decodedImg);
-            }
-//else {
-//                organizacion.setPhoto(null);
-//            }
-            organizationService.guardar(organizacion);
-        }
-        Api.imprimirUpdateLogAuditoria("/user/organization", user.getId(), organizacion);
-        return ResponseEntity.ok(Api.response("organization", organizationData));
     }
 
 }
