@@ -32,4 +32,6 @@ import org.jlgranda.appsventas.dto.BaseObjectData;
 @EqualsAndHashCode(callSuper = false)
 public class CuentaBancariaData extends BaseObjectData {
 
+    private String tipoCuenta;
+
 }

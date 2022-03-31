@@ -37,4 +37,7 @@ public class CuentaBancaria extends DeletableObject<CuentaBancaria> implements S
     @Column(name = "organization_id", insertable = true, updatable = true, nullable = true)
     private Long organizacionId;
 
+    @Column(name = "tipo_cuenta")
+    private String tipoCuenta;
+
 }

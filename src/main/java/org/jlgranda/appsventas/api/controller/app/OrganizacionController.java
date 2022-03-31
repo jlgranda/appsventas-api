@@ -172,8 +172,11 @@ public class OrganizacionController {
         cuentaBancaria.setOrganizacionId(organizacion.getId());
         cuentaBancariaService.guardar(cuentaBancaria);
 
+        //Cargar datos de retorno al frontend
+        cuentaBancariaData = cuentaBancariaService.buildCuentaBancariaData(cuentaBancaria);
+
         Api.imprimirPostLogAuditoria("organization/cuentabancaria", user.getId());
-        return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancaria));
+        return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancariaData));
     }
 
     @PutMapping("/cuentabancaria")
@@ -185,7 +188,7 @@ public class OrganizacionController {
             BeanUtils.copyProperties(cuentaBancariaData, cuentaBancaria, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             cuentaBancariaService.guardar(cuentaBancaria);
             Api.imprimirUpdateLogAuditoria("organization/cuentabancaria", user.getId(), cuentaBancariaData);
-            return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancaria));
+            return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancariaData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
 
