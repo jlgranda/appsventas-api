@@ -55,6 +55,17 @@ public class CuentaBancariaService {
     }
 
     /**
+     * Devolver las instancias <tt>CuentaBancaria</tt> para el code dado como
+     * parámentro, discriminando el campo eliminado
+     *
+     * @param code
+     * @return
+     */
+    public Optional<CuentaBancaria> encontrarPorCode(String code) {
+        return this.getRepository().encontrarPorCode(code);
+    }
+
+    /**
      * Devolver las instancias <tt>CuentaBancaria</tt> para el uuid dado como
      * parámentro, discriminando el campo eliminado
      *

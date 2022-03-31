@@ -31,6 +31,9 @@ public interface CuentaBancariaRepository extends CrudRepository<CuentaBancaria,
     @Query("select p from CuentaBancaria p where p.deleted = false and p.id = :#{#id}")
     public Optional<CuentaBancaria> encontrarPorId(Long id);
 
+    @Query("select p from CuentaBancaria p where p.deleted = false and p.code = :#{#code}")
+    public Optional<CuentaBancaria> encontrarPorCode(String code);
+
     @Query("select p from CuentaBancaria p where p.deleted = false and p.uuid = :#{#uuid}")
     public Optional<CuentaBancaria> encontrarPorUuid(String uuid);
 

@@ -166,14 +166,16 @@ public class OrganizacionController {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
 
-        CuentaBancaria cuentaBancaria = cuentaBancariaService.crearInstancia(subjectOpt.get());
-        BeanUtils.copyProperties(cuentaBancariaData, cuentaBancaria, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-        cuentaBancaria.setCode(cuentaBancariaData.getCode());
-        cuentaBancaria.setOrganizacionId(organizacion.getId());
-        cuentaBancariaService.guardar(cuentaBancaria);
-
-        //Cargar datos de retorno al frontend
-        cuentaBancariaData = cuentaBancariaService.buildCuentaBancariaData(cuentaBancaria);
+        Optional<CuentaBancaria> cuentaBancariaOpt = cuentaBancariaService.encontrarPorCode(cuentaBancariaData.getCode());
+        if (!cuentaBancariaOpt.isPresent()) {//No existe esa cuenta
+            CuentaBancaria cuentaBancaria = cuentaBancariaService.crearInstancia(subjectOpt.get());
+            BeanUtils.copyProperties(cuentaBancariaData, cuentaBancaria, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+            cuentaBancaria.setCode(cuentaBancariaData.getCode());
+            cuentaBancaria.setOrganizacionId(organizacion.getId());
+            cuentaBancariaService.guardar(cuentaBancaria);
+            //Cargar datos de retorno al frontend
+            cuentaBancariaData = cuentaBancariaService.buildCuentaBancariaData(cuentaBancaria);
+        }
 
         Api.imprimirPostLogAuditoria("organization/cuentabancaria", user.getId());
         return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancariaData));
