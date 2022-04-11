@@ -99,8 +99,11 @@ public class UsersController {
         UserModelData userModelData = new UserModelData();
         Optional<Subject> subjectOpt = userService.getUserRepository().findByCode(code);//Buscar por campo code
         if (!subjectOpt.isPresent()) {
-            subjectOpt = userService.getUserRepository().findByRuc(code);//Buscar por campo ruc
+            String ruc = code.length() == 10 ?  code + "001" : code;
+            subjectOpt = userService.getUserRepository().findByRuc(ruc);//Buscar por campo ruc
         }
+        
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><< Encontrado " + subjectOpt);
         if (subjectOpt.isPresent()) {
             Subject subject = subjectOpt.get();
             userModelData = new UserModelData();
