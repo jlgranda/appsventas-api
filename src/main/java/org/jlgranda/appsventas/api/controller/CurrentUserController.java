@@ -94,6 +94,13 @@ public class CurrentUserController {
         return ResponseEntity.ok(userImageData);
     }
 
+    /**
+     * Soporte para descargar imagen de organización
+     * @param userData
+     * @param offset
+     * @param limit
+     * @return 
+     */
     @GetMapping("organization/image")
     public ResponseEntity currentUserOrganizationImage(
             @AuthenticationPrincipal UserData userData,
