@@ -256,37 +256,16 @@ public class CurrentUserController {
                 byte[] decodedImg = java.util.Base64.getDecoder()
                         .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
                 user.setPhoto(decodedImg);
-            } else {
-                user.setPhoto(null);
             }
+//            } else {
+//                user.setPhoto(null);
+//            }
 
             userService.getUserRepository().save(user); //Guarda los cambios
 
             Api.imprimirUpdateLogAuditoria("/user", user.getId(), userData);
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
-    }
-
-    @PutMapping("/organization")
-    public ResponseEntity updateOrganization(
-            @AuthenticationPrincipal UserData user,
-            @Valid @RequestBody OrganizationData organizationData,
-            BindingResult bindingResult) {
-        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-        if (organizacion != null) {
-            BeanUtils.copyProperties(organizationData, organizacion);
-            if (!Strings.isNullOrEmpty(organizationData.getImage())) {
-                String base64ImageString = organizationData.getImage().replace("data:image/jpeg;base64,", "");
-                byte[] decodedImg = java.util.Base64.getDecoder()
-                        .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
-                organizacion.setPhoto(decodedImg);
-            } else {
-                organizacion.setPhoto(null);
-            }
-            organizationService.guardar(organizacion);
-        }
-        Api.imprimirUpdateLogAuditoria("/user/organization", user.getId(), organizacion);
-        return ResponseEntity.ok(Api.response("organization", organizationData));
     }
 
 }
