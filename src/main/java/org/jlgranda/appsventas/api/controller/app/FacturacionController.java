@@ -179,7 +179,7 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent()) {
-            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
+            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/recibidas/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
@@ -270,8 +270,9 @@ public class FacturacionController {
 
     /**
      * Contruye la lista de entidades para respuesta en el frontend
+     *
      * @param invoiceCountViews
-     * @return 
+     * @return
      */
     private List<InvoiceCountData> buildResultListFromInvoiceCountView(List<InvoiceCountView> invoiceCountViews) {
         List<InvoiceCountData> invoicesCountData = new ArrayList<>();
@@ -288,7 +289,7 @@ public class FacturacionController {
                 String nameStatus = Constantes.SRI_STATUS_CREATED.equals(invoiceCount.getInternalStatus()) ? "Por enviar al SRI"
                         : Constantes.SRI_STATUS_POSTED.equals(invoiceCount.getInternalStatus()) ? "Enviadas al SRI sin autorizar"
                         : Constantes.SRI_STATUS_REJECTED.equals(invoiceCount.getInternalStatus()) ? "Rechazadas"
-                        : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "Inválidas"  
+                        : Constantes.SRI_STATUS_INVALID.equals(invoiceCount.getInternalStatus()) ? "Inválidas"
                         : Constantes.SRI_STATUS_CANCELLED.equals(invoiceCount.getInternalStatus()) ? "Anuladas" : "Otras";
                 invoiceCount.setStatus(nameStatus);
                 invoicesCountData.add(invoiceCount);
