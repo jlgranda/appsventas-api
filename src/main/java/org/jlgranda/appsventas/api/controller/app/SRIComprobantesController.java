@@ -477,7 +477,7 @@ public class SRIComprobantesController {
         
         final String path = this.veronicaAPI + tipo;
         final String uri = path;
-        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< uri: " + uri);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>><<<<<<< token: " + token);
 
         if (Constantes.VERONICA_NO_TOKEN.equalsIgnoreCase(token)) {
