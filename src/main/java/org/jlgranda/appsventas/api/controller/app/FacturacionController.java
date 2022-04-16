@@ -5,7 +5,6 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
-import io.jsonwebtoken.lang.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +79,33 @@ public class FacturacionController {
         this.ignoreProperties = ignoreProperties;
     }
 
+    @GetMapping
+    public ResponseEntity encontrarPorOrganizacion(
+            @AuthenticationPrincipal UserData user,
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "20") int limit
+    ) {
+        InvoiceGlobalData invoiceGlobal = new InvoiceGlobalData();
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        if (subjectOpt.isPresent() && organizacion != null) {
+            invoiceGlobal.setInvoicesEmitidasData(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+            invoiceGlobal.setInvoicesEmitidasCountData(buildResultListFromInvoiceCountView(invoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
+            
+            invoiceGlobal.setInvoicesRecibidasData(buildResultListFromInvoiceView(invoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+        }
+        Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
+        return ResponseEntity.ok(invoiceGlobal);
+    }
     @GetMapping("/facturas/emitidas/activos")
     public ResponseEntity encontrarPorOrganizacionIdYDocumentType(
             @AuthenticationPrincipal UserData user,
@@ -99,15 +125,38 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent() && organizacion != null) {
-            System.out.println("\n\n\n");
-            System.out.println(subjectOpt.get().getId() + "" + organizacion.getId() + "" + DocumentType.INVOICE + "" + Constantes.SRI_STATUS_APPLIED);
             invoiceGlobal.setInvoicesData(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
-            System.out.println("\n\n\n");
             invoiceGlobal.setInvoicesCountData(buildResultListFromInvoiceCountView(invoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
         return ResponseEntity.ok(invoiceGlobal);
     }
+    
+    @GetMapping("/facturas/recibidas/activos")
+    public ResponseEntity encontrarParaOwnerYDocumentType(
+            @AuthenticationPrincipal UserData user,
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "20") int limit
+    ) {
+        List<InvoiceData> invoicesData = new ArrayList<>();
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        if (subjectOpt.isPresent()) {
+            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
+        }
+        Api.imprimirGetLogAuditoria("facturacion/facturas/recibidas/activos", user.getId());
+        return ResponseEntity.ok(invoicesData);
+    }
+    
 
     @GetMapping("/facturas/emitidas/estado/{estado}/activos")
     public ResponseEntity encontrarPorOrganizacionIdYDocumentTypeInternalStatus(
@@ -160,30 +209,6 @@ public class FacturacionController {
         return ResponseEntity.ok(invoicesData);
     }
 
-    @GetMapping("/facturas/recibidas/activos")
-    public ResponseEntity encontrarParaOwnerYDocumentType(
-            @AuthenticationPrincipal UserData user,
-            @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "20") int limit
-    ) {
-        List<InvoiceData> invoicesData = new ArrayList<>();
-
-        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
-        if (!subjectOpt.isPresent()) {
-            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
-        }
-
-        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
-        if (organizacion == null) {
-            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
-        }
-
-        if (subjectOpt.isPresent()) {
-            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
-        }
-        Api.imprimirGetLogAuditoria("facturacion/facturas/recibidas/activos", user.getId());
-        return ResponseEntity.ok(invoicesData);
-    }
 
     @PutMapping("/facturas/pago")
     public ResponseEntity editarProduct(

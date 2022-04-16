@@ -95,6 +95,7 @@ public class ServiciosController {
         return ResponseEntity.ok(productsData);
     }
 
+    
     @GetMapping("/organizacion/tipo/{productType}/activos")
     public ResponseEntity encontrarPorOrganizacionIdYProductType(
             @AuthenticationPrincipal UserData user,

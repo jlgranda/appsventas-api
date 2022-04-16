@@ -178,7 +178,12 @@ public class Constantes {
             + "      \"valorRetRenta\":$valorRetRenta\n"
             + "   },\n"
             + "   \"detalle\":[\n"
-            + "      {\n"
+            + "     $detalles"        
+            + "   ],\n"
+            + "   \"campoAdicional\":[]\n"
+            + "}";
+    
+    public static final String JSON_DETAIL_TEMPLATE = "{\n"
             + "         \"codigoPrincipal\":\"$codigoPrincipal\",\n"
             + "         \"codigoAuxiliar\":\"$codigoAuxiliar\",\n"
             + "         \"descripcion\":\"$descripcion\",\n"
@@ -201,10 +206,8 @@ public class Constantes {
             + "               \"valor\":$impuestoValor\n"
             + "            }\n"
             + "         ]\n"
-            + "      }\n"
-            + "   ],\n"
-            + "   \"campoAdicional\":[]\n"
-            + "}";
+            + "      }\n";
+    
     public static final String JSON_CERTIFICADO_DIGITAL = "{\n"
             + "  \"certificado\":\"$certificado\",\n"
             + "  \"password\": \"$password\"\n" +

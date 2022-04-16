@@ -21,9 +21,11 @@ import java.math.RoundingMode;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +36,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.validation.Valid;
 import net.tecnopro.util.Dates;
+import net.tecnopro.util.Lists;
 import net.tecnopro.util.Strings;
 import net.tecnopro.util.VelocityHelper;
 import org.jlgranda.appsventas.Api;
@@ -269,6 +272,14 @@ public class SRIComprobantesController {
         return Api.responseError("No se pudó recuperar comprobantes para el tipo indicado.", tipo);
     }
     
+    /**
+     * Envia la petición de facturación. 
+     * Los datos se registran en appsventas, luego de la respuesta de veronica y el SRI
+     * @param user
+     * @param invoiceData
+     * @param bindingResult
+     * @return 
+     */
     @PostMapping(path = "/factura")
     public ResponseEntity crearEnviarFactura(
             @AuthenticationPrincipal UserData user,
@@ -311,7 +322,6 @@ public class SRIComprobantesController {
 
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
         InternalInvoice invoice = null;
-        Detail detail = null;
         
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
         if (!customerOpt.isPresent()) {
@@ -320,7 +330,7 @@ public class SRIComprobantesController {
         
         if (subjectOpt.isPresent() && customerOpt.isPresent() && organizacion != null) {
 
-            //Guardar el invoice
+            //Guardar el invoice en appsventas
             invoice = invoiceService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(invoiceData, invoice, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             invoice.setOrganizacionId(organizacion.getId());
@@ -337,16 +347,19 @@ public class SRIComprobantesController {
             invoice.setOwner(customerOpt.get());
             invoiceService.guardar(invoice);
 
-            //Guardar el detail
-            detail = detailService.crearInstancia(subjectOpt.get());
-            if (invoice.getId() != null && invoiceData.getProduct() != null) {
-                detail.setInvoiceId(invoice.getId());
-                detail.setProductId(invoiceData.getProduct().getId());
-                detail.setAmount(BigDecimal.ONE); //Estas facturas son a 1 por defecto
-                detail.setPrice(invoiceData.getSubTotal());
-                detail.setIva12(invoiceData.getIva12());
-                detailService.guardar(detail);
-            }
+            final Long invoiceId = invoice.getId();
+            List<Detail> details = new ArrayList<>();
+            invoiceData.getDetails().forEach(dtl -> {
+                Detail detail = detailService.crearInstancia(subjectOpt.get());
+                detail.setInvoiceId(invoiceId);
+                detail.setProductId(dtl.getProductId());
+                detail.setAmount(dtl.getAmount()); //La cantidad que viene desde el front
+                detail.setPrice(dtl.getPrice());
+                detail.setIva12(dtl.isIVA12());
+                details.add(detail);
+            });
+            
+            detailService.guardar(details);
 
             //Guardar el subjectCustomer en caso aún no sea parte del usuario
             if (invoiceData.getSubjectCustomer() != null && invoiceData.getSubjectCustomer().getId() == null) {
@@ -440,11 +453,11 @@ public class SRIComprobantesController {
         
         if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(invoiceData.getInternalStatus())) {
             //Notificar via correo
-            String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
+            String titulo = "[Notificación] FACTURA - $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
             String cuerpoMensaje = "<p>Estimada(o): <strong>$clienteNombreCompleto</strong></p>\n"
                     + "<p><br />Le informamos que su Factura n&uacute;mero <strong>$facturaSecuencia</strong> ha sido remitida por <strong>$organizacionNombreCompleto</strong> de forma Electr&oacute;nica.</p>\n"
                     + "<p>&nbsp;</p>\n"
-                    + "<p>Si Usted es cliente del $organizacionNombreCompleto mantenga siempre a la mano las facturas que emite y recibe a trav&eacute;s de nuestra aplicaci&oacute;n <a title=\"FAZil facturaci&oacute;n electr&oacute;nica en 2 clics\" href=\"$url\" target=\"_blank\" rel=\"noopener noreferrer\">FAZil</a><br /><br />Atentamente,<br /><strong>$organizacionNombreCompleto.</strong></p>";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
+                    + "<p>Si Usted es cliente del $organizacionNombreCompleto mantenga siempre a la mano las facturas que emite y recibe a trav&eacute;s de nuestra aplicaci&oacute;n <a title=\"FAZil facturar EC en 2 clics\" href=\"$url\" target=\"_blank\" rel=\"noopener noreferrer\">FAZil</a><br /><br />Atentamente,<br /><strong>$organizacionNombreCompleto.</strong></p>";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
             UserData destinatario = new UserData();
             BeanUtils.copyProperties(customerOpt.get(), destinatario);
             destinatario.setNombre(customerOpt.get().getFullName());
@@ -454,7 +467,7 @@ public class SRIComprobantesController {
             values.put("facturaSecuencia", invoiceData.getSecuencial());
             values.put("clienteNombreCompleto", Strings.toUpperCase(destinatario.getNombre()));
             values.put("organizacionNombreCompleto", Strings.toUpperCase(organizacion.getName()));
-            values.put("url", "http://jlgranda.com/entry/fazil-facturacion-electronica-para-profesionales");
+            values.put("url", "http://jlgranda.com/entry/fazil-facturacion-electronica-sri-para-profesionales-en-ecuador");
             byte[] pdf = getPDF(Constantes.INVOICE, claveAcceso, user.getUsername());
             byte[] xml = getXML(Constantes.INVOICE, claveAcceso, user.getUsername());
 
@@ -531,10 +544,9 @@ public class SRIComprobantesController {
         //Cargar generadores de serie para facturas
         Subject subject = subjectOpt.get();
         Subject customer = customerOpt.get();
-        
+        final String ambienteSRI = "PRODUCCION".equalsIgnoreCase(organizacion.getAmbienteSRI()) ? "2" : "1";
         Map<String, Object> values = new HashMap<>();
-//        values.put("ambiente", "" + "1"); //PRUEBAS
-        values.put("ambiente", "" + "2"); //PRODUCCION
+        values.put("ambiente", ambienteSRI); //1 PRUEBAS, 2 PRODUCCION
         values.put("tipoEmision", "" + "1");
         values.put("razonSocial", "" + organizacion.getName());
         values.put("nombreComercial", "" + organizacion.getInitials());
@@ -583,31 +595,47 @@ public class SRIComprobantesController {
         values.put("valorRetIva", "" + 0.00);
         values.put("valorRetRenta", "" + 0.00);
 
-        //detalle
-        values.put("codigoPrincipal", "" + invoiceData.getProduct().getId());
-        values.put("codigoAuxiliar", "" + invoiceData.getProduct().getId());
-        values.put("descripcion", "" + (Strings.isNullOrEmpty(invoiceData.getProduct().getName()) ? invoiceData.getDescription(): invoiceData.getProduct().getName().concat(" [").concat(invoiceData.getDescription())) + "]");
-        values.put("cantidad", "" + 1.00);
-        values.put("precioUnitario", "" + invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
-        values.put("descuento", "" + 0.00);
-        values.put("precioTotalSinImpuesto", invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
+        //detalles en función del detalle de la factura
+        List<String> detalles = new ArrayList<>();
         
-        values.put("detAdicionalNombre1", "" + invoiceData.getProduct().getName());
-        values.put("detAdicionalValor1", "" + invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
-        
-        values.put("impuestoCodigo", "2");
-        values.put("impuestoCodigoPorcentaje", "2");
-        values.put("tarifa", "12");
-        values.put("impuestoBaseImponible", invoiceData.getSubTotal() != null ? invoiceData.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
-        values.put("impuestoValor", "" + invoiceData.getImporteTotal() != null ? invoiceData.getImporteTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
+        invoiceData.getDetails().forEach(dtl -> {
+            Map<String, Object> detailValues = new HashMap<>();
+            try {
+                detailValues.put("codigoPrincipal", "" + dtl.getProductId());
+                detailValues.put("codigoAuxiliar", "" + dtl.getProductId());
+                detailValues.put("descripcion", "" + (Strings.isNullOrEmpty(dtl.getProductName()) ? invoiceData.getDescription() : dtl.getProductName().concat( Strings.isNullOrEmpty(invoiceData.getDescription()) ? "" :  "[".concat(invoiceData.getDescription()).concat("]"))) );
+                detailValues.put("cantidad", "" + dtl.getAmount());
+                detailValues.put("precioUnitario", "" + dtl.getPrice() != null ? dtl.getPrice().setScale(2, RoundingMode.HALF_UP) : "0.00");
+                detailValues.put("descuento", "" + 0.00);
+                detailValues.put("precioTotalSinImpuesto", dtl.getSubTotal() != null ? dtl.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
 
+                detailValues.put("detAdicionalNombre1", "" + dtl.getProductName());
+                detailValues.put("detAdicionalValor1", "" + dtl.getSubTotal() != null ? dtl.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
+
+                detailValues.put("impuestoCodigo", "2");
+                detailValues.put("impuestoCodigoPorcentaje", "2");
+                detailValues.put("tarifa", "12");
+                detailValues.put("impuestoBaseImponible", dtl.getSubTotal() != null ? dtl.getSubTotal().setScale(2, RoundingMode.HALF_UP) : "0.00");
+                detailValues.put("impuestoValor", "" + dtl.getImpuestoValor() != null ? dtl.getImpuestoValor().setScale(2, RoundingMode.HALF_UP) : "0.00");
+
+               detalles.add(VelocityHelper.getRendererMessage(Constantes.JSON_DETAIL_TEMPLATE, detailValues));
+            } catch (Exception ex) {
+                Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+        
+        //Establecer detalles
+        values.put("detalles", Lists.toString(detalles, ","));
         //Falta el array de campoAdicional
         values.put("campoAdicional", "" + "campoAdicional");
         
+        //Renderizado final del objeto factura antes de enviar a SRI
         StringBuilder json = new StringBuilder("$");
-        
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+            System.out.println(json);
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
         } catch (Exception ex) {
             
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);

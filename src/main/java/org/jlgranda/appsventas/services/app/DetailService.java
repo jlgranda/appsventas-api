@@ -85,5 +85,8 @@ public class DetailService {
     public Detail guardar(Detail detail) {
         return this.getRepository().save(detail);
     }
+    public Iterable<Detail> guardar(List<Detail> details) {
+        return this.getRepository().saveAll(details);
+    }
 
 }

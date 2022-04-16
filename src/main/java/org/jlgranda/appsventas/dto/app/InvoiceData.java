@@ -40,7 +40,7 @@ public class InvoiceData {
     private SubjectCustomerData subjectCustomer;
     private ProductData product;
 
-    private List<DetailData> details;
+    private List<InvoiceDetailData> details;
     private List<PaymentData> payments;
 
     private Long customerId;

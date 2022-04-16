@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 usuario
+ * Copyright (C) 2022 jlgranda
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,32 +24,41 @@ import lombok.ToString;
 
 /**
  *
- * @author usuario
+ * @author jlgranda
  */
 @Getter
 @Setter
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class DetailData {
-
-    private Long id;
-    private String uuid;
-
-    private Long invoiceId;
-    private Long productId;
-    private String productName;
+public class InvoiceDetailData {
+    
     private BigDecimal amount;
-    private String unit;
-    private BigDecimal price;
-    private boolean iva12;
+    private ProductData product;
     
     public BigDecimal getSubTotal(){
-        return this.getAmount().multiply(this.getPrice());
+        return this.getAmount().multiply(this.getProduct().getPrice());
     };
 
     public BigDecimal getImpuestoValor() {
-        BigDecimal factor = this.iva12 ? BigDecimal.valueOf(0.12) : BigDecimal.ZERO;
-        return this.getSubTotal().multiply(factor);
+        return this.getSubTotal().multiply(this.getProduct().getTaxFactor().divide(BigDecimal.valueOf(100)));
+    }
+    
+    public boolean isIVA12(){
+        
+        if (this.getProduct() == null) return false;
+        
+        return "IVA".equalsIgnoreCase(this.getProduct().getTaxType().toString());
     }
 
+    public Long getProductId() {
+        return this.getProduct().getId();
+    }
+
+    public String getProductName() {
+        return this.getProduct().getName();
+    }
+
+    public BigDecimal getPrice() {
+        return this.getProduct().getPrice();
+    }
 }

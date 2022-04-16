@@ -33,7 +33,14 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = false)
 public class InvoiceGlobalData {
 
+    @Deprecated
     List<InvoiceData> invoicesData = new ArrayList<>();
+    @Deprecated
     List<InvoiceCountData> invoicesCountData = new ArrayList<>();
+    
+    List<InvoiceData> invoicesEmitidasData = new ArrayList<>();
+    List<InvoiceCountData> invoicesEmitidasCountData = new ArrayList<>();
+    
+    List<InvoiceData> invoicesRecibidasData = new ArrayList<>();
 
 }

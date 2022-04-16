@@ -5,6 +5,7 @@
  */
 package org.jlgranda.appsventas.services.app;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -71,6 +72,7 @@ public class ProductService {
     public ProductData buildProductData(Product p) {
         ProductData productData = new ProductData();
         BeanUtils.copyProperties(p, productData);
+        productData.setTaxFactor(TaxType.IVA.equals(p.getTaxType()) ? BigDecimal.valueOf(12) : BigDecimal.ZERO); //TODO ver una mejor forma de establecer impuestos al producto
         return productData;
     }
 
@@ -82,7 +84,7 @@ public class ProductService {
         _instance.setActivationTime(Dates.now());
         _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
         _instance.setUuid(UUID.randomUUID().toString());
-        _instance.setProductType(ProductType.RAW_MATERIAL);
+        _instance.setProductType(ProductType.PRODUCT);
         _instance.setTaxType(TaxType.IVA);
         return _instance;
     }

@@ -30,6 +30,7 @@ public class ProductData {
     private BigDecimal price;
     private ProductType productType;
     private TaxType taxType;
+    private BigDecimal taxFactor;
     private String icon;
     private byte[] photo;
 
