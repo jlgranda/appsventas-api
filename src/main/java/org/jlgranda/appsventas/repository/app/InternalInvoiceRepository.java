@@ -120,6 +120,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
      */
     @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
             + "cliente.id as customerId, \n"
+            + "cliente.email as customerEmail, \n"
             + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"
             + "inv_.emissionOn as emissionOn, \n"
@@ -132,7 +133,9 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "sriintsts.description as internalStatus, \n"
             + "(case \n"
             + "when (select count(pay) from public.payment pay where pay.invoice_id = inv_.id and pay.deleted = false and pay.datepaymentcancel is not null) > 0 \n"
-            + "then true else false end) as isPayment \n"
+            + "then true else false end) as isPayment, \n"
+            + "sriinv.authorization_date as authorizationDate, \n"
+            + "sriinv.customer_id as customerRUC \n"
             + "from public.invoice inv_ \n"
             + "inner join public.vista_subject_organization as emisor on emisor.subject_id = inv_.author\n"
             + "inner join public.subject as cliente on cliente.id = inv_.owner \n"

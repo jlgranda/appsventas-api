@@ -57,4 +57,9 @@ public class InvoiceData {
     private String claveAcceso;
     private String internalStatus;
     private Boolean isPayment;
+
+    private String customerRUC;
+    private String customerEmail;
+    private String numeroAutorizacion;
+    private Date authorizationDate;
 }

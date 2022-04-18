@@ -64,8 +64,9 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>InternalInvoice</tt> para el owner, la organizacionId
-     * y documentType dados como parámentros, discriminando el campo eliminado
+     * Devolver las instancias <tt>InternalInvoice</tt> para el owner, la
+     * organizacionId y documentType dados como parámentros, discriminando el
+     * campo eliminado
      *
      * @param owner
      * @param organizacionId
@@ -77,8 +78,8 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>InternalInvoice</tt> para el author y documentType
-     * dados como parámentros, discriminando el campo eliminado
+     * Devolver las instancias <tt>InternalInvoice</tt> para el author y
+     * documentType dados como parámentros, discriminando el campo eliminado
      *
      * @param author
      * @param documentType
@@ -89,8 +90,8 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>InternalInvoice</tt> para el owner y documentType
-     * dados como parámentros, discriminando el campo eliminado
+     * Devolver las instancias <tt>InternalInvoice</tt> para el owner y
+     * documentType dados como parámentros, discriminando el campo eliminado
      *
      * @param owner
      * @param documentType

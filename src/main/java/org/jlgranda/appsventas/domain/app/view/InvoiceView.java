@@ -68,4 +68,12 @@ public interface InvoiceView {
 
     public Boolean getIsPayment();
 
+    public String getCustomerRUC();
+
+    public String getCustomerEmail();
+
+    public String getNumeroAutorizacion();
+
+    public Date getAuthorizationDate();
+
 }
