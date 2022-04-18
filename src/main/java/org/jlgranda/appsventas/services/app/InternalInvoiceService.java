@@ -39,7 +39,18 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>Invoice</tt> para el author, la
+     * Devolver las instancias <tt>InternalInvoice</tt> para el uuid dado como
+     * parámentro, discriminando el campo eliminado
+     *
+     * @param uuid
+     * @return
+     */
+    public Optional<InternalInvoice> encontrarPorUuid(String uuid) {
+        return this.getRepository().encontrarPorUuid(uuid);
+    }
+
+    /**
+     * Devolver las instancias <tt>InternalInvoice</tt> para el author, la
      * organizacionId y documentType dados como parámentros, discriminando el
      * campo eliminado
      *
@@ -53,13 +64,12 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>Invoice</tt> para el owner, la organizacionId
+     * Devolver las instancias <tt>InternalInvoice</tt> para el owner, la organizacionId
      * y documentType dados como parámentros, discriminando el campo eliminado
      *
      * @param owner
      * @param organizacionId
      * @param documentType
-     * @param internalStatus
      * @return
      */
     public List<InternalInvoice> encontrarPorOwnerYOrganizacionIdYDocumentType(Subject owner, Long organizacionId, DocumentType documentType) {
@@ -67,7 +77,7 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>Invoice</tt> para el author y documentType
+     * Devolver las instancias <tt>InternalInvoice</tt> para el author y documentType
      * dados como parámentros, discriminando el campo eliminado
      *
      * @param author
@@ -79,7 +89,7 @@ public class InternalInvoiceService {
     }
 
     /**
-     * Devolver las instancias <tt>Invoice</tt> para el owner y documentType
+     * Devolver las instancias <tt>InternalInvoice</tt> para el owner y documentType
      * dados como parámentros, discriminando el campo eliminado
      *
      * @param owner
@@ -91,23 +101,23 @@ public class InternalInvoiceService {
     }
 
     public InvoiceData buildInvoiceData(InternalInvoice inv) {
-        InvoiceData invoiceData = new InvoiceData();
-        BeanUtils.copyProperties(inv, invoiceData);
-        invoiceData.setSubjectFullName(inv.getAuthor() == null ? "No definido" : inv.getAuthor().getFullName());
-        return invoiceData;
+        InvoiceData internalInvoiceData = new InvoiceData();
+        BeanUtils.copyProperties(inv, internalInvoiceData);
+        internalInvoiceData.setSubjectFullName(inv.getAuthor() == null ? "No definido" : inv.getAuthor().getFullName());
+        return internalInvoiceData;
     }
 
     public InvoiceData buildInvoiceData(InvoiceView inv) {
-        InvoiceData invoiceData = new InvoiceData();
-        BeanUtils.copyProperties(inv, invoiceData);
-        return invoiceData;
+        InvoiceData internalInvoiceData = new InvoiceData();
+        BeanUtils.copyProperties(inv, internalInvoiceData);
+        return internalInvoiceData;
     }
 
     public InvoiceData buildInvoiceData(InternalInvoice inv, Subject c) {
-        InvoiceData invoiceData = new InvoiceData();
-        BeanUtils.copyProperties(inv, invoiceData);
-        invoiceData.setCustomerFullName(c == null ? "No definido" : c.getFullName());
-        return invoiceData;
+        InvoiceData internalInvoiceData = new InvoiceData();
+        BeanUtils.copyProperties(inv, internalInvoiceData);
+        internalInvoiceData.setCustomerFullName(c == null ? "No definido" : c.getFullName());
+        return internalInvoiceData;
     }
 
     public InternalInvoice crearInstancia() {
@@ -132,8 +142,8 @@ public class InternalInvoiceService {
         return _instance;
     }
 
-    public InternalInvoice guardar(InternalInvoice invoice) {
-        return this.getRepository().save(invoice);
+    public InternalInvoice guardar(InternalInvoice InternalInvoice) {
+        return this.getRepository().save(InternalInvoice);
     }
 
     /**
@@ -147,7 +157,7 @@ public class InternalInvoiceService {
      * @return
      */
     public List<InvoiceCountView> countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(Long authorId, Long organizacionId, DocumentType documentType) {
-            return this.getRepository().countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal());
+        return this.getRepository().countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(authorId, organizacionId, documentType.ordinal());
     }
 
     /**

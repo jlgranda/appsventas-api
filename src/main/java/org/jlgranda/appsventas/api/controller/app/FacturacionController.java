@@ -5,6 +5,7 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
+import com.rolandopalermo.facturacion.ec.domain.Invoice;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +29,8 @@ import org.jlgranda.appsventas.dto.app.InvoiceGlobalData;
 import org.jlgranda.appsventas.dto.app.PaymentData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
+import org.jlgranda.appsventas.exception.ResourceNotFoundException;
+import org.jlgranda.appsventas.services.app.ComprobantesService;
 import org.jlgranda.appsventas.services.app.DetailService;
 import org.jlgranda.appsventas.services.app.InternalInvoiceService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
@@ -55,7 +58,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/facturacion")
 public class FacturacionController {
 
-    private InternalInvoiceService invoiceService;
+    private InternalInvoiceService internalInvoiceService;
+    private ComprobantesService comprobantesService;
     private DetailService detailService;
     private PaymentService paymentService;
     private OrganizationService organizationService;
@@ -64,14 +68,16 @@ public class FacturacionController {
 
     @Autowired
     public FacturacionController(
-            InternalInvoiceService invoiceService,
+            InternalInvoiceService internalInvoiceService,
+            ComprobantesService comprobantesService,
             DetailService detailService,
             PaymentService paymentService,
             OrganizationService organizationService,
             SubjectService subjectService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
-        this.invoiceService = invoiceService;
+        this.internalInvoiceService = internalInvoiceService;
+        this.comprobantesService = comprobantesService;
         this.detailService = detailService;
         this.paymentService = paymentService;
         this.organizationService = organizationService;
@@ -98,14 +104,15 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent() && organizacion != null) {
-            invoiceGlobal.setInvoicesEmitidasData(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
-            invoiceGlobal.setInvoicesEmitidasCountData(buildResultListFromInvoiceCountView(invoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
-            
-            invoiceGlobal.setInvoicesRecibidasData(buildResultListFromInvoiceView(invoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+            invoiceGlobal.setInvoicesEmitidasData(buildResultListFromInvoiceView(internalInvoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+            invoiceGlobal.setInvoicesEmitidasCountData(buildResultListFromInvoiceCountView(internalInvoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
+
+            invoiceGlobal.setInvoicesRecibidasData(buildResultListFromInvoiceView(internalInvoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
         return ResponseEntity.ok(invoiceGlobal);
     }
+
     @GetMapping("/facturas/emitidas/activos")
     public ResponseEntity encontrarPorOrganizacionIdYDocumentType(
             @AuthenticationPrincipal UserData user,
@@ -125,13 +132,13 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent() && organizacion != null) {
-            invoiceGlobal.setInvoicesData(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
-            invoiceGlobal.setInvoicesCountData(buildResultListFromInvoiceCountView(invoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
+            invoiceGlobal.setInvoicesData(buildResultListFromInvoiceView(internalInvoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+            invoiceGlobal.setInvoicesCountData(buildResultListFromInvoiceCountView(internalInvoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
         return ResponseEntity.ok(invoiceGlobal);
     }
-    
+
     @GetMapping("/facturas/recibidas/activos")
     public ResponseEntity encontrarParaOwnerYDocumentType(
             @AuthenticationPrincipal UserData user,
@@ -151,12 +158,11 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent()) {
-            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
+            invoicesData = buildResultListFromInvoiceView(internalInvoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/recibidas/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
     }
-    
 
     @GetMapping("/facturas/emitidas/estado/{estado}/activos")
     public ResponseEntity encontrarPorOrganizacionIdYDocumentTypeInternalStatus(
@@ -178,7 +184,7 @@ public class FacturacionController {
         }
 
         if (subjectOpt.isPresent() && organizacion != null) {
-            invoicesData = buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, internalStatus));
+            invoicesData = buildResultListFromInvoiceView(internalInvoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, internalStatus));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/estado/{estado}/activos", user.getId());
         return ResponseEntity.ok(invoicesData);
@@ -202,18 +208,17 @@ public class FacturacionController {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
         if (subjectOpt.isPresent() && organizacion != null) {
-            invoicesData.addAll(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_INVALID)));
-            invoicesData.addAll(buildResultListFromInvoiceView(invoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_REJECTED)));
+            invoicesData.addAll(buildResultListFromInvoiceView(internalInvoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_INVALID)));
+            invoicesData.addAll(buildResultListFromInvoiceView(internalInvoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_REJECTED)));
         }
         Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/rechazados", user.getId());
         return ResponseEntity.ok(invoicesData);
     }
 
-
     @PutMapping("/facturas/pago")
-    public ResponseEntity editarProduct(
+    public ResponseEntity editarFacturaPago(
             @AuthenticationPrincipal UserData user,
-            @Valid @RequestBody InvoiceData invoiceData,
+            @Valid @RequestBody InvoiceData internalInvoiceData,
             BindingResult bindingResult
     ) {
         //Verificar binding
@@ -230,8 +235,8 @@ public class FacturacionController {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
         }
 //
-        if (subjectOpt.isPresent() && invoiceData.getId() != null && invoiceData.getImporteTotal() != null) {
-            List<Payment> payments = paymentService.encontrarPorInvoiceId(invoiceData.getId());
+        if (subjectOpt.isPresent() && internalInvoiceData.getId() != null && internalInvoiceData.getImporteTotal() != null) {
+            List<Payment> payments = paymentService.encontrarPorInvoiceId(internalInvoiceData.getId());
             if (!payments.isEmpty()) {
                 for (Payment p : payments) {
                     p.setDeleted(Boolean.TRUE);
@@ -242,8 +247,8 @@ public class FacturacionController {
 
             //Registrar el pago
             payment = paymentService.crearInstancia(subjectOpt.get());
-            payment.setInvoiceId(invoiceData.getId());
-            payment.setAmount(invoiceData.getImporteTotal());
+            payment.setInvoiceId(internalInvoiceData.getId());
+            payment.setAmount(internalInvoiceData.getImporteTotal());
             payment.setCash(payment.getAmount());
             payment.setDatePaymentCancel(Dates.now());
             paymentService.guardar(payment);
@@ -254,8 +259,41 @@ public class FacturacionController {
         } else {
             throw new NotFoundException("Los datos del pago están incompletos.");
         }
-        Api.imprimirUpdateLogAuditoria("/facturacion/facturas/pago", user.getId(), payment);
+        Api.imprimirUpdateLogAuditoria("/facturacion/facturas/pago", user.getId(), paymentData);
         return ResponseEntity.ok(Api.response("payment", paymentData));
+    }
+
+    @PutMapping("/facturas/anular")
+    public ResponseEntity editarFacturaEstado(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody InvoiceData internalInvoiceData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        return internalInvoiceService.encontrarPorUuid(internalInvoiceData.getUuid()).map(internalInvoice -> {
+            //Anular factura
+            Optional<Invoice> sriInvoiceOpt = comprobantesService.encontrarPorClaveAcceso(internalInvoice.getClaveAcceso());
+            if (sriInvoiceOpt.isPresent()) {
+                Invoice sriInvoice = sriInvoiceOpt.get();
+                sriInvoice.setInternalStatusId(6);//Cancelada
+                comprobantesService.guardar(sriInvoice);
+                //Cambiar estado ACTIVE de internalInvoice
+                internalInvoice.setActive(Boolean.FALSE);
+                internalInvoiceService.guardar(internalInvoice);
+            }
+            Api.imprimirUpdateLogAuditoria("/facturacion/facturas/anular", user.getId(), internalInvoiceData);
+            return ResponseEntity.ok(Api.response("factura", internalInvoiceData));
+        }).orElseThrow(ResourceNotFoundException::new);
+
     }
 
     private List<InvoiceData> buildResultListInvoice(Long subjectId, List<InternalInvoice> invoices) {
@@ -264,7 +302,7 @@ public class FacturacionController {
             Map<Long, Subject> customersMap = new HashMap<>();
             subjectService.encontrarPorSubjectCustomerSubjectId(subjectId).forEach(c -> customersMap.put(c.getId(), c));
             invoices.forEach(inv -> {
-                invoicesData.add(invoiceService.buildInvoiceData(inv, customersMap.get(inv.getOwner().getId())));
+                invoicesData.add(internalInvoiceService.buildInvoiceData(inv, customersMap.get(inv.getOwner().getId())));
             });
         }
         return invoicesData;
@@ -275,7 +313,7 @@ public class FacturacionController {
         List<InvoiceData> invoicesData = new ArrayList<>();
         if (!invoices.isEmpty()) {
             invoices.forEach(inv -> {
-                invoicesData.add(invoiceService.buildInvoiceData(inv));
+                invoicesData.add(internalInvoiceService.buildInvoiceData(inv));
             });
         }
         return invoicesData;
@@ -286,7 +324,7 @@ public class FacturacionController {
         List<InvoiceData> invoicesData = new ArrayList<>();
         if (!invoiceViews.isEmpty()) {
             invoiceViews.forEach(inv -> {
-                invoicesData.add(invoiceService.buildInvoiceData(inv));
+                invoicesData.add(internalInvoiceService.buildInvoiceData(inv));
             });
         }
         return invoicesData;

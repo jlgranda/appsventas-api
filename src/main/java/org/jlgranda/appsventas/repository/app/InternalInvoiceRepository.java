@@ -34,6 +34,9 @@ import org.springframework.data.repository.query.Param;
  */
 public interface InternalInvoiceRepository extends CrudRepository<InternalInvoice, Long> {
 
+    @Query("select p from InternalInvoice p where p.deleted = false and p.uuid = :#{#uuid}")
+    public Optional<InternalInvoice> encontrarPorUuid(String uuid);
+
     @Query("select p from InternalInvoice p where p.deleted = false and p.author = :#{#author} and p.organizacionId = :#{#organizacionId} and p.documentType = :#{#documentType} and not p.claveAcceso is null order by p.emissionOn DESC")
     public List<InternalInvoice> encontrarPorAuthorYOrganizacionIdYDocumentType(Subject author, Long organizacionId, DocumentType documentType);
 

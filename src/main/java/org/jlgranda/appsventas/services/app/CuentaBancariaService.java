@@ -69,7 +69,7 @@ public class CuentaBancariaService {
      * Devolver las instancias <tt>CuentaBancaria</tt> para el uuid dado como
      * parámentro, discriminando el campo eliminado
      *
-     * @param id
+     * @param uuid
      * @return
      */
     public Optional<CuentaBancaria> encontrarPorUuid(String uuid) {

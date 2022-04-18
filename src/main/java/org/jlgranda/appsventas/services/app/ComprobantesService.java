@@ -17,6 +17,7 @@
 package org.jlgranda.appsventas.services.app;
 
 import com.rolandopalermo.facturacion.ec.domain.Invoice;
+import java.util.Optional;
 import org.jlgranda.appsventas.repository.app.InvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,11 +28,31 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ComprobantesService {
-    
+
     @Autowired
-    InvoiceRepository invoiceRepository;
-    
-    public Iterable<Invoice> findAllBySupplierId(String supplierId){
-        return invoiceRepository.findBySupplierId(supplierId);
+    InvoiceRepository repository;
+
+    public InvoiceRepository getRepository() {
+        return repository;
     }
+
+    public Iterable<Invoice> findAllBySupplierId(String supplierId) {
+        return this.getRepository().findBySupplierId(supplierId);
+    }
+
+    /**
+     * Devolver la instancia <tt>Invoice</tt> para el access_key dado como
+     * parámentro, discriminando el campo eliminado
+     *
+     * @param claveAcceso
+     * @return
+     */
+    public Optional<Invoice> encontrarPorClaveAcceso(String claveAcceso) {
+        return this.getRepository().encontrarPorAccessKey(claveAcceso);
+    }
+
+    public Invoice guardar(Invoice invoice) {
+        return this.getRepository().save(invoice);
+    }
+
 }

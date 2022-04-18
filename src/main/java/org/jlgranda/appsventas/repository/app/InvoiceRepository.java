@@ -18,18 +18,24 @@ package org.jlgranda.appsventas.repository.app;
 
 import com.rolandopalermo.facturacion.ec.domain.Invoice;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 /**
  * Repositorio de entidades Invoice del SRI
+ *
  * @author jlgranda
  */
-public interface InvoiceRepository  extends CrudRepository<Invoice, Long> {
-    
+public interface InvoiceRepository extends CrudRepository<Invoice, Long> {
+
     @Query("select i.accessKey from Invoice i where i.supplierId = ?1 and i.isDeleted = ?2")
     List<String> findBySupplierIdAndIsDeleted(String supplierId, boolean isDeleted);
-    
+
     @Query("select i from Invoice i where i.supplierId = ?1 and i.isDeleted = false")
     List<Invoice> findBySupplierId(String supplierId);
+
+    @Query("select p from Invoice p where p.accessKey = :#{#accessKey}")
+    public Optional<Invoice> encontrarPorAccessKey(String accessKey);
+
 }

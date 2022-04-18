@@ -16,7 +16,6 @@
  */
 package org.jlgranda.appsventas.api.controller.app;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -109,7 +108,7 @@ public class SRIComprobantesController {
     private SubjectService subjectService;
     private OrganizationService organizationService;
     private SerialService serialService;
-    private InternalInvoiceService invoiceService;
+    private InternalInvoiceService internalInvoiceService;
     private DetailService detailService;
     private SubjectCustomerService subjectCustomerService;
     private DataService dataService;
@@ -123,7 +122,7 @@ public class SRIComprobantesController {
             SubjectService subjectService,
             OrganizationService organizationService,
             SerialService serialService,
-            InternalInvoiceService invoiceService,
+            InternalInvoiceService internalInvoiceService,
             DetailService detailService,
             SubjectCustomerService subjectCustomerService,
             DataService dataService,
@@ -135,7 +134,7 @@ public class SRIComprobantesController {
         this.subjectService = subjectService;
         this.organizationService = organizationService;
         this.serialService = serialService;
-        this.invoiceService = invoiceService;
+        this.internalInvoiceService = internalInvoiceService;
         this.detailService = detailService;
         this.subjectCustomerService = subjectCustomerService;
         this.dataService = dataService;
@@ -331,7 +330,7 @@ public class SRIComprobantesController {
         if (subjectOpt.isPresent() && customerOpt.isPresent() && organizacion != null) {
 
             //Guardar el invoice en appsventas
-            invoice = invoiceService.crearInstancia(subjectOpt.get());
+            invoice = internalInvoiceService.crearInstancia(subjectOpt.get());
             BeanUtils.copyProperties(invoiceData, invoice, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
             invoice.setOrganizacionId(organizacion.getId());
             invoice.setDocumentType(DocumentType.INVOICE);
@@ -345,7 +344,7 @@ public class SRIComprobantesController {
                 invoice.setClaveAcceso(Constantes.PROFORMA + Constantes.SEPARADOR + UUID.randomUUID().toString());
             }
             invoice.setOwner(customerOpt.get());
-            invoiceService.guardar(invoice);
+            internalInvoiceService.guardar(invoice);
 
             final Long invoiceId = invoice.getId();
             List<Detail> details = new ArrayList<>();
@@ -444,7 +443,7 @@ public class SRIComprobantesController {
             throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
         }
         
-        InvoiceData invoiceData = invoiceService.buildInvoiceData(invoiceService.encontrarPorClaveAcceso(claveAcceso).get());
+        InvoiceData invoiceData = internalInvoiceService.buildInvoiceData(internalInvoiceService.encontrarPorClaveAcceso(claveAcceso).get());
         
         Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getCustomerId());
         if (!customerOpt.isPresent()) {
@@ -736,7 +735,7 @@ public class SRIComprobantesController {
 //            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
 //            System.out.println("data: " + data);
 //            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
-            Optional<InvoiceView> invoiceViewOpt = invoiceService.encontrarPorClaveAcceso(data.getResult().getClaveAcceso());
+            Optional<InvoiceView> invoiceViewOpt = internalInvoiceService.encontrarPorClaveAcceso(data.getResult().getClaveAcceso());
             if (invoiceViewOpt.isPresent()) {
 //                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
 //                System.out.println("invoiceViewOpt.get().getInternalStatus(): " + invoiceViewOpt.get().getInternalStatus());
