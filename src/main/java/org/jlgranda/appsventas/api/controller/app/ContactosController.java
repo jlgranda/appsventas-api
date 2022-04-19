@@ -86,7 +86,11 @@ public class ContactosController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
+        System.out.println("\n\n>>>>>>>>>>>><<");
+        System.out.println("\n"+user.getId());
+        System.out.println("\n"+keyword.trim());
         List<SubjectCustomerData> subjectCustomersData = buildResultListSubjectCustomer(user.getId(), subjectCustomerService.encontrarPorSubjectIdYKeyword(user.getId(), keyword.trim()));
+        System.out.println(">>>>>>>>>>>><<\n\n");
         if (subjectCustomersData.isEmpty()) {
             subjectCustomersData.addAll(buildResultListSubjectCustomerBaseCustomer(user.getId(), subjectService.encontrarPorKeyword(keyword.trim())));
         }
