@@ -66,7 +66,7 @@ public class SerialService {
     }
 
     private Optional<Secuencia> encontrarPorEntidadEstabPtoEmi(String ruc, String entidad, String estab, String ptoEmi) {
-        Optional<Secuencia> secuenciaOpt =  this.getRepository().encontrarPorEntidadEstabPtoEmi(entidad, estab, ptoEmi);
+        Optional<Secuencia> secuenciaOpt =  this.getRepository().encontrarPorEntidadEstabPtoEmi(ruc, entidad, estab, ptoEmi);
         if (!secuenciaOpt.isPresent()){
             //Crear el secuencial
             Secuencia secuencia = this.crearInstancia();
