@@ -632,9 +632,9 @@ public class SRIComprobantesController {
         StringBuilder json = new StringBuilder("$");
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-            System.out.println(json);
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+//            System.out.println(json);
+//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
         } catch (Exception ex) {
             
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);

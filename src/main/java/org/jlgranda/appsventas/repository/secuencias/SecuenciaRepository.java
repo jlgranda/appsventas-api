@@ -28,7 +28,7 @@ import org.springframework.data.repository.query.Param;
  */
 public interface SecuenciaRepository extends CrudRepository<Secuencia, Long> {
     
-    @Query("select s from Secuencia s where s.deleted = false and s.entidad = :#{#entidad} and s.estab = :#{#estab} and s.ptoEmi = :#{#ptoEmi}")
-    public Optional<Secuencia> encontrarPorEntidadEstabPtoEmi(@Param("entidad") String entidad, @Param("estab") String estab, @Param("ptoEmi") String ptoEmi);
+    @Query("select s from Secuencia s where s.deleted = false and s.ruc= :#{#ruc} and s.entidad = :#{#entidad} and s.estab = :#{#estab} and s.ptoEmi = :#{#ptoEmi}")
+    public Optional<Secuencia> encontrarPorEntidadEstabPtoEmi(@Param("ruc") String ruc, @Param("entidad") String entidad, @Param("estab") String estab, @Param("ptoEmi") String ptoEmi);
     
 }
