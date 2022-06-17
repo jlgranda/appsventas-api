@@ -557,7 +557,7 @@ public class SRIComprobantesController {
         
         values.put("dirMatriz", "" + subject.getDescription());
         values.put("dirEstablecimiento", Strings.isNullOrEmpty(organizacion.getDireccion()) ? Constantes.SIN_DIRECCION : organizacion.getDireccion());
-        values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "5368" : subject.getNumeroContribuyenteEspecial());
+        values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "" : subject.getNumeroContribuyenteEspecial());
         values.put("obligadoContabilidad", "" + "NO");
 
         //Datos del invoiceData (infoFactura) //comprador
