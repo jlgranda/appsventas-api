@@ -201,6 +201,7 @@ public class Constantes {
             + "      \"fechaEmision\":\"$fechaEmision\",\n"
             + "      \"dirEstablecimiento\":\"$dirEstablecimiento\",\n"
             + "      \"obligadoContabilidad\":\"$obligadoContabilidad\",\n"
+            + "      \"tipoIdentificacionComprador\":\"$tipoIdentificacionComprador\",\n"
             + "      \"razonSocialComprador\":\"$razonSocialComprador\",\n"
             + "      \"identificacionComprador\":\"$identificacionComprador\",\n"
             + "      \"direccionComprador\":\"$direccionComprador\",\n"
