@@ -107,9 +107,9 @@ public class FacturacionController {
             invoiceGlobal.setInvoicesEmitidasData(buildResultListFromInvoiceView(internalInvoiceService.listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
             invoiceGlobal.setInvoicesEmitidasCountData(buildResultListFromInvoiceCountView(internalInvoiceService.countPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(subjectOpt.get().getId(), organizacion.getId(), DocumentType.INVOICE)));
 
-            invoiceGlobal.setInvoicesRecibidasData(buildResultListFromInvoiceView(internalInvoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
+            //invoiceGlobal.setInvoicesRecibidasData(buildResultListFromInvoiceView(internalInvoiceService.listarPorOwnerYDocumentTypeInternalStatus(subjectOpt.get().getId(), DocumentType.INVOICE, Constantes.SRI_STATUS_APPLIED)));
         }
-        Api.imprimirGetLogAuditoria("facturacion/facturas/emitidas/activos", user.getId());
+        Api.imprimirGetLogAuditoria("facturacion", user.getId());
         return ResponseEntity.ok(invoiceGlobal);
     }
 
