@@ -557,7 +557,11 @@ public class SRIComprobantesController {
         
         values.put("dirMatriz", "" + subject.getDescription());
         values.put("dirEstablecimiento", Strings.isNullOrEmpty(organizacion.getDireccion()) ? Constantes.SIN_DIRECCION : organizacion.getDireccion());
-        values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "5368" : subject.getNumeroContribuyenteEspecial());
+        
+        if ( !Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ){
+            values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "" : subject.getNumeroContribuyenteEspecial());
+        }
+        
         values.put("obligadoContabilidad", "" + "NO");
 
         //Datos del invoiceData (infoFactura) //comprador
@@ -596,7 +600,12 @@ public class SRIComprobantesController {
 
         //detalles en función del detalle de la factura
         List<String> detalles = new ArrayList<>();
-        
+        if (invoiceData.getDetails().size() == 1){ //Sobreescribir precios
+            invoiceData.getDetails().forEach(dtl -> {
+                dtl.getProduct().setPrice(invoiceData.getSubTotal()); //Cambiar el valor si es un sólo producto y los valores son diferentes
+            });
+        }
+        //Procesar detalles para generar la factura.
         invoiceData.getDetails().forEach(dtl -> {
             Map<String, Object> detailValues = new HashMap<>();
             try {
@@ -632,9 +641,6 @@ public class SRIComprobantesController {
         StringBuilder json = new StringBuilder("$");
         try {
             json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
-//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-//            System.out.println(json);
-//            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
         } catch (Exception ex) {
             
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
