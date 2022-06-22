@@ -33,7 +33,7 @@ public interface InvoiceView {
     public Date getEmissionOn();
 
     public String getResumen();
-
+    
     public BigDecimal getAmount();
 
     public BigDecimal getSubTotal();
@@ -75,5 +75,5 @@ public interface InvoiceView {
     public String getNumeroAutorizacion();
 
     public Date getAuthorizationDate();
-
+    
 }

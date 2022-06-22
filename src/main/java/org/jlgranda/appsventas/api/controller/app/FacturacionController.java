@@ -6,6 +6,7 @@
 package org.jlgranda.appsventas.api.controller.app;
 
 import com.rolandopalermo.facturacion.ec.domain.Invoice;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,17 +17,22 @@ import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
+import org.jlgranda.appsventas.domain.app.Detail;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.domain.app.Payment;
+import org.jlgranda.appsventas.domain.app.Product;
 import org.jlgranda.appsventas.domain.app.view.InvoiceCountView;
 import org.jlgranda.appsventas.domain.app.view.InvoiceView;
 import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.app.InvoiceCountData;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
+import org.jlgranda.appsventas.dto.app.InvoiceDetailData;
 import org.jlgranda.appsventas.dto.app.InvoiceGlobalData;
 import org.jlgranda.appsventas.dto.app.PaymentData;
+import org.jlgranda.appsventas.dto.app.ProductData;
+import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.exception.ResourceNotFoundException;
@@ -35,6 +41,8 @@ import org.jlgranda.appsventas.services.app.DetailService;
 import org.jlgranda.appsventas.services.app.InternalInvoiceService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.app.PaymentService;
+import org.jlgranda.appsventas.services.app.ProductService;
+import org.jlgranda.appsventas.services.app.SubjectCustomerService;
 import org.jlgranda.appsventas.services.app.SubjectService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,9 +69,11 @@ public class FacturacionController {
     private InternalInvoiceService internalInvoiceService;
     private ComprobantesService comprobantesService;
     private DetailService detailService;
+    private ProductService productService;
     private PaymentService paymentService;
     private OrganizationService organizationService;
     private SubjectService subjectService;
+    private SubjectCustomerService subjectCustomerService;
     private final String ignoreProperties;
 
     @Autowired
@@ -71,17 +81,21 @@ public class FacturacionController {
             InternalInvoiceService internalInvoiceService,
             ComprobantesService comprobantesService,
             DetailService detailService,
+            ProductService productService,
             PaymentService paymentService,
             OrganizationService organizationService,
             SubjectService subjectService,
+            SubjectCustomerService subjectCustomerService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
         this.internalInvoiceService = internalInvoiceService;
         this.comprobantesService = comprobantesService;
+        this.productService = productService;
         this.detailService = detailService;
         this.paymentService = paymentService;
         this.organizationService = organizationService;
         this.subjectService = subjectService;
+        this.subjectCustomerService = subjectCustomerService;
         this.ignoreProperties = ignoreProperties;
     }
 
@@ -329,6 +343,49 @@ public class FacturacionController {
         }
         return invoicesData;
 
+    }
+
+    @PutMapping("/factura/data/reemitir")
+    public ResponseEntity recargarDataFactura(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody InvoiceData internalInvoiceData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        return subjectCustomerService.encontrarPorSubjectIdCustomerId(user.getId(), internalInvoiceData.getCustomerId()).map(subjectCustomer -> {
+            
+            //Cargar customer
+            Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomer.getCustomerId());
+            if(customerOpt.isPresent()){
+                internalInvoiceData.setSubjectCustomer(subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customerOpt.get()));
+            }
+
+            //Cargar details
+            List<InvoiceDetailData> invoiceDetailsData = new ArrayList<>();
+            Map<Long, ProductData> productsMap = new HashMap<>();
+            productService.encontrarPorOrganizacionId(organizacion.getId()).forEach(p -> productsMap.put(p.getId(), productService.buildProductData(p)));
+            detailService.encontrarPorInvoiceId(internalInvoiceData.getId()).forEach(dt -> {
+                invoiceDetailsData.add(detailService.buildInvoiceDetailData(dt, productsMap.get(dt.getProductId())));
+            });
+            internalInvoiceData.setDetails(invoiceDetailsData);
+            
+            Api.imprimirUpdateLogAuditoria("/facturacion/factura", user.getId(), internalInvoiceData);
+            return ResponseEntity.ok(Api.response("factura", internalInvoiceData));
+        }).orElseThrow(ResourceNotFoundException::new);
     }
 
     /**

@@ -27,5 +27,5 @@ public interface InvoiceCountView {
     public String getInternalStatus();
 
     public BigDecimal getCount();
-
+    
 }

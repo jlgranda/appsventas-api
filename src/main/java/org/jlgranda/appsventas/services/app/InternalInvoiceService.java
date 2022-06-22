@@ -5,6 +5,7 @@
  */
 package org.jlgranda.appsventas.services.app;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,12 +14,15 @@ import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.InternalInvoice;
+import org.jlgranda.appsventas.domain.app.SubjectCustomer;
 import org.jlgranda.appsventas.domain.app.view.InvoiceCountView;
 import org.jlgranda.appsventas.domain.app.view.InvoiceView;
 import org.jlgranda.appsventas.domain.util.DocumentType;
 import org.jlgranda.appsventas.domain.util.EmissionType;
 import org.jlgranda.appsventas.domain.util.EnvironmentType;
 import org.jlgranda.appsventas.dto.app.InvoiceData;
+import org.jlgranda.appsventas.dto.app.InvoiceDetailData;
+import org.jlgranda.appsventas.dto.app.SubjectCustomerData;
 import org.jlgranda.appsventas.repository.app.InternalInvoiceRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,7 +117,7 @@ public class InternalInvoiceService {
         BeanUtils.copyProperties(inv, internalInvoiceData);
         return internalInvoiceData;
     }
-
+    
     public InvoiceData buildInvoiceData(InternalInvoice inv, Subject c) {
         InvoiceData internalInvoiceData = new InvoiceData();
         BeanUtils.copyProperties(inv, internalInvoiceData);

@@ -14,7 +14,10 @@ import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.StatusType;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Detail;
+import org.jlgranda.appsventas.domain.app.Product;
 import org.jlgranda.appsventas.dto.app.DetailData;
+import org.jlgranda.appsventas.dto.app.InvoiceDetailData;
+import org.jlgranda.appsventas.dto.app.ProductData;
 import org.jlgranda.appsventas.repository.app.DetailRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +65,13 @@ public class DetailService {
         return detailData;
     }
 
+    public InvoiceDetailData buildInvoiceDetailData(Detail d, ProductData pd) {
+        InvoiceDetailData invoiceDetailData = new InvoiceDetailData();
+        BeanUtils.copyProperties(d, invoiceDetailData);
+        invoiceDetailData.setProduct(pd);
+        return invoiceDetailData;
+    }
+
     public Detail crearInstancia() {
         Detail _instance = new Detail();
         _instance.setCreatedOn(Dates.now());
@@ -85,6 +95,7 @@ public class DetailService {
     public Detail guardar(Detail detail) {
         return this.getRepository().save(detail);
     }
+
     public Iterable<Detail> guardar(List<Detail> details) {
         return this.getRepository().saveAll(details);
     }
