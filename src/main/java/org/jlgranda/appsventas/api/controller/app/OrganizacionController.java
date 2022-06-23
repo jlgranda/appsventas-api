@@ -19,10 +19,12 @@ package org.jlgranda.appsventas.api.controller.app;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.validation.Valid;
 import net.tecnopro.util.Strings;
 import org.jlgranda.appsventas.Api;
+import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.CuentaBancaria;
 import org.jlgranda.appsventas.domain.app.Organization;
@@ -119,8 +121,19 @@ public class OrganizacionController {
                         .decode(base64ImageString.getBytes(StandardCharsets.UTF_8));
                 organizacion.setPhoto(decodedImg);
             }
+            if (organizationData.getAmbientePro() != null && Objects.equals(Boolean.TRUE, organizationData.getAmbientePro())) {
+                organizacion.setAmbienteSRI(Constantes.AMBIENTE_PRODUCCION);
+            } else {
+                organizacion.setAmbienteSRI(Constantes.AMBIENTE_DESARROLLO);
+            }
             organizationService.guardar(organizacion);
         }
+
+        //Recargar data
+        OrganizationData organizationDataUpdate = new OrganizationData();
+        BeanUtils.copyProperties(organizacion, organizationDataUpdate);
+        organizationDataUpdate.setImage(organizationData.getImage());
+
         Api.imprimirUpdateLogAuditoria("organization", user.getId(), organizacion);
         return ResponseEntity.ok(Api.response("organization", organizationData));
     }

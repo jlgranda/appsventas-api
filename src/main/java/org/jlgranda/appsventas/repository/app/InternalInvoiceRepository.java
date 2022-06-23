@@ -57,7 +57,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
      * @param documentType
      * @return
      */
-    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
+    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, inv_.description as description, \n"
             + "cliente.id as customerId, \n"
             + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"
@@ -118,7 +118,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
      * @param internalStatus
      * @return
      */
-    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
+    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, inv_.description as description, \n"
             + "cliente.id as customerId, \n"
             + "cliente.email as customerEmail, \n"
             + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
@@ -150,7 +150,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "and not inv_.sri_clave_acceso is null order by inv_.emissionOn DESC")
     List<InvoiceView> listarPorAuthorYOrganizacionIdYDocumentTypeInternalStatus(@Param("authorId") Long authorId, @Param("organizacionId") Long organizacionId, @Param("documentType") int documentType, @Param("internalStatus") String internalStatus);
 
-    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
+    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, inv_.description as description, \n"
             + "cliente.id as customerId, \n"
             + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"
@@ -177,7 +177,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
             + "and sriintsts.description = :#{#internalStatus} \n"
             + "and not inv_.sri_clave_acceso is null order by inv_.emissionOn DESC")
     List<InvoiceView> listarPorOwnerYDocumentTypeInternalStatus(@Param("ownerId") Long ownerId, @Param("documentType") int documentType, @Param("internalStatus") String internalStatus);
-//    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
+//    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, inv_.description as description, \n"
 //            + "cliente.id as customerId, \n"
 //            + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
 //            + "emisor.organization_name as subjectFullName, \n"
@@ -206,7 +206,7 @@ public interface InternalInvoiceRepository extends CrudRepository<InternalInvoic
 //            + "and not inv_.sri_clave_acceso is null order by inv_.emissionOn DESC")
 //    List<InvoiceView> listarPorOwnerYOrganizacionIdYDocumentTypeInternalStatus(@Param("ownerId") Long ownerId, @Param("organizacionId") Long organizacionId, @Param("documentType") int documentType, @Param("internalStatus") String internalStatus);
 
-    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, \n"
+    @Query(nativeQuery = true, value = "select inv_.id as id, inv_.uuid as uuid, inv_.description as description, \n"
             + "cliente.id as customerId, \n"
             + "upper( COALESCE (cliente.firstname, '', cliente.firstname) || ' ' || COALESCE (cliente.surname, '', cliente.surname) ) as customerFullName, \n"
             + "emisor.organization_name as subjectFullName, \n"

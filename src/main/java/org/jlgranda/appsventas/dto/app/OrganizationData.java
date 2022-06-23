@@ -33,9 +33,11 @@ public class OrganizationData {
 
     private String ruc;
     private String initials;
+    private String name;//razonSocial
     private String direccion;
     private String image;
     private String ambienteSRI;
+    private Boolean ambientePro = Boolean.FALSE;
     private Long numeroLocales;
 
 }

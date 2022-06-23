@@ -14,6 +14,10 @@ public class Constantes {
     public static final String JNDINAME_STAGE = "java:/FedeXADS";
     public static final String DATA_DEFAULT_SCHEMA = "public";
     public static final String SRI_DEFAULT_SCHEMA = "public";
+    
+    public static final String AMBIENTE_PRODUCCION = "PRODUCCION";
+    public static final String AMBIENTE_DESARROLLO = "DESARROLLO";
+    
 
     public static final Long ESTADO_ACTIVO = 1L;
     public static final Long ESTADO_INACTIVO = 0L;
