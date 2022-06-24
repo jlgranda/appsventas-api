@@ -310,7 +310,13 @@ public class SRIComprobantesController {
 
         String ptoEmi = Constantes.SRI_PTO_EMISION_FACTURAS_ELECTRONICAS;
 
-        String secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.INVOICE, estab, ptoEmi).next();
+        String secuencial = "";
+
+        if (Strings.isNullOrEmpty(invoiceData.getSecuencial())) {
+            secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.INVOICE, estab, ptoEmi, organizacion.getAmbienteSRI()).next();
+        } else {
+            secuencial = invoiceData.getSecuencial();
+        }
 
 //        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
 //        System.out.println("ruc: " + organizacion.getRuc());

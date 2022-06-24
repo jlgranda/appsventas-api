@@ -68,6 +68,7 @@ public class DetailService {
     public InvoiceDetailData buildInvoiceDetailData(Detail d, ProductData pd) {
         InvoiceDetailData invoiceDetailData = new InvoiceDetailData();
         BeanUtils.copyProperties(d, invoiceDetailData);
+        pd.setPrice(d.getPrice());//Actualizar el precio del producto por el cual se facturó en el detalle
         invoiceDetailData.setProduct(pd);
         return invoiceDetailData;
     }

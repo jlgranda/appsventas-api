@@ -73,4 +73,10 @@ public class Secuencia extends DeletableObject<Secuencia> implements Serializabl
     @Column(name = "digitos")
     private Long digitos;
     
+    /**
+     * Tipo de ambiente
+     */
+    @Column(name = "ambiente_sri")
+    String ambienteSRI;
+    
 }

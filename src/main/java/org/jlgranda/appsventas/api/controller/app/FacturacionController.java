@@ -367,10 +367,10 @@ public class FacturacionController {
         }
 
         return subjectCustomerService.encontrarPorSubjectIdCustomerId(user.getId(), internalInvoiceData.getCustomerId()).map(subjectCustomer -> {
-            
+
             //Cargar customer
             Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomer.getCustomerId());
-            if(customerOpt.isPresent()){
+            if (customerOpt.isPresent()) {
                 internalInvoiceData.setSubjectCustomer(subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customerOpt.get()));
             }
 
@@ -382,9 +382,59 @@ public class FacturacionController {
                 invoiceDetailsData.add(detailService.buildInvoiceDetailData(dt, productsMap.get(dt.getProductId())));
             });
             internalInvoiceData.setDetails(invoiceDetailsData);
-            
+
             Api.imprimirUpdateLogAuditoria("/facturacion/factura", user.getId(), internalInvoiceData);
             return ResponseEntity.ok(Api.response("factura", internalInvoiceData));
+        }).orElseThrow(ResourceNotFoundException::new);
+    }
+
+    @PutMapping("/factura/data/nueva")
+    public ResponseEntity nuevaDataFacturaAPartirDe(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody InvoiceData internalInvoiceData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        return subjectCustomerService.encontrarPorSubjectIdCustomerId(user.getId(), internalInvoiceData.getCustomerId()).map(subjectCustomer -> {
+
+            //Nueva factura
+            InvoiceData newInternalInvoiceData = new InvoiceData();
+
+            //Cargar customer
+            Optional<Subject> customerOpt = subjectService.encontrarPorId(subjectCustomer.getCustomerId());
+            if (customerOpt.isPresent()) {
+                newInternalInvoiceData.setSubjectCustomer(subjectCustomerService.buildSubjectCustomerData(subjectCustomer, customerOpt.get()));
+            }
+
+            //Cargar details
+            List<InvoiceDetailData> invoiceDetailsData = new ArrayList<>();
+            Map<Long, ProductData> productsMap = new HashMap<>();
+            productService.encontrarPorOrganizacionId(organizacion.getId()).forEach(p -> productsMap.put(p.getId(), productService.buildProductData(p)));
+            detailService.encontrarPorInvoiceId(internalInvoiceData.getId()).forEach(dt -> {
+                invoiceDetailsData.add(detailService.buildInvoiceDetailData(dt, productsMap.get(dt.getProductId())));
+            });
+            newInternalInvoiceData.setDetails(invoiceDetailsData);
+            newInternalInvoiceData.setDescription(internalInvoiceData.getDescription());
+            
+            newInternalInvoiceData.setEstab(internalInvoiceData.getEstab());
+            newInternalInvoiceData.setPtoEmi(internalInvoiceData.getPtoEmi());
+            
+            Api.imprimirUpdateLogAuditoria("/facturacion/factura", user.getId(), newInternalInvoiceData);
+            return ResponseEntity.ok(Api.response("factura", newInternalInvoiceData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
 

@@ -93,9 +93,39 @@ public class SerialService {
         }
         return secuenciaOpt;
     }
+
+    private Optional<Secuencia> encontrarPorEntidadEstabPtoEmiAmbiente(String ruc, String entidad, String estab, String ptoEmi, String ambienteSRI) {
+        Optional<Secuencia> secuenciaOpt =  this.getRepository().encontrarPorEntidadEstabPtoEmiAmbiente(ruc, entidad, estab, ptoEmi, ambienteSRI);
+        if (!secuenciaOpt.isPresent()){
+            //Crear el secuencial
+            Secuencia secuencia = this.crearInstancia();
+            secuencia.setRuc(ruc);
+            secuencia.setEntidad(entidad);
+            secuencia.setName(entidad);
+            secuencia.setEstab(estab);
+            secuencia.setPtoEmi(ptoEmi);
+            secuencia.setAmbienteSRI(ambienteSRI);
+            secuencia.setDigitos(9L);
+            secuencia.setValorActual(1L);
+            secuencia.setAgregarAnio(false);
+            this.guardar(secuencia);
+            secuenciaOpt = Optional.of(secuencia);
+        } else {
+            
+                //Cargar el secuencial y almacenar el paso
+                Secuencia secuencia = secuenciaOpt.get();
+                //Incrementa 1 y registra el valor usado
+                Long valorActual = secuencia.getValorActual() + 1;
+                secuencia.setValorActual(valorActual); //Una lectura del generador incremente el valor actual
+                //Guardar los nuevos valores de la serie
+                this.guardar(secuencia);
+                secuenciaOpt = Optional.of(secuencia);
+        }
+        return secuenciaOpt;
+    }
     
-    public Generator getSecuencialGenerator(String ruc, String entidad, String estab, String ptoEmi) {
-        Optional<Secuencia> secuenciaOpt = this.encontrarPorEntidadEstabPtoEmi(ruc, entidad, estab, ptoEmi);
+    public Generator getSecuencialGenerator(String ruc, String entidad, String estab, String ptoEmi, String ambienteSRI) {
+        Optional<Secuencia> secuenciaOpt = this.encontrarPorEntidadEstabPtoEmiAmbiente(ruc, entidad, estab, ptoEmi, ambienteSRI);
         SecuencialInvoiceGenerator secuencialInvoiceGenerator = new SecuencialInvoiceGenerator();
         BeanUtils.copyProperties(secuenciaOpt.get(), secuencialInvoiceGenerator);
         secuencialInvoiceGenerator.setAddYear(secuenciaOpt.get().isAgregarAnio());
