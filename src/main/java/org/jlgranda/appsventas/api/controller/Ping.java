@@ -33,7 +33,7 @@ public class Ping {
     @GetMapping
     public ResponseEntity ping() {
         String message = "appsventas-api::" + Dates.toString(Dates.now(), "E, dd MMM yyyy HH:mm:ss z");
-        String description = "Appventas (c) 2021 v071220211639";
+        String description = "Appventas (c) 2022 v270720221224";
         return ResponseEntity.ok( new PingData(message, description, 1) );
     }
 }
