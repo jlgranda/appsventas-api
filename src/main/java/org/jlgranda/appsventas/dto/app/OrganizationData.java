@@ -39,5 +39,9 @@ public class OrganizationData {
     private String ambienteSRI;
     private Boolean ambientePro = Boolean.FALSE;
     private Long numeroLocales;
-
+    private Boolean contribuyenteEspecial;
+    private String contribuyenteEspecialNumeroResolucion;
+    private Boolean agenteRetencion;
+    private Boolean regimenRimpe;
+    private String regimenRimpeTipo;
 }

@@ -182,7 +182,7 @@ public class ContactosController {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
-
+        
         Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
         if (!subjectOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");

@@ -45,6 +45,16 @@ public class Organization extends DeletableObject<Organization> implements Seria
     @Column(name = "ambiente_sri")
     private String ambienteSRI;
     private Long numeroLocales = Long.valueOf(1);
+    @Column(name = "contribuyente_especial")
+    private Boolean contribuyenteEspecial = Boolean.FALSE;
+    @Column(name = "contribuyente_especial_numero_resolucion")
+    private String contribuyenteEspecialNumeroResolucion;
+    @Column(name = "agente_retencion")
+    private Boolean agenteRetencion = Boolean.FALSE;
+    @Column(name = "regimen_rimpe")
+    private Boolean regimenRimpe = Boolean.FALSE;
+     @Column(name = "regimen_rimpe_tipo")
+    private String regimenRimpeTipo;
 
     public enum Type {
         GOVERMENT,

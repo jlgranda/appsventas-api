@@ -14,20 +14,19 @@ public class Constantes {
     public static final String JNDINAME_STAGE = "java:/FedeXADS";
     public static final String DATA_DEFAULT_SCHEMA = "public";
     public static final String SRI_DEFAULT_SCHEMA = "public";
-    
+
     public static final String AMBIENTE_PRODUCCION = "PRODUCCION";
     public static final String AMBIENTE_DESARROLLO = "DESARROLLO";
-    
 
     public static final Long ESTADO_ACTIVO = 1L;
     public static final Long ESTADO_INACTIVO = 0L;
     public static final Long ESTADO_MANTENIMIENTO = 2L;
     public static final Long ESTADO_CREADA = 3L;
     public static final Long ESTADO_CERRADO = 4L;
-    
+
     public static final String ESTADO_COMPROBANTE_CREADA = "CREADA";
     public static final String ESTADO_COMPROBANTE_RECIBIDA = "RECIBIDA";
-    
+
     public static final String ACCION_COMPROBANTE_ANULAR = "anular";
     public static final String ACCION_COMPROBANTE_ENVIAR = "enviar";
     public static final String ACCION_COMPROBANTE_AUTORIZAR = "autorizar";
@@ -121,8 +120,7 @@ public class Constantes {
     public static final String INVOICE_PAX = "1";
     public static final String INVOICE_BOARD = "0";
     public static final String INVOICE_UNIT = "u";
-    
-    
+
     public static final String NO_ORGANIZACION = "ORGANIZACION NO DEFINIDA";
     public static final String NO_RUC = "RUC NO VALIDO";
     public static final String CREADO_POR = "CREADOR POR";
@@ -131,61 +129,62 @@ public class Constantes {
     public static final String SIN_DIRECCION = "SIN DIRECCIÓN";
     public static final String SIN_TELEFONO = "999999999";
 
-//    public static final String JSON_FACTURA_TEMPLATE_CONTRIBUYENTE_ESPECIAL = "{\n"
-//            + "   \"id\":\"comprobante\",\n"
-//            + "   \"version\":\"1.0.0\",\n"
-//            + "   \"infoTributaria\":{\n"
-//            + "      \"ambiente\":\"$ambiente\",\n"
-//            + "      \"tipoEmision\":\"$tipoEmision\",\n"
-//            + "      \"razonSocial\":\"$razonSocial\",\n"
-//            + "      \"nombreComercial\":\"$nombreComercial\",\n"
-//            + "      \"ruc\":\"$ruc\",\n"
-//            + "      \"codDoc\":\"$codDoc\",\n"
-//            + "      \"estab\":\"$estab\",\n"
-//            + "      \"ptoEmi\":\"$ptoEmi\",\n"
-//            + "      \"secuencial\":\"$secuencial\",\n"
-//            + "      \"dirMatriz\":\"$dirMatriz\"\n"
-//            + "   },\n"
-//            + "   \"infoFactura\":{\n"
-//            + "      \"fechaEmision\":\"$fechaEmision\",\n"
-//            + "      \"dirEstablecimiento\":\"$dirEstablecimiento\",\n"
-//            + "      \"contribuyenteEspecial\":\"$contribuyenteEspecial\",\n"
-//            + "      \"obligadoContabilidad\":\"$obligadoContabilidad\",\n"
-//            + "      \"tipoIdentificacionComprador\":\"$tipoIdentificacionComprador\",\n"
-//            //+ "      \"guiaRemision\":\"$guiaRemision\",\n"
-//            + "      \"razonSocialComprador\":\"$razonSocialComprador\",\n"
-//            + "      \"identificacionComprador\":\"$identificacionComprador\",\n"
-//            + "      \"direccionComprador\":\"$direccionComprador\",\n"
-//            + "      \"totalSinImpuestos\":$totalSinImpuestos,\n"
-//            + "      \"totalDescuento\":$totalDescuento,\n"
-//            + "      \"totalImpuesto\":[\n"
-//            + "         {\n"
-//            + "            \"codigo\":\"$totalImpuestoCodigo\",\n"
-//            + "            \"codigoPorcentaje\":$totalImpuestoCodigoPorcentaje,\n"
-//            + "            \"descuentoAdicional\":$descuentoAdicional,\n"
-//            + "            \"baseImponible\":$totalImpuestoBaseImponible,\n"
-//            + "            \"valor\":$totalImpuestoValor\n"
-//            + "         }\n"
-//            + "      ],\n"
-//            + "      \"propina\":$propina,\n"
-//            + "      \"importeTotal\":$importeTotal,\n"
-//            + "      \"moneda\":\"$moneda\",\n"
-//            + "      \"pagos\":[\n"
-//            + "         {\n"
-//            + "            \"formaPago\":\"$formaPago\",\n"
-//            + "            \"total\":$total,\n"
-//            + "            \"plazo\":\"$plazo\",\n"
-//            + "            \"unidadTiempo\":\"$unidadTiempo\"\n"
-//            + "         }\n"
-//            + "      ],\n"
-//            + "      \"valorRetIva\":$valorRetIva,\n"
-//            + "      \"valorRetRenta\":$valorRetRenta\n"
-//            + "   },\n"
-//            + "   \"detalle\":[\n"
-//            + "     $detalles"        
-//            + "   ],\n"
-//            + "   \"campoAdicional\":[]\n"
-//            + "}";
+    public static final String JSON_FACTURA_TEMPLATE_CONTRIBUYENTE_ESPECIAL = "{\n"
+            + "   \"id\":\"comprobante\",\n"
+            + "   \"version\":\"1.0.0\",\n"
+            + "   \"infoTributaria\":{\n"
+            + "      \"ambiente\":\"$ambiente\",\n"
+            + "      \"tipoEmision\":\"$tipoEmision\",\n"
+            + "      \"razonSocial\":\"$razonSocial\",\n"
+            + "      \"nombreComercial\":\"$nombreComercial\",\n"
+            + "      \"ruc\":\"$ruc\",\n"
+            + "      \"codDoc\":\"$codDoc\",\n"
+            + "      \"estab\":\"$estab\",\n"
+            + "      \"ptoEmi\":\"$ptoEmi\",\n"
+            + "      \"secuencial\":\"$secuencial\",\n"
+            + "      \"dirMatriz\":\"$dirMatriz\"\n"
+            + "   },\n"
+            + "   \"infoFactura\":{\n"
+            + "      \"fechaEmision\":\"$fechaEmision\",\n"
+            + "      \"dirEstablecimiento\":\"$dirEstablecimiento\",\n"
+            + "      \"contribuyenteEspecial\":\"$contribuyenteEspecial\",\n"
+            + "      \"obligadoContabilidad\":\"$obligadoContabilidad\",\n"
+            + "      \"tipoIdentificacionComprador\":\"$tipoIdentificacionComprador\",\n"
+            //+ "      \"guiaRemision\":\"$guiaRemision\",\n"
+            + "      \"razonSocialComprador\":\"$razonSocialComprador\",\n"
+            + "      \"identificacionComprador\":\"$identificacionComprador\",\n"
+            + "      \"direccionComprador\":\"$direccionComprador\",\n"
+            + "      \"totalSinImpuestos\":$totalSinImpuestos,\n"
+            + "      \"totalDescuento\":$totalDescuento,\n"
+            + "      \"totalImpuesto\":[\n"
+            + "         {\n"
+            + "            \"codigo\":\"$totalImpuestoCodigo\",\n"
+            + "            \"codigoPorcentaje\":$totalImpuestoCodigoPorcentaje,\n"
+            + "            \"descuentoAdicional\":$descuentoAdicional,\n"
+            + "            \"baseImponible\":$totalImpuestoBaseImponible,\n"
+            + "            \"valor\":$totalImpuestoValor\n"
+            + "         }\n"
+            + "      ],\n"
+            + "      \"propina\":$propina,\n"
+            + "      \"importeTotal\":$importeTotal,\n"
+            + "      \"moneda\":\"$moneda\",\n"
+            + "      \"pagos\":[\n"
+            + "         {\n"
+            + "            \"formaPago\":\"$formaPago\",\n"
+            + "            \"total\":$total,\n"
+            + "            \"plazo\":\"$plazo\",\n"
+            + "            \"unidadTiempo\":\"$unidadTiempo\"\n"
+            + "         }\n"
+            + "      ],\n"
+            + "      \"valorRetIva\":$valorRetIva,\n"
+            + "      \"valorRetRenta\":$valorRetRenta\n"
+            + "   },\n"
+            + "   \"detalle\":[\n"
+            + "     $detalles"
+            + "   ],\n"
+            + "   \"campoAdicional\":[]\n"
+            + "}";
+
     public static final String JSON_FACTURA_TEMPLATE = "{\n"
             + "   \"id\":\"comprobante\",\n"
             + "   \"version\":\"1.0.0\",\n"
@@ -235,11 +234,11 @@ public class Constantes {
             + "      \"valorRetRenta\":$valorRetRenta\n"
             + "   },\n"
             + "   \"detalle\":[\n"
-            + "     $detalles"        
+            + "     $detalles"
             + "   ],\n"
             + "   \"campoAdicional\":[]\n"
             + "}";
-    
+
     public static final String JSON_DETAIL_TEMPLATE = "{\n"
             + "         \"codigoPrincipal\":\"$codigoPrincipal\",\n"
             + "         \"codigoAuxiliar\":\"$codigoAuxiliar\",\n"
@@ -264,13 +263,12 @@ public class Constantes {
             + "            }\n"
             + "         ]\n"
             + "      }\n";
-    
+
     public static final String JSON_CERTIFICADO_DIGITAL = "{\n"
             + "  \"certificado\":\"$certificado\",\n"
-            + "  \"password\": \"$password\"\n" +
-"}";
+            + "  \"password\": \"$password\"\n"
+            + "}";
 
-    
     public static final String SRI_STATUS_CREATED = "CREATED";
     public static final String SRI_STATUS_POSTED = "POSTED";
     public static final String SRI_STATUS_APPLIED = "APPLIED";

@@ -18,6 +18,7 @@ package org.jlgranda.appsventas.api.controller.app;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,7 +47,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -204,6 +207,18 @@ public class OrganizacionController {
             cuentaBancariaService.guardar(cuentaBancaria);
             Api.imprimirUpdateLogAuditoria("organization/cuentabancaria", user.getId(), cuentaBancariaData);
             return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancariaData));
+        }).orElseThrow(ResourceNotFoundException::new);
+    }
+    
+    @DeleteMapping("/cuentabancaria/{uuid}")
+    public ResponseEntity eliminarCuentaBancaria(
+            @AuthenticationPrincipal UserData user,
+            @PathVariable("uuid") String uuid) {
+        return cuentaBancariaService.encontrarPorUuid(uuid).map(cuentaBancaria -> {
+            cuentaBancaria.setDeleted(true);
+            cuentaBancariaService.guardar(cuentaBancaria);
+            Api.imprimirUpdateLogAuditoria("organization/cuentabancaria/uuid", user.getId(), cuentaBancaria);
+            return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancaria));
         }).orElseThrow(ResourceNotFoundException::new);
     }
 

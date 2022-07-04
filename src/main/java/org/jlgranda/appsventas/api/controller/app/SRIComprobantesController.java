@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -565,8 +566,8 @@ public class SRIComprobantesController {
         values.put("dirMatriz", "" + subject.getDescription());
         values.put("dirEstablecimiento", Strings.isNullOrEmpty(organizacion.getDireccion()) ? Constantes.SIN_DIRECCION : organizacion.getDireccion());
 
-        if (!Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial())) {
-            values.put("contribuyenteEspecial", Strings.isNullOrEmpty(subject.getNumeroContribuyenteEspecial()) ? "" : subject.getNumeroContribuyenteEspecial());
+        if (Objects.equals(Boolean.TRUE, organizacion.getContribuyenteEspecial())) {
+            values.put("contribuyenteEspecial", Strings.isNullOrEmpty(organizacion.getContribuyenteEspecialNumeroResolucion()) ? "" : organizacion.getContribuyenteEspecialNumeroResolucion());
         }
 
         values.put("obligadoContabilidad", "" + "NO");
@@ -647,7 +648,11 @@ public class SRIComprobantesController {
         //Renderizado final del objeto factura antes de enviar a SRI
         StringBuilder json = new StringBuilder("$");
         try {
-            json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
+            if (Objects.equals(Boolean.TRUE, organizacion.getContribuyenteEspecial())) {
+                json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE_CONTRIBUYENTE_ESPECIAL, values));
+            } else {
+                json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
+            }
         } catch (Exception ex) {
 
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
