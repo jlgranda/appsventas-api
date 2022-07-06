@@ -18,12 +18,20 @@ package org.jlgranda.appsventas.domain.app;
 
 import java.io.Serializable;
 import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 import org.jlgranda.appsventas.domain.DeletableObject;
 
 /**
  *
  * @author usuario
  */
+@Entity
+@Table(name = "EMISSION_POINT", schema = "public")
+@Getter
+@Setter
 public class EmissionPoint extends DeletableObject<EmissionPoint> implements Serializable {
     
     @Column(name = "establishment_id", insertable = true, updatable = true, nullable = true)
