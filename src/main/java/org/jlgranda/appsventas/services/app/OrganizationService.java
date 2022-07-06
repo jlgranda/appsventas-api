@@ -6,13 +6,17 @@
 package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import net.tecnopro.util.Dates;
 import net.tecnopro.util.Strings;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Organization;
+import org.jlgranda.appsventas.dto.app.EstablishmentData;
+import org.jlgranda.appsventas.dto.app.OrganizationData;
 import org.jlgranda.appsventas.repository.app.OrganizationRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -125,5 +129,31 @@ public class OrganizationService {
      */
     public Organization guardar(Organization organization) {
         return this.getRepository().save(organization);
+    }
+
+    public OrganizationData buildOrganization(Organization org) {
+        OrganizationData organizationData = new OrganizationData();
+        BeanUtils.copyProperties(org, organizationData);
+        //Cargar ambiente
+        if (!Strings.isNullOrEmpty(org.getAmbienteSRI()) && Objects.equals(Constantes.AMBIENTE_PRODUCCION, org.getAmbienteSRI())) {
+            organizationData.setAmbientePro(Boolean.TRUE);
+        }
+        //Cargar foto organizacion
+        //organizationData.setImage(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
+        return organizationData;
+    }
+
+    public OrganizationData buildOrganization(Organization org, List<EstablishmentData> establishments) {
+        OrganizationData organizationData = new OrganizationData();
+        BeanUtils.copyProperties(org, organizationData);
+        //Cargar ambiente
+        if (!Strings.isNullOrEmpty(org.getAmbienteSRI()) && Objects.equals(Constantes.AMBIENTE_PRODUCCION, org.getAmbienteSRI())) {
+            organizationData.setAmbientePro(Boolean.TRUE);
+        }
+        //Cargar establecimientos
+        organizationData.setEstablecimientos(establishments);
+        //Cargar foto organizacion
+        //organizationData.setImage(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
+        return organizationData;
     }
 }

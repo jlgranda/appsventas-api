@@ -16,8 +16,6 @@
  */
 package org.jlgranda.appsventas.dto.app;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,20 +29,10 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class OrganizationData {
-
-    private String ruc;
-    private String initials;
-    private String name;//razonSocial
-    private String direccion;
-    private String image;
-    private String ambienteSRI;
-    private Boolean ambientePro = Boolean.FALSE;
-    private Long numeroLocales;
-    private Boolean contribuyenteEspecial;
-    private String contribuyenteEspecialNumeroResolucion;
-    private Boolean agenteRetencion;
-    private Boolean regimenRimpe;
-    private String regimenRimpeTipo;
-    private List<EstablishmentData> establecimientos = new ArrayList<>();
+public class EmissionPointData {
+    
+    private Long id;
+    private String uuid;
+    private String name;
+    private Long establishmentId;
 }

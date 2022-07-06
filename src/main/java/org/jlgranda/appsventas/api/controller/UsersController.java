@@ -35,8 +35,6 @@ import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.api.controller.app.SRIComprobantesController;
 import org.jlgranda.appsventas.domain.CodeType;
 import org.jlgranda.appsventas.domain.Subject;
-import org.jlgranda.appsventas.domain.UsersRoles;
-import org.jlgranda.appsventas.domain.UsersRolesPK;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserModelData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
@@ -52,7 +50,6 @@ import org.jlgranda.util.AESUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;

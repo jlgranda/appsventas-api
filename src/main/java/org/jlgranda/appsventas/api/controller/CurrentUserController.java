@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import javax.validation.constraints.Email;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -26,17 +28,23 @@ import net.tecnopro.util.Strings;
 import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
+import org.jlgranda.appsventas.domain.app.EmissionPoint;
+import org.jlgranda.appsventas.domain.app.Establishment;
 import org.jlgranda.appsventas.domain.app.Organization;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserImageData;
 import org.jlgranda.appsventas.dto.UserModelData;
 import org.jlgranda.appsventas.dto.UserWithToken;
+import org.jlgranda.appsventas.dto.app.EmissionPointData;
+import org.jlgranda.appsventas.dto.app.EstablishmentData;
 import org.jlgranda.appsventas.dto.app.OrganizationData;
 import org.jlgranda.appsventas.exception.NoAuthorizationException;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.exception.ResourceNotFoundException;
 import org.jlgranda.appsventas.services.AuthorizationService;
 import org.jlgranda.appsventas.services.DataService;
+import org.jlgranda.appsventas.services.app.EmissionPointService;
+import org.jlgranda.appsventas.services.app.EstablishmentService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.auth.UserService;
 import org.jlgranda.appsventas.util.UserDataBuilder;
@@ -51,37 +59,45 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RestController
 @RequestMapping(path = "/user")
 public class CurrentUserController {
-    
+
     private UserService userService;
-    
+
     private OrganizationService organizationService;
-    
+
+    private EstablishmentService establishmentService;
+
+    private EmissionPointService emissionPointService;
+
     private DataService dataService;
-    
+
     private final String ignoreProperties;
-    
+
     @Autowired
     public CurrentUserController(
             UserService userService,
             OrganizationService organizationService,
+            EstablishmentService establishmentService,
+            EmissionPointService emissionPointService,
             DataService dataService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
         this.userService = userService;
         this.organizationService = organizationService;
+        this.establishmentService = establishmentService;
+        this.emissionPointService = emissionPointService;
         this.dataService = dataService;
         this.ignoreProperties = ignoreProperties;
     }
-    
+
     @GetMapping("image")
     public ResponseEntity currentUserImage(
             @AuthenticationPrincipal UserData userData,
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        
+
         UserImageData userImageData = new UserImageData();
-        
+
         Optional<Subject> userOpt = userService.getUserRepository().findByUsername(userData.getUsername());
         if (!userOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
@@ -89,7 +105,7 @@ public class CurrentUserController {
         if (userOpt.isPresent()) {
             userImageData.setImageUser(userOpt.get().getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(userOpt.get().getPhoto()) : null);
         }
-        
+
         Api.imprimirGetLogAuditoria("user/image/", userData.getId());
         return ResponseEntity.ok(userImageData);
     }
@@ -108,9 +124,9 @@ public class CurrentUserController {
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit
     ) {
-        
+
         UserImageData userImageData = new UserImageData();
-        
+
         Optional<Subject> userOpt = userService.getUserRepository().findByUsername(userData.getUsername());
         if (!userOpt.isPresent()) {
             throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
@@ -121,20 +137,20 @@ public class CurrentUserController {
                 userImageData.setImageOrganization(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
             }
         }
-        
+
         Api.imprimirGetLogAuditoria("user/organization/image", userData.getId());
         return ResponseEntity.ok(userImageData);
     }
-    
+
     @GetMapping
     public ResponseEntity currentUser(
             @AuthenticationPrincipal UserData currentUser,
             @RequestHeader(value = "Authorization") String authorization) throws JsonProcessingException {
-        
+
         String token = authorization.split(" ")[1];
-        
+
         UserData userData = UserDataBuilder.append(token);
-        
+
         Optional<Subject> userOpt = userService.getUserRepository().findByUsername(userData.getUsername());
         Subject user = null; //El usuario local
         //Obtener desde la base de datos local para completar la información
@@ -156,7 +172,7 @@ public class CurrentUserController {
             //Datos de facturación, forzar creación de organización si tiene ruc.
             //No dispone de certificado digital
             userData.setTieneCertificadoDigital(Boolean.FALSE);
-            
+
             String ruc = Strings.isNullOrEmpty(user.getRuc()) ? "" : user.getRuc().trim();
             if (Strings.isNullOrEmpty(ruc)) {
                 if (user.getCode() != null && user.getCode().length() == 10) {
@@ -170,28 +186,27 @@ public class CurrentUserController {
             if (Strings.validateTaxpayerDocument(ruc)) {
                 Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
                 if (organizacion != null) {
+                    //Datos para el usuario
                     userData.setRuc(organizacion.getRuc());
                     userData.setNombre(organizacion.getName());
                     userData.setInitials(organizacion.getInitials());
                     userData.setDireccion(organizacion.getDireccion());
-                    
-                    OrganizationData organizationData = new OrganizationData();
-                    BeanUtils.copyProperties(organizacion, organizationData);
-//                    organizationData.setImage(organizacion.getPhoto() != null ? "data:image/png;base64," + Base64.toBase64String(organizacion.getPhoto()) : null);
+                    //Cargar establishment
+                    List<EmissionPointData> emissionPointsData = new ArrayList<>();
+                    emissionPointService.encontrarActivosPorOrganizacionId(organizacion.getId()).forEach(empt -> emissionPointsData.add(emissionPointService.buildEmissionPoint(empt)));
+                    Map<Long, List<EmissionPointData>> establishmentPoints = emissionPointsData.stream().collect(Collectors.groupingBy(EmissionPointData::getEstablishmentId));
+                    List<EstablishmentData> establishmentsData = new ArrayList<>();
+                    establishmentService.encontrarPorOrganizacionId(organizacion.getId()).forEach(est -> {
+                        establishmentsData.add(establishmentService.buildEstablishment(est, establishmentPoints.get(est.getId())));
+                    });
+                    //Cargar data de organizacion
+                    userData.setOrganization(organizationService.buildOrganization(organizacion, establishmentsData));
 
-                    //Cargar ambiente
-                    if (!Strings.isNullOrEmpty(organizacion.getAmbienteSRI()) && Objects.equals(Constantes.AMBIENTE_PRODUCCION, organizacion.getAmbienteSRI())) {
-                        organizationData.setAmbientePro(Boolean.TRUE);
-                    }
-                    
-                    userData.setOrganization(organizationData);
-                    
                     String sql = "select count(*) from public.sri_digital_cert where owner = '" + ruc + "' and active = true;";
                     if (BigInteger.ONE.equals(dataService.ejecutarCount(sql))) {
                         userData.setTieneCertificadoDigital(Boolean.TRUE);
                     }
                 } else {
-//                    userData.setInitials(Constantes.NO_ORGANIZACION);
                     userData.setInitials(Constantes.NO_RUC);
                     userData.setRuc(user.getRuc());
                 }
@@ -200,26 +215,26 @@ public class CurrentUserController {
                 userData.setRuc(user.getRuc());
             }
         }
-        
+
         List<String> roles = userData.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
-        
+
         Logger.getLogger(CurrentUserController.class.getName()).log(Level.INFO, "Current user uuid: {0}", userData.getUuid());
-        
+
         return ResponseEntity.ok(Api.response("user",
                 new UserWithToken(userData, token, roles)
         ));
     }
-    
+
     @GetMapping("/internal")
     public ResponseEntity currentUserInternal(@AuthenticationPrincipal UserData currentUser,
             @RequestHeader(value = "Authorization") String authorization) throws JsonProcessingException {
-        
+
         String token = authorization.split(" ")[1];
-        
+
         UserData userData = UserDataBuilder.append(token);
-        
+
         Optional<Subject> userOpt = userService.getUserRepository().findByUsername(userData.getUsername());
         Subject user = null; //El usuario local
         //Obtener desde la base de datos local para completar la información
@@ -233,12 +248,12 @@ public class CurrentUserController {
         List<String> roles = userData.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
-        
+
         Logger.getLogger(CurrentUserController.class.getName()).log(Level.INFO, "Current user uuid: {0}", userData.getUuid());
-        
+
         return ResponseEntity.ok(new UserWithToken(userData, token, roles));
     }
-    
+
     @PutMapping()
     public ResponseEntity updateUser(
             @AuthenticationPrincipal UserData userAuth,
@@ -248,15 +263,15 @@ public class CurrentUserController {
             if (!AuthorizationService.canWrite(userAuth, user)) {
                 throw new NoAuthorizationException();
             }
-            
+
             BeanUtils.copyProperties(userData, user, io.jsonwebtoken.lang.Strings.tokenizeToStringArray("id, uuid, code, email, username, password, authorities", ","));
-            
+
             user.setUsuarioAPP(Boolean.TRUE);
             user.setDescription(userData.getDireccion());
             if (userData.getCode() != null) {
                 user.setCode(userData.getCode());
             }
-            
+
             if (!Strings.isNullOrEmpty(userData.getImage())) {
                 String base64ImageString = userData.getImage().replace("data:image/jpeg;base64,", "");
                 byte[] decodedImg = java.util.Base64.getDecoder()
@@ -273,14 +288,14 @@ public class CurrentUserController {
             return ResponseEntity.ok(Api.response("user", userData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
-    
+
 }
 
 @Getter
 @JsonRootName("user")
 @NoArgsConstructor
 class UpdateUserParam {
-    
+
     @Email(message = "should be an email")
     private String email = "";
     private String password = "";

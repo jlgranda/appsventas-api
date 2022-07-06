@@ -14,37 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.jlgranda.appsventas.dto.app;
+package org.jlgranda.appsventas.domain.app;
 
-import java.util.ArrayList;
-import java.util.List;
-import lombok.EqualsAndHashCode;
+import java.io.Serializable;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
+import org.jlgranda.appsventas.domain.DeletableObject;
 
 /**
  *
  * @author usuario
  */
+@Entity
+@Table(name = "ESTABLISHMENT", schema = "public")
 @Getter
 @Setter
-@ToString
-@EqualsAndHashCode(callSuper = false)
-public class OrganizationData {
+public class Establishment extends DeletableObject<Establishment> implements Serializable {
 
-    private String ruc;
-    private String initials;
-    private String name;//razonSocial
-    private String direccion;
-    private String image;
-    private String ambienteSRI;
-    private Boolean ambientePro = Boolean.FALSE;
-    private Long numeroLocales;
-    private Boolean contribuyenteEspecial;
-    private String contribuyenteEspecialNumeroResolucion;
-    private Boolean agenteRetencion;
-    private Boolean regimenRimpe;
-    private String regimenRimpeTipo;
-    private List<EstablishmentData> establecimientos = new ArrayList<>();
+    @Column(name = "organization_id", insertable = true, updatable = true, nullable = true)
+    private Long organizacionId;
+
 }
