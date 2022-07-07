@@ -18,6 +18,7 @@ package org.jlgranda.appsventas.api.controller.app;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,18 +28,28 @@ import org.jlgranda.appsventas.Api;
 import org.jlgranda.appsventas.Constantes;
 import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.CuentaBancaria;
+import org.jlgranda.appsventas.domain.app.EmissionPoint;
+import org.jlgranda.appsventas.domain.app.Establishment;
 import org.jlgranda.appsventas.domain.app.Organization;
+import org.jlgranda.appsventas.domain.secuencias.Secuencia;
 import org.jlgranda.appsventas.dto.UserData;
 import org.jlgranda.appsventas.dto.UserImageData;
 import org.jlgranda.appsventas.dto.app.CuentaBancariaData;
+import org.jlgranda.appsventas.dto.app.EmissionPointData;
+import org.jlgranda.appsventas.dto.app.EstablishmentData;
+import org.jlgranda.appsventas.dto.app.EstablishmentListData;
 import org.jlgranda.appsventas.dto.app.OrganizationData;
+import org.jlgranda.appsventas.dto.app.SecuenciaData;
 import org.jlgranda.appsventas.exception.InvalidRequestException;
 import org.jlgranda.appsventas.exception.NotFoundException;
 import org.jlgranda.appsventas.exception.ResourceNotFoundException;
 import org.jlgranda.appsventas.services.app.CuentaBancariaService;
+import org.jlgranda.appsventas.services.app.EmissionPointService;
+import org.jlgranda.appsventas.services.app.EstablishmentService;
 import org.jlgranda.appsventas.services.app.OrganizationService;
 import org.jlgranda.appsventas.services.app.SubjectService;
 import org.jlgranda.appsventas.services.auth.UserService;
+import org.jlgranda.appsventas.services.secuencias.SerialService;
 import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +79,9 @@ public class OrganizacionController {
     private SubjectService subjectService;
     private OrganizationService organizationService;
     private CuentaBancariaService cuentaBancariaService;
+    private EstablishmentService establishmentService;
+    private EmissionPointService emissionPointService;
+    private SerialService serialService;
     private final String ignoreProperties;
 
     @Autowired
@@ -76,15 +90,29 @@ public class OrganizacionController {
             SubjectService subjectService,
             OrganizationService organizationService,
             CuentaBancariaService cuentaBancariaService,
+            EstablishmentService establishmentService,
+            EmissionPointService emissionPointService,
+            SerialService serialService,
             @Value("${appsventas.persistence.ignore_properties}") String ignoreProperties
     ) {
         this.userService = userService;
         this.subjectService = subjectService;
         this.organizationService = organizationService;
         this.cuentaBancariaService = cuentaBancariaService;
+        this.establishmentService = establishmentService;
+        this.emissionPointService = emissionPointService;
+        this.serialService = serialService;
         this.ignoreProperties = ignoreProperties;
     }
 
+    /**
+     * Organization
+     *
+     * @param userData
+     * @param offset
+     * @param limit
+     * @return
+     */
     @GetMapping("/image")
     public ResponseEntity currentUserOrganizationImage(
             @AuthenticationPrincipal UserData userData,
@@ -140,6 +168,14 @@ public class OrganizacionController {
         return ResponseEntity.ok(Api.response("organization", organizationData));
     }
 
+    /**
+     * CuentaBancaria
+     *
+     * @param user
+     * @param offset
+     * @param limit
+     * @return
+     */
     @GetMapping("/cuentabancaria/activos")
     public ResponseEntity encontrarPorOrganizacionId(
             @AuthenticationPrincipal UserData user,
@@ -189,7 +225,7 @@ public class OrganizacionController {
             cuentaBancaria.setOrganizacionId(organizacion.getId());
             cuentaBancariaService.guardar(cuentaBancaria);
             //Cargar datos de retorno al frontend
-            cuentaBancariaData = cuentaBancariaService.buildCuentaBancariaData(cuentaBancaria);
+            cuentaBancariaData = cuentaBancariaService.buildCuentaBancaria(cuentaBancaria);
         }
 
         Api.imprimirPostLogAuditoria("organization/cuentabancaria", user.getId());
@@ -208,7 +244,7 @@ public class OrganizacionController {
             return ResponseEntity.ok(Api.response("cuentaBancaria", cuentaBancariaData));
         }).orElseThrow(ResourceNotFoundException::new);
     }
-    
+
     @DeleteMapping("/cuentabancaria/{uuid}")
     public ResponseEntity eliminarCuentaBancaria(
             @AuthenticationPrincipal UserData user,
@@ -225,10 +261,176 @@ public class OrganizacionController {
         List<CuentaBancariaData> cuentasBancariasData = new ArrayList<>();
         if (!cuentasBancarias.isEmpty()) {
             cuentasBancarias.forEach(p -> {
-                cuentasBancariasData.add(cuentaBancariaService.buildCuentaBancariaData(p));
+                cuentasBancariasData.add(cuentaBancariaService.buildCuentaBancaria(p));
             });
         }
         return cuentasBancariasData;
+    }
+
+    /**
+     * Establishment
+     *
+     * @param user
+     * @param establishmentData
+     * @param bindingResult
+     * @return
+     */
+    @PostMapping("/establishment")
+    public ResponseEntity crearEstablecimiento(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody EstablishmentData establishmentData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        Optional<Establishment> establishmentOpt = establishmentService.encontrarPorOrganizacionIdYNombre(organizacion.getId(), establishmentData.getName());
+        if (!establishmentOpt.isPresent()) {//No existe ese establecimiento
+            Establishment establishment = establishmentService.crearInstancia(subjectOpt.get());
+            BeanUtils.copyProperties(establishmentData, establishment, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+            establishment.setOrganizacionId(organizacion.getId());
+            establishmentService.guardar(establishment);
+            //Guardar puntos de emision
+            List<EmissionPoint> emissionPoints = new ArrayList<>();
+            if (establishmentData.getEmisionPointsData() != null && !establishmentData.getEmisionPointsData().isEmpty()) {
+                EmissionPoint emissionPoint = null;
+                for (EmissionPointData empt : establishmentData.getEmisionPointsData()) {
+                    if (empt.getId() == null) {
+                        emissionPoint = emissionPointService.crearInstancia(subjectOpt.get());
+                        BeanUtils.copyProperties(empt, emissionPoint, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                        emissionPoint.setEstablishmentId(establishment.getId());
+                        emissionPoints.add(emissionPoint);
+                    } else {
+                        BeanUtils.copyProperties(empt, emissionPoint, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                        emissionPoint.setLastUpdate(new Date());
+                        emissionPoints.add(emissionPoint);
+                    }
+                }
+                emissionPointService.guardarLista(emissionPoints);
+                //Cargar datos de retorno al frontend
+                establishmentData = establishmentService.buildEstablishment(establishment, buildResultListEmissionPoint(emissionPoints));
+            } else {
+                //Cargar datos de retorno al frontend
+                establishmentData = establishmentService.buildEstablishment(establishment);
+            }
+        }
+        Api.imprimirPostLogAuditoria("organization/establishment", user.getId());
+        return ResponseEntity.ok(Api.response("establishment", establishmentData));
+    }
+
+    private List<EmissionPointData> buildResultListEmissionPoint(List<EmissionPoint> emissionPoints) {
+        List<EmissionPointData> emissionPointsData = new ArrayList<>();
+        if (!emissionPoints.isEmpty()) {
+            emissionPoints.forEach(p -> {
+                emissionPointsData.add(emissionPointService.buildEmissionPoint(p));
+            });
+        }
+        return emissionPointsData;
+    }
+
+    @PutMapping("/establishment/serial")
+    public ResponseEntity actualizarSerialEstablisment(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody SecuenciaData secuenciaData,
+            BindingResult bindingResult
+    ) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+        
+        Optional<Secuencia> secuenciaOpt = serialService.encontrarPorEntidadEstabPtoEmiAmbienteValor(organizacion.getRuc(), secuenciaData.getEntidad(), secuenciaData.getEstab(), secuenciaData.getPtoEmi(), organizacion.getAmbienteSRI(), secuenciaData.getValorActual());
+
+        Api.imprimirUpdateLogAuditoria("organization/establishment", user.getId(), secuenciaOpt.get());
+        return ResponseEntity.ok(Api.response("secuencia", secuenciaOpt.get()));
+    }
+
+    @PutMapping("/establishments")
+    public ResponseEntity guardarEstablecimientos(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody EstablishmentListData establishmentListData,
+            BindingResult bindingResult) {
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        List<EstablishmentData> establishmentsData = new ArrayList<>();
+        if (establishmentListData.getEstablishmentsData() != null && !establishmentListData.getEstablishmentsData().isEmpty()) {
+            for (EstablishmentData establishmentData : establishmentListData.getEstablishmentsData()) {
+                Establishment establishment = null;
+                Optional<Establishment> establishmentOpt = establishmentService.encontrarPorOrganizacionIdYNombre(organizacion.getId(), establishmentData.getName());
+                if (!establishmentOpt.isPresent()) {//No existe ese establecimiento
+                    establishment = establishmentService.crearInstancia(subjectOpt.get());
+                    BeanUtils.copyProperties(establishmentData, establishment, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                    establishment.setOrganizacionId(organizacion.getId());
+                    establishmentService.guardar(establishment);
+                } else {
+                    BeanUtils.copyProperties(establishmentData, establishment, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                    establishment.setLastUpdate(new Date());
+                    establishmentService.guardar(establishment);
+                }
+                //Guardar puntos de emision
+                if (establishmentData.getEmisionPointsData() != null && !establishmentData.getEmisionPointsData().isEmpty()) {
+                    List<EmissionPoint> emissionPoints = new ArrayList<>();
+                    EmissionPoint emissionPoint = null;
+                    for (EmissionPointData emissionPointData : establishmentData.getEmisionPointsData()) {
+                        if (emissionPointData.getId() == null) {
+                            emissionPoint = emissionPointService.crearInstancia(subjectOpt.get());
+                            BeanUtils.copyProperties(emissionPointData, emissionPoint, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                            emissionPoint.setEstablishmentId(establishment.getId());
+                            emissionPoints.add(emissionPoint);
+                        } else {
+                            BeanUtils.copyProperties(emissionPointData, emissionPoint, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+                            emissionPoint.setLastUpdate(new Date());
+                            emissionPoints.add(emissionPoint);
+                        }
+                    }
+                    emissionPointService.guardarLista(emissionPoints);
+                    //Cargar datos de retorno al frontend
+                    establishmentData = establishmentService.buildEstablishment(establishment, buildResultListEmissionPoint(emissionPoints));
+                } else {
+                    //Cargar datos de retorno al frontend
+                    establishmentData = establishmentService.buildEstablishment(establishment);
+                }
+                //Cargar datos de retorno al frontend
+                establishmentsData.add(establishmentData);
+            }
+        }
+        Api.imprimirUpdateLogAuditoria("organization/establishment", user.getId(), establishmentsData);
+        return ResponseEntity.ok(Api.response("establishments", establishmentsData));
     }
 
 }

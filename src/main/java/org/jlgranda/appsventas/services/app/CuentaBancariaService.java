@@ -87,7 +87,7 @@ public class CuentaBancariaService {
         return this.getRepository().encontrarPorOrganizacionId(organizacionId);
     }
 
-    public CuentaBancariaData buildCuentaBancariaData(CuentaBancaria cb) {
+    public CuentaBancariaData buildCuentaBancaria(CuentaBancaria cb) {
         CuentaBancariaData cuentaBancariaData = new CuentaBancariaData();
         BeanUtils.copyProperties(cb, cuentaBancariaData);
         return cuentaBancariaData;

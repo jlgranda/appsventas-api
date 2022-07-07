@@ -18,6 +18,10 @@ package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.domain.StatusType;
+import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.Establishment;
 import org.jlgranda.appsventas.dto.app.EmissionPointData;
 import org.jlgranda.appsventas.dto.app.EstablishmentData;
@@ -61,18 +65,52 @@ public class EstablishmentService {
     public List<Establishment> encontrarPorOrganizacionId(Long organizacionId) {
         return this.getRepository().encontrarPorOrganizacionId(organizacionId);
     }
-    
+
+    /**
+     * Devolver las instancias <tt>Establishment</tt> para la organizacionId y
+     * palabra clave dados como parámentros, discriminando el campo eliminado
+     *
+     * @param organizacionId
+     * @param keyword
+     * @return
+     */
+    public Optional<Establishment> encontrarPorOrganizacionIdYNombre(Long organizacionId, String keyword) {
+        return this.getRepository().encontrarPorOrganizacionIdYNombre(organizacionId, keyword);
+    }
+
     public EstablishmentData buildEstablishment(Establishment est) {
         EstablishmentData establishmentData = new EstablishmentData();
         BeanUtils.copyProperties(est, establishmentData);
         return establishmentData;
     }
-    
-    public EstablishmentData buildEstablishment(Establishment est, List<EmissionPointData>emisionPointsData) {
+
+    public EstablishmentData buildEstablishment(Establishment est, List<EmissionPointData> emisionPointsData) {
         EstablishmentData establishmentData = new EstablishmentData();
         BeanUtils.copyProperties(est, establishmentData);
         establishmentData.setEmisionPointsData(emisionPointsData);
         return establishmentData;
+    }
+    
+    public Establishment crearInstancia() {
+        Establishment _instance = new Establishment();
+        _instance.setCreatedOn(Dates.now());
+        _instance.setLastUpdate(Dates.now());
+        _instance.setStatus(StatusType.ACTIVE.toString());
+        _instance.setActivationTime(Dates.now());
+        _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        _instance.setUuid(UUID.randomUUID().toString());
+        return _instance;
+    }
+
+    public Establishment crearInstancia(Subject user) {
+        Establishment _instance = crearInstancia();
+        _instance.setAuthor(user); //Establecer al usuario actual
+        _instance.setOwner(user); //Establecer al usuario actual
+        return _instance;
+    }
+    
+    public Establishment guardar(Establishment establishment) {
+        return this.getRepository().save(establishment);
     }
 
 }

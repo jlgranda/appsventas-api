@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import net.tecnopro.util.Dates;
 import org.jlgranda.appsventas.domain.StatusType;
+import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.secuencias.Secuencia;
 import org.jlgranda.appsventas.repository.secuencias.SecuenciaRepository;
 import org.jlgranda.appsventas.util.secuencial.SecuencialInvoiceGenerator;
@@ -60,7 +61,7 @@ public class SerialService {
         instancia.setLastUpdate(Dates.now());
         return instancia;
     }
-
+    
     public Secuencia guardar(Secuencia secuencia) {
         return this.getRepository().save(secuencia);
     }
@@ -117,6 +118,34 @@ public class SerialService {
                 //Incrementa 1 y registra el valor usado
                 Long valorActual = secuencia.getValorActual() + 1;
                 secuencia.setValorActual(valorActual); //Una lectura del generador incremente el valor actual
+                //Guardar los nuevos valores de la serie
+                this.guardar(secuencia);
+                secuenciaOpt = Optional.of(secuencia);
+        }
+        return secuenciaOpt;
+    }
+
+    public Optional<Secuencia> encontrarPorEntidadEstabPtoEmiAmbienteValor(String ruc, String entidad, String estab, String ptoEmi, String ambienteSRI, Long valorActual) {
+        Optional<Secuencia> secuenciaOpt =  this.getRepository().encontrarPorEntidadEstabPtoEmiAmbiente(ruc, entidad, estab, ptoEmi, ambienteSRI);
+        if (!secuenciaOpt.isPresent()){
+            //Crear el secuencial
+            Secuencia secuencia = this.crearInstancia();
+            secuencia.setRuc(ruc);
+            secuencia.setEntidad(entidad);
+            secuencia.setName(entidad);
+            secuencia.setEstab(estab);
+            secuencia.setPtoEmi(ptoEmi);
+            secuencia.setAmbienteSRI(ambienteSRI);
+            secuencia.setDigitos(9L);
+            secuencia.setValorActual(valorActual);
+            secuencia.setAgregarAnio(false);
+            this.guardar(secuencia);
+            secuenciaOpt = Optional.of(secuencia);
+        } else {
+            
+                //Cargar el secuencial y almacenar el paso
+                Secuencia secuencia = secuenciaOpt.get();
+                secuencia.setValorActual(valorActual); 
                 //Guardar los nuevos valores de la serie
                 this.guardar(secuencia);
                 secuenciaOpt = Optional.of(secuencia);

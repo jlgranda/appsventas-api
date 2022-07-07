@@ -34,4 +34,7 @@ public interface EstablishmentRepository extends CrudRepository<Establishment, L
     @Query("select p from Establishment p where p.deleted = false and p.organizacionId = :#{#organizacionId} order by p.name ASC")
     public List<Establishment> encontrarPorOrganizacionId(Long organizacionId);
     
+    @Query("select p from Establishment p where p.deleted = false and p.organizacionId = :#{#organizacionId} and lower(trim(p.name)) like %:keyword%")
+    public Optional<Establishment> encontrarPorOrganizacionIdYNombre(Long organizacionId, String keyword);
+    
 }

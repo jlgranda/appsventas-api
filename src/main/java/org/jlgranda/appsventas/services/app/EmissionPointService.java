@@ -18,6 +18,10 @@ package org.jlgranda.appsventas.services.app;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import net.tecnopro.util.Dates;
+import org.jlgranda.appsventas.domain.StatusType;
+import org.jlgranda.appsventas.domain.Subject;
 import org.jlgranda.appsventas.domain.app.EmissionPoint;
 import org.jlgranda.appsventas.dto.app.EmissionPointData;
 import org.jlgranda.appsventas.repository.app.EmissionPointRepository;
@@ -52,7 +56,7 @@ public class EmissionPointService {
 
     /**
      * Devolver las instancias <tt>EmissionPoint</tt> , segun el campo
-     * organizacionId de Establishment discriminando el campo eliminado
+     * organizacionId de EmissionPoint discriminando el campo eliminado
      *
      * @param organizacionId
      * @return
@@ -87,6 +91,32 @@ public class EmissionPointService {
         EmissionPointData emissionPointData = new EmissionPointData();
         BeanUtils.copyProperties(empt, emissionPointData);
         return emissionPointData;
+    }
+
+    public EmissionPoint crearInstancia() {
+        EmissionPoint _instance = new EmissionPoint();
+        _instance.setCreatedOn(Dates.now());
+        _instance.setLastUpdate(Dates.now());
+        _instance.setStatus(StatusType.ACTIVE.toString());
+        _instance.setActivationTime(Dates.now());
+        _instance.setExpirationTime(Dates.addDays(Dates.now(), 364));
+        _instance.setUuid(UUID.randomUUID().toString());
+        return _instance;
+    }
+
+    public EmissionPoint crearInstancia(Subject user) {
+        EmissionPoint _instance = crearInstancia();
+        _instance.setAuthor(user); //Establecer al usuario actual
+        _instance.setOwner(user); //Establecer al usuario actual
+        return _instance;
+    }
+
+    public EmissionPoint guardar(EmissionPoint emissionPoint) {
+        return this.getRepository().save(emissionPoint);
+    }
+
+    public Iterable<EmissionPoint> guardarLista(List<EmissionPoint> emissionPoints) {
+        return this.getRepository().saveAll(emissionPoints);
     }
 
 }

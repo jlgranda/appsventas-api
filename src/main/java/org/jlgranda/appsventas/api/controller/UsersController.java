@@ -96,10 +96,10 @@ public class UsersController {
         UserModelData userModelData = new UserModelData();
         Optional<Subject> subjectOpt = userService.getUserRepository().findByCode(code);//Buscar por campo code
         if (!subjectOpt.isPresent()) {
-            String ruc = code.length() == 10 ?  code + "001" : code;
+            String ruc = code.length() == 10 ? code + "001" : code;
             subjectOpt = userService.getUserRepository().findByRuc(ruc);//Buscar por campo ruc
         }
-        
+
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><< Encontrado " + subjectOpt);
         if (subjectOpt.isPresent()) {
             Subject subject = subjectOpt.get();
@@ -112,6 +112,39 @@ public class UsersController {
             userModelData.setEmail(subject.getEmail());
         }
         return ResponseEntity.ok(userModelData);
+    }
+
+    @RequestMapping(path = "/users", method = GET)
+    public ResponseEntity getUsers(@AuthenticationPrincipal UserData user, @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "20") int limit) {
+        List<UserModelData> result = new ArrayList<>();
+        UserModelData userModelData = null;
+
+        //Armar lista de usuarios agregando el grado
+        for (Subject usr : userService.encontrarActivos()) {
+            userModelData = new UserModelData();
+            BeanUtils.copyProperties(usr, userModelData); //Todo proteger datos o simplificar en UXData
+            result.add(userModelData);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @RequestMapping(path = "/users/{uuid}", method = GET)
+    public ResponseEntity getUserPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
+        Api.imprimirGetLogAuditoria("users/", user.getId());
+        return ResponseEntity.ok(userService.findByUUID(uuid));
+    }
+
+    @RequestMapping(path = "/users/codigo/{codigo}", method = GET)
+    public ResponseEntity getUserPorCodigo(@PathVariable("codigo") String codigo, @AuthenticationPrincipal UserData user) {
+        Api.imprimirGetLogAuditoria("users/codigo", user.getId());
+        return ResponseEntity.ok(userService.findByCodigo(codigo));
+    }
+
+    @RequestMapping(path = "/users/usuario/{uuid}", method = GET)
+    public ResponseEntity getUsuarioPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
+        Api.imprimirGetLogAuditoria("users/", user.getId());
+        return ResponseEntity.ok(userService.encontrarPorUUID(uuid));
     }
 
     @RequestMapping(path = "/users", method = POST)
@@ -192,43 +225,37 @@ public class UsersController {
             //Cargar datos de retorno al frontend
             UserModelData userModelData = userService.findById(user.getId()).get();
 
-            //Api.imprimirUpdateLogAuditoria("users/", user.getId());
+            Api.imprimirUpdateLogAuditoria("users/password", user.getId(), registerParam);
             return ResponseEntity.ok(Api.response("user", userModelData));
         }).orElseThrow(ResourceNotFoundException::new);
-
     }
 
-//    @RequestMapping(path = "/users", method = PUT)
-//    public ResponseEntity updateUser(@AuthenticationPrincipal UserData userDataAuth,
-//            @Valid @RequestBody UserModelData userModelData,
-//            BindingResult bindingResult) {
-//        //checkInput(userModelData, bindingResult);
-//        return userService.getUserRepository().findByUUID(userModelData.getUuid()).map(user -> {
-//            if (!AuthorizationService.canWrite(userDataAuth, user)) {
-//                throw new NoAuthorizationException();
-//            }
-//            BeanUtils.copyProperties(userModelData, user, Strings.tokenizeToStringArray(this.ignoreProperties, ","));
-//            userService.getUserRepository().save(user);
-//
-//            //Enviar notificación de cuenta creada y contraseña
-////            if (userModelData.isContraseniaModificada()) {
-////                String titulo = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
-////                String cuerpoMensaje = catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
-////                UserData remitente = new UserData();
-////                BeanUtils.copyProperties(userModelData, remitente);
-////                UserData destinatario = new UserData();
-////                BeanUtils.copyProperties(userModelData, destinatario);
-////                Map<String, Object> values = new HashMap<>();
-////                values.put("cedula", destinatario.getUsername());
-////                values.put("nombres", destinatario.getNombre());
-////                values.put("nombreUsuario", destinatario.getUsername());
-////                values.put("contrasenia", userModelData.getPassword());
-////                EmailUtil.getInstance().enviarCorreo(remitente, destinatario, titulo, cuerpoMensaje, values, notificationService, messageService);
-////            }
-//            //Fin de enviar notificación de cuenta creada
-//            return ResponseEntity.ok(Api.response("user", user));
-//        }).orElseThrow(ResourceNotFoundException::new);
-//    }
+    @RequestMapping(path = "/users/password", method = PUT)
+    public ResponseEntity updateUserPassword(
+            @AuthenticationPrincipal UserData userData,
+            @Valid @RequestBody UserModelData registerParam,
+            BindingResult bindingResult) {
+
+        return userService.getUserRepository().findByUUID(registerParam.getUuid()).map(user -> {
+            //La contraseña viene encriptada, desencriptar y encriptar para Shiro autenticación
+            String plainText = "";
+            try {
+                plainText = AESUtil.decrypt("dXNyX2FwcGF0cGE6cHJ1ZWI0c19BVFBBXzIwMjA", registerParam.getPassword());
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | InvalidAlgorithmParameterException | BadPaddingException ex) {
+                Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
+                throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
+            }
+            user.setPassword(svc.encryptPassword(plainText));
+            userService.getUserRepository().save(user);
+
+            //Cargar datos de retorno al frontend
+            UserModelData userModelData = userService.findById(user.getId()).get();
+
+            Api.imprimirUpdateLogAuditoria("users/password", user.getId(), registerParam);
+            return ResponseEntity.ok(Api.response("user", userModelData));
+        }).orElseThrow(ResourceNotFoundException::new);
+    }
+
     @RequestMapping(path = "/users/{uuid}", method = DELETE)
     public ResponseEntity deleteUser(@PathVariable("uuid") String uuid,
             @AuthenticationPrincipal UserData userDataAuth) {
@@ -273,39 +300,6 @@ public class UsersController {
         if (bindingResult.hasErrors()) {
             throw new InvalidRequestException(bindingResult);
         }
-    }
-
-    @RequestMapping(path = "/users", method = GET)
-    public ResponseEntity getUsers(@AuthenticationPrincipal UserData user, @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "20") int limit) {
-        List<UserModelData> result = new ArrayList<>();
-        UserModelData userModelData = null;
-
-        //Armar lista de usuarios agregando el grado
-        for (Subject usr : userService.encontrarActivos()) {
-            userModelData = new UserModelData();
-            BeanUtils.copyProperties(usr, userModelData); //Todo proteger datos o simplificar en UXData
-            result.add(userModelData);
-        }
-        return ResponseEntity.ok(result);
-    }
-
-    @RequestMapping(path = "/users/{uuid}", method = GET)
-    public ResponseEntity getUserPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
-        Api.imprimirGetLogAuditoria("users/", user.getId());
-        return ResponseEntity.ok(userService.findByUUID(uuid));
-    }
-
-    @RequestMapping(path = "/users/codigo/{codigo}", method = GET)
-    public ResponseEntity getUserPorCodigo(@PathVariable("codigo") String codigo, @AuthenticationPrincipal UserData user) {
-        Api.imprimirGetLogAuditoria("users/codigo", user.getId());
-        return ResponseEntity.ok(userService.findByCodigo(codigo));
-    }
-
-    @RequestMapping(path = "/users/usuario/{uuid}", method = GET)
-    public ResponseEntity getUsuarioPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
-        Api.imprimirGetLogAuditoria("users/", user.getId());
-        return ResponseEntity.ok(userService.encontrarPorUUID(uuid));
     }
 
 }
