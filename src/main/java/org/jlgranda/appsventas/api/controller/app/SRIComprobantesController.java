@@ -553,12 +553,16 @@ public class SRIComprobantesController {
         Subject customer = customerOpt.get();
         final String ambienteSRI = "PRODUCCION".equalsIgnoreCase(organizacion.getAmbienteSRI()) ? "2" : "1";
         Map<String, Object> values = new HashMap<>();
+
+        values.put("id", "comprobante");
+        values.put("version", "1.0.0");
         values.put("ambiente", ambienteSRI); //1 PRUEBAS, 2 PRODUCCION
+        values.put("claveAcceso", ""); //1 PRUEBAS, 2 PRODUCCION
         values.put("tipoEmision", "" + "1");
         values.put("razonSocial", "" + organizacion.getName());
         values.put("nombreComercial", "" + organizacion.getInitials());
         values.put("ruc", "" + organizacion.getRuc());
-        values.put("codDoc", "" + "01"); //Documento Factura
+        values.put("codDoc", "" + "04"); //NOTA DE CRÉDITO
         values.put("estab", estab); //Por defecto un establecimiento
         values.put("ptoEmi", ptoEmi); ////Por defecto un punto de emision
         values.put("secuencial", Strings.extractLast(secuencial, "-"));
@@ -570,7 +574,27 @@ public class SRIComprobantesController {
             values.put("contribuyenteEspecial", Strings.isNullOrEmpty(organizacion.getContribuyenteEspecialNumeroResolucion()) ? "" : organizacion.getContribuyenteEspecialNumeroResolucion());
         }
 
-        values.put("obligadoContabilidad", "" + "NO");
+        if (Objects.equals(Boolean.TRUE, organizacion.getObligadoLlevarContabilidad())) { //Obligado a llevar contabilidad
+            values.put("obligadoContabilidad", "" + "SI");
+        } else {
+            values.put("obligadoContabilidad", "" + "NO");
+        }
+        
+        if (Objects.equals(Boolean.TRUE, organizacion.getRegimenRimpe())) { //Obligado a llevar contabilidad
+            values.put("contribuyenteRimpe", organizacion.getRegimenRimpeTipo()); //TODO verificar que saca
+        } else {
+            values.put("contribuyenteRimpe", "");
+        }
+        
+        if (Objects.equals(Boolean.TRUE, organizacion.getRegimenMicroEmpresas())) { //Obligado a llevar contabilidad
+            values.put("regimenMicroempresas", "" + "SI");
+        } else {
+            values.put("regimenMicroempresas", "" + "NO");
+        }
+        
+        if (Objects.equals(Boolean.TRUE, organizacion.getRise())) { //Obligado a llevar contabilidad
+            values.put("rise", "" + "Contribuyente Régimen Simplificado RISE");
+        } 
 
         //Datos del invoiceData (infoFactura) //comprador
         values.put("fechaEmision", Dates.toString(invoiceData.getEmissionOn(), Constantes.FORMATO_FECHA_SRI));
@@ -1056,7 +1080,9 @@ public class SRIComprobantesController {
     
     
     /*************************************************************************
+     *************************************************************************
      * Notas de crédito
+     *************************************************************************
      ************************************************************************/
     /**
      * Envia la petición de facturación. Los datos se registran en appsventas,
@@ -1097,7 +1123,7 @@ public class SRIComprobantesController {
 
         String ptoEmi = Constantes.SRI_PTO_EMISION_FACTURAS_ELECTRONICAS;
 
-        String secuencial = "";
+        String secuencial = Constantes.VACIO;
 
         if (Strings.isNullOrEmpty(invoiceData.getSecuencial())) {
             secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.CM, estab, ptoEmi, organizacion.getAmbienteSRI()).next();

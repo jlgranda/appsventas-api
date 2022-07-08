@@ -44,17 +44,29 @@ public class Organization extends DeletableObject<Organization> implements Seria
     private byte[] photo;
     @Column(name = "ambiente_sri")
     private String ambienteSRI;
-    private Long numeroLocales = Long.valueOf(1);
+    
     @Column(name = "contribuyente_especial")
     private Boolean contribuyenteEspecial = Boolean.FALSE;
+    
     @Column(name = "contribuyente_especial_numero_resolucion")
     private String contribuyenteEspecialNumeroResolucion;
+    
     @Column(name = "agente_retencion")
     private Boolean agenteRetencion = Boolean.FALSE;
+    
     @Column(name = "regimen_rimpe")
     private Boolean regimenRimpe = Boolean.FALSE;
-     @Column(name = "regimen_rimpe_tipo")
+    @Column(name = "regimen_rimpe_tipo")
     private String regimenRimpeTipo;
+    
+    @Column(name = "regimen_microempresas")
+    private Boolean regimenMicroEmpresas = Boolean.FALSE;
+    
+    @Column(name = "rise")
+    private Boolean rise = Boolean.FALSE;
+    
+    @Column(name = "obligado_llevar_contabilidad")
+    private Boolean obligadoLlevarContabilidad = Boolean.FALSE;
 
     public enum Type {
         GOVERMENT,
