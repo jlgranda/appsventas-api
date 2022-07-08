@@ -670,15 +670,26 @@ public class SRIComprobantesController {
         values.put("campoAdicional", "" + "campoAdicional");
 
         //TODO elegir template en función del tipo de documento
+        String jsonPlantilla = "";
+        switch (tipo) {
+            case Constantes.INVOICE:
+                if (Objects.equals(Boolean.TRUE, organizacion.getContribuyenteEspecial())) {
+                    jsonPlantilla = Constantes.JSON_FACTURA_TEMPLATE_CONTRIBUYENTE_ESPECIAL;
+                } else {
+                    jsonPlantilla = Constantes.JSON_FACTURA_TEMPLATE;
+                }
+                break;
+            case Constantes.CM:
+                jsonPlantilla = Constantes.JSON_NOTA_CREDITO_TEMPLATE;
+                break;
+            default:
+                throw new AssertionError();
+        }
         
         //Renderizado final del objeto factura antes de enviar a SRI
         StringBuilder json = new StringBuilder("$");
         try {
-            if (Objects.equals(Boolean.TRUE, organizacion.getContribuyenteEspecial())) {
-                json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE_CONTRIBUYENTE_ESPECIAL, values));
-            } else {
-                json = new StringBuilder(VelocityHelper.getRendererMessage(Constantes.JSON_FACTURA_TEMPLATE, values));
-            }
+            json = new StringBuilder(VelocityHelper.getRendererMessage(jsonPlantilla, values));
         } catch (Exception ex) {
 
             Logger.getLogger(SRIComprobantesController.class.getName()).log(Level.SEVERE, null, ex);
