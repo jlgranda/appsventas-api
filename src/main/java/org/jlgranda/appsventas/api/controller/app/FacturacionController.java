@@ -229,6 +229,15 @@ public class FacturacionController {
         return ResponseEntity.ok(invoicesData);
     }
 
+    @GetMapping("/facturas/{uuid}")
+    public ResponseEntity encontrarPorUUID(
+            @AuthenticationPrincipal UserData user,
+            @PathVariable("uuid") String uuid
+    ) {
+        Api.imprimirGetLogAuditoria("facturacion/facturas/{uuid}", user.getId());
+        return ResponseEntity.ok(internalInvoiceService.encontrarPorUuid(uuid));
+    }
+
     @PutMapping("/facturas/pago")
     public ResponseEntity editarFacturaPago(
             @AuthenticationPrincipal UserData user,
@@ -429,10 +438,10 @@ public class FacturacionController {
             });
             newInternalInvoiceData.setDetails(invoiceDetailsData);
             newInternalInvoiceData.setDescription(internalInvoiceData.getDescription());
-            
+
             newInternalInvoiceData.setEstab(internalInvoiceData.getEstab());
             newInternalInvoiceData.setPtoEmi(internalInvoiceData.getPtoEmi());
-            
+
             Api.imprimirUpdateLogAuditoria("/facturacion/factura", user.getId(), newInternalInvoiceData);
             return ResponseEntity.ok(Api.response("factura", newInternalInvoiceData));
         }).orElseThrow(ResourceNotFoundException::new);
