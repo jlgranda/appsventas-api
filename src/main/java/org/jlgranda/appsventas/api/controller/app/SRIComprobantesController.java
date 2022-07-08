@@ -669,6 +669,8 @@ public class SRIComprobantesController {
         //Falta el array de campoAdicional
         values.put("campoAdicional", "" + "campoAdicional");
 
+        //TODO elegir template en función del tipo de documento
+        
         //Renderizado final del objeto factura antes de enviar a SRI
         StringBuilder json = new StringBuilder("$");
         try {
