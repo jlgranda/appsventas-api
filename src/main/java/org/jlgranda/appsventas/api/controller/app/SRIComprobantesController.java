@@ -281,7 +281,7 @@ public class SRIComprobantesController {
      * @param bindingResult
      * @return
      */
-    @PostMapping(path = "/factura")
+    @PostMapping(path = "/" + Constantes.INVOICE)
     public ResponseEntity crearEnviarFactura(
             @AuthenticationPrincipal UserData user,
             @Valid @RequestBody InvoiceData invoiceData,
@@ -421,7 +421,7 @@ public class SRIComprobantesController {
         return ResponseEntity.ok(data);
     }
 
-    @PutMapping(path = "/facturas/{claveAcceso}/notificar")
+    @PutMapping(path = "/" + Constantes.INVOICE + "/{claveAcceso}/notificar")
     public ResponseEntity notificarFactura(
             @AuthenticationPrincipal UserData user,
             @PathVariable("claveAcceso") String claveAcceso,
@@ -1052,6 +1052,159 @@ public class SRIComprobantesController {
         }
 
         return null;
+    }
+    
+    
+    /*************************************************************************
+     * Notas de crédito
+     ************************************************************************/
+    /**
+     * Envia la petición de facturación. Los datos se registran en appsventas,
+     * luego de la respuesta de veronica y el SRI
+     *
+     * @param user
+     * @param invoiceData
+     * @param bindingResult
+     * @return
+     */
+    @PostMapping(path = "/" + Constantes.CM)
+    public ResponseEntity crearEnviarNotaCredito(
+            @AuthenticationPrincipal UserData user,
+            @Valid @RequestBody InvoiceData invoiceData,
+            BindingResult bindingResult
+    ) {
+
+        //Verificar binding
+        if (bindingResult.hasErrors()) {
+            throw new InvalidRequestException(bindingResult);
+        }
+
+        //Invocar servicio veronica API
+        String token = this.getVeronicaToken(user);
+
+        Optional<Subject> subjectOpt = subjectService.encontrarPorId(user.getId());
+
+        if (!subjectOpt.isPresent()) {
+            throw new NotFoundException("No se encontró una entidad Subject válida para el usuario autenticado.");
+        }
+
+        Organization organizacion = organizationService.encontrarPorSubjectId(user.getId());
+        if (organizacion == null) {
+            throw new NotFoundException("No se encontró una organización válida para el usuario autenticado.");
+        }
+
+        String estab = Strings.isNullOrEmpty(invoiceData.getEstab()) ? Constantes.SRI_ESTAB_DEFAULT : Strings.toUpperCase(invoiceData.getEstab());
+
+        String ptoEmi = Constantes.SRI_PTO_EMISION_FACTURAS_ELECTRONICAS;
+
+        String secuencial = "";
+
+        if (Strings.isNullOrEmpty(invoiceData.getSecuencial())) {
+            secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.INVOICE, estab, ptoEmi, organizacion.getAmbienteSRI()).next();
+        } else {
+            secuencial = invoiceData.getSecuencial();
+        }
+
+//        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+//        System.out.println("ruc: " + organizacion.getRuc());
+//        System.out.println("estab: " + estab);
+//        System.out.println("ptoEmi: " + ptoEmi);
+//        System.out.println("secuencial: " + secuencial);
+//        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
+        VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, secuencial, estab, ptoEmi, invoiceData, user);
+
+        //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
+        InternalInvoice invoice = null;
+
+        Optional<Subject> customerOpt = subjectService.encontrarPorId(invoiceData.getSubjectCustomer().getCustomerId());
+        if (!customerOpt.isPresent()) {
+            throw new NotFoundException("No se encontró un cliente válido para el usuario autenticado.");
+        }
+
+        if (subjectOpt.isPresent() && customerOpt.isPresent() && organizacion != null) {
+
+            //Guardar el invoice en appsventas
+            invoice = internalInvoiceService.crearInstancia(subjectOpt.get());
+            BeanUtils.copyProperties(invoiceData, invoice, io.jsonwebtoken.lang.Strings.tokenizeToStringArray(this.ignoreProperties, ","));
+            invoice.setOrganizacionId(organizacion.getId());
+            invoice.setDocumentType(DocumentType.INVOICE);
+            invoice.setSequencial(secuencial);
+            invoice.setBoardNumber(Constantes.INVOICE_BOARD);
+            invoice.setPax(Long.valueOf(Constantes.INVOICE_PAX));
+            invoice.setPrintAlias(Boolean.FALSE);
+            if (data.getResult() != null) {
+                invoice.setClaveAcceso(data.getResult().getClaveAcceso());
+            } else {
+                invoice.setClaveAcceso(Constantes.PROFORMA + Constantes.SEPARADOR + UUID.randomUUID().toString());
+            }
+            invoice.setOwner(customerOpt.get());
+            internalInvoiceService.guardar(invoice);
+
+            final Long invoiceId = invoice.getId();
+            List<Detail> details = new ArrayList<>();
+            invoiceData.getDetails().forEach(dtl -> {
+                Detail detail = detailService.crearInstancia(subjectOpt.get());
+                detail.setInvoiceId(invoiceId);
+                detail.setProductId(dtl.getProductId());
+                detail.setAmount(dtl.getAmount()); //La cantidad que viene desde el front
+                detail.setPrice(dtl.getPrice());
+                detail.setIva12(dtl.isIVA12());
+                details.add(detail);
+            });
+
+            detailService.guardar(details);
+
+            //Guardar el subjectCustomer en caso aún no sea parte del usuario
+            if (invoiceData.getSubjectCustomer() != null && invoiceData.getSubjectCustomer().getId() == null) {
+                SubjectCustomer subjectCustomer = null;
+                subjectCustomer = subjectCustomerService.crearInstancia(subjectOpt.get());
+                subjectCustomer.setSubjectId(user.getId());
+                subjectCustomer.setCustomerId(customerOpt.get().getId());
+                subjectCustomerService.guardar(subjectCustomer);
+            }
+        }
+
+        if (invoiceData.getEnviarSRI()) {
+            String accion = invoiceData.getAccionSRI();
+            if (Constantes.ACCION_COMPROBANTE_ENVIAR.equalsIgnoreCase(accion)
+                    || Constantes.ACCION_COMPROBANTE_AUTORIZAR.equalsIgnoreCase(accion)
+                    || Constantes.ACCION_COMPROBANTE_EMITIR.equalsIgnoreCase(accion)) {
+
+                String claveAcceso = data.getResult().getClaveAcceso();
+                data = enviarComprobante(token, Constantes.URI_API_V1_INVOICE, claveAcceso, accion);
+
+                //VeronicaAPIData data2 = enviarComprobante( token, Constantes.URI_API_V1_INVOICE, "0503202201110382696000110010010000000055093058218"); //verificado
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+//                System.out.println("Notificar via correo: APLLIED = " + data.getResult().getEstado());
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<");
+                if (Constantes.SRI_STATUS_APPLIED.equalsIgnoreCase(data.getResult().getEstado())) {
+                    //Notificar via correo
+                    String titulo = "[Notificación] FACTURA - SERVICIO $organizacionNombreCompleto";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_TITULO", "Notificación de creación de usuarios SMC");
+                    String cuerpoMensaje = "<p>Estimada(o): <strong>$clienteNombreCompleto</strong></p>\n"
+                            + "<p><br />Le informamos que su Factura n&uacute;mero <strong>$facturaSecuencia</strong> ha sido remitida por <strong>$organizacionNombreCompleto</strong> de forma Electr&oacute;nica.</p>\n"
+                            + "<p>&nbsp;</p>\n"
+                            + "<p>Si Usted es cliente del $organizacionNombreCompleto mantenga siempre a la mano las facturas que emite y recibe a trav&eacute;s de nuestra aplicaci&oacute;n <a title=\"FAZil facturaci&oacute;n electr&oacute;nica en 2 clics\" href=\"$url\" target=\"_blank\" rel=\"noopener noreferrer\">FAZil</a><br /><br />Atentamente,<br /><strong>$organizacionNombreCompleto.</strong></p>";//catalogoService.obtenerValor("NOTIFICACION_CREACION_USUARIO_MENSAJE", "Bienvenido $cedula - $nombres a SMC\nSus datos de acceso son:\nNombre de usuario: $nombreUsuario\nContraseña: $contrasenia\n");
+                    UserData destinatario = new UserData();
+                    BeanUtils.copyProperties(customerOpt.get(), destinatario);
+                    destinatario.setNombre(customerOpt.get().getFullName());
+                    destinatario.setId(customerOpt.get().getId());
+
+                    Map<String, Object> values = new HashMap<>();
+                    values.put("facturaSecuencia", secuencial);
+                    values.put("clienteNombreCompleto", Strings.toUpperCase(destinatario.getNombre()));
+                    values.put("organizacionNombreCompleto", Strings.toUpperCase(organizacion.getName()));
+                    values.put("url", "http://jlgranda.com/entry/fazil-facturacion-electronica-para-profesionales");
+                    byte[] pdf = getPDF(Constantes.INVOICE, claveAcceso, user.getUsername());
+                    byte[] xml = getXML(Constantes.INVOICE, claveAcceso, user.getUsername());
+
+                    //La notificaciones siempre deben enviarse desde un mismo correo
+                    user.setEmail("AppsVentas Plataforma <notificacion@jlgranda.com>"); //TODO obtener desde propiedades del sistema
+                    EmailUtil.getInstance().enviarCorreo(user, destinatario, titulo, cuerpoMensaje, values, this.notificationService, this.messageService, claveAcceso, pdf, xml);
+                }
+            }
+        }
+
+        return ResponseEntity.ok(data);
     }
 
 }
