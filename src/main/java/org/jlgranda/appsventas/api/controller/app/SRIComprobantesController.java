@@ -1100,7 +1100,7 @@ public class SRIComprobantesController {
         String secuencial = "";
 
         if (Strings.isNullOrEmpty(invoiceData.getSecuencial())) {
-            secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.INVOICE, estab, ptoEmi, organizacion.getAmbienteSRI()).next();
+            secuencial = serialService.getSecuencialGenerator(organizacion.getRuc(), Constantes.CM, estab, ptoEmi, organizacion.getAmbienteSRI()).next();
         } else {
             secuencial = invoiceData.getSecuencial();
         }
@@ -1111,7 +1111,7 @@ public class SRIComprobantesController {
 //        System.out.println("ptoEmi: " + ptoEmi);
 //        System.out.println("secuencial: " + secuencial);
 //        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<");
-        VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_INVOICE, secuencial, estab, ptoEmi, invoiceData, user);
+        VeronicaAPIData data = crearComprobante(token, Constantes.URI_API_V1_CM, secuencial, estab, ptoEmi, invoiceData, user);
 
         //Enviar a InternalInvoice (entidad invoice en appsventas), agregar un indicador de si ya se generó en el SRI
         InternalInvoice invoice = null;

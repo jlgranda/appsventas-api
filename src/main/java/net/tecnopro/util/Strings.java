@@ -706,6 +706,7 @@ public final class Strings {
         if (nid.length() < 13) {
             return false;
         }
+        
         String spatron = "[0-9]{13}";// \\d{10}
         if (!Pattern.matches(spatron, nid)) {
             return false;
@@ -725,7 +726,7 @@ public final class Strings {
         } else if (typeRuc == 6) {
             return Strings.verifyTaxPayerPublic(nid);
         } else if (typeRuc == 9) {
-            return Strings.verifyTaxPayerPrivate(nid);
+            return true; //Strings.verifyTaxPayerPrivate(nid);
         }
 
         String _main = nid.substring(9, nid.length());
@@ -948,5 +949,6 @@ BigDecimal total = new BigDecimal(23.421);
         System.out.println("23.06" + total != null ? total.setScale(2, RoundingMode.HALF_UP) : "0.00");
         total = new BigDecimal(23.068);
         System.out.println("23.068" + total != null ? total.setScale(2, RoundingMode.HALF_UP) : "0.00");
+        System.out.println("1793197455001" + Strings.validateTaxpayerDocument("1793197455001"));
     }
 }
