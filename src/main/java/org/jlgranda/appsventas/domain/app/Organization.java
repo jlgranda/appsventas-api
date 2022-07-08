@@ -67,6 +67,9 @@ public class Organization extends DeletableObject<Organization> implements Seria
     
     @Column(name = "obligado_llevar_contabilidad")
     private Boolean obligadoLlevarContabilidad = Boolean.FALSE;
+    
+    @Column(name = "numero_comprobantes")
+    private Integer numeroComprobantes;
 
     public enum Type {
         GOVERMENT,
