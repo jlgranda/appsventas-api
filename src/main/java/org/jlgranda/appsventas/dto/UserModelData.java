@@ -50,7 +50,8 @@ public class UserModelData extends BaseObjectData {
     protected String ruc;
     protected String initials;
     protected String direccion;
-
+    protected Boolean aceptaTerminosCondiciones = false;
+    
     //Estado para ejecutar facturación electrónica
     protected Boolean tieneCertificadoDigital;
 

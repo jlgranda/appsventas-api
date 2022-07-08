@@ -114,8 +114,24 @@ public class UsersController {
         return ResponseEntity.ok(userModelData);
     }
 
+    @RequestMapping(path = "/users/email/{email}", method = GET)
+    public ResponseEntity getByEmail(
+            @AuthenticationPrincipal UserData userData,
+            @PathVariable("email") String email
+    ) {
+        Boolean correoExistente = Boolean.FALSE;
+        Optional<Subject> subjectOpt = userService.getUserRepository().findByEmail(email.trim());//Buscar por campo code
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><< Encontrado " + subjectOpt);
+        if (subjectOpt.isPresent()) {
+            correoExistente = Boolean.TRUE;
+        }
+        return ResponseEntity.ok(correoExistente);
+    }
+
     @RequestMapping(path = "/users", method = GET)
-    public ResponseEntity getUsers(@AuthenticationPrincipal UserData user, @RequestParam(value = "offset", defaultValue = "0") int offset,
+    public ResponseEntity getUsers(
+            @AuthenticationPrincipal UserData user,
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "20") int limit) {
         List<UserModelData> result = new ArrayList<>();
         UserModelData userModelData = null;
@@ -130,13 +146,18 @@ public class UsersController {
     }
 
     @RequestMapping(path = "/users/{uuid}", method = GET)
-    public ResponseEntity getUserPorUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal UserData user) {
+    public ResponseEntity getUserPorUUID(
+            @AuthenticationPrincipal UserData user,
+            @PathVariable("uuid") String uuid
+    ) {
         Api.imprimirGetLogAuditoria("users/", user.getId());
         return ResponseEntity.ok(userService.findByUUID(uuid));
     }
 
     @RequestMapping(path = "/users/codigo/{codigo}", method = GET)
-    public ResponseEntity getUserPorCodigo(@PathVariable("codigo") String codigo, @AuthenticationPrincipal UserData user) {
+    public ResponseEntity getUserPorCodigo(
+            @AuthenticationPrincipal UserData user,
+            @PathVariable("codigo") String codigo) {
         Api.imprimirGetLogAuditoria("users/codigo", user.getId());
         return ResponseEntity.ok(userService.findByCodigo(codigo));
     }
@@ -151,7 +172,8 @@ public class UsersController {
     public ResponseEntity createUser(
             @AuthenticationPrincipal UserData userData,
             @Valid @RequestBody UserModelData registerParam,
-            BindingResult bindingResult) {
+            BindingResult bindingResult
+    ) {
         checkInput(registerParam, bindingResult);
 
         Boolean isCI = net.tecnopro.util.Strings.validateNationalIdentityDocument(registerParam.getCode());
@@ -194,7 +216,8 @@ public class UsersController {
     public ResponseEntity updateUser(
             @AuthenticationPrincipal UserData userData,
             @Valid @RequestBody UserModelData registerParam,
-            BindingResult bindingResult) {
+            BindingResult bindingResult
+    ) {
 
         return userService.getUserRepository().findByUUID(registerParam.getUuid()).map(user -> {
 
@@ -234,7 +257,8 @@ public class UsersController {
     public ResponseEntity updateUserPassword(
             @AuthenticationPrincipal UserData userData,
             @Valid @RequestBody UserModelData registerParam,
-            BindingResult bindingResult) {
+            BindingResult bindingResult
+    ) {
 
         return userService.getUserRepository().findByUUID(registerParam.getUuid()).map(user -> {
             //La contraseña viene encriptada, desencriptar y encriptar para Shiro autenticación
@@ -257,8 +281,10 @@ public class UsersController {
     }
 
     @RequestMapping(path = "/users/{uuid}", method = DELETE)
-    public ResponseEntity deleteUser(@PathVariable("uuid") String uuid,
-            @AuthenticationPrincipal UserData userDataAuth) {
+    public ResponseEntity deleteUser(
+            @AuthenticationPrincipal UserData userDataAuth,
+            @PathVariable("uuid") String uuid
+    ) {
         return userService.getUserRepository().findByUUID(uuid).map(user -> {
             if (!AuthorizationService.canWrite(userDataAuth, user)) {
                 throw new NoAuthorizationException();
