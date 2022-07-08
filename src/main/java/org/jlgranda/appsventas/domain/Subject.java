@@ -88,6 +88,8 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
     private Date date_birth;
     @Column(name = "usuario_app", nullable = true)
     private Boolean usuarioAPP = false;
+    @Column(name = "acepta_terminos_condiciones", nullable = true)
+    private Boolean aceptaTerminosCondiciones = false;
 
     /**
      * Return for each BussinesEntity te canonical path ....
@@ -301,6 +303,14 @@ public class Subject extends DeletableObject<Subject> implements Serializable {
         this.usuarioAPP = usuarioAPP;
     }
 
+    public Boolean getAceptaTerminosCondiciones() {
+        return aceptaTerminosCondiciones;
+    }
+
+    public void setAceptaTerminosCondiciones(Boolean aceptaTerminosCondiciones) {
+        this.aceptaTerminosCondiciones = aceptaTerminosCondiciones;
+    }
+    
     @Override
     public int hashCode() {
         final int prime = 31;
